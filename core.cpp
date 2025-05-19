@@ -110,15 +110,20 @@ uint16_t CPU16::performOp(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uin
 
 uint16_t CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val) {
     uint16_t destVal = 0;
-    switch (op14) {
-        case(isa::Op::ADD):
-            destVal = src1Val + src2Val;
-            if (destVal > isa::MAX_UINT_16BIT) {
-                flagReg.setCarry(true);
-                destVal -= isa::MAX_UINT_16BIT;
-            }
+    //note flag updates not fully good to go
+    auto thisOp = static_cast<isa::Op>(op14);
+    switch (thisOp) {
+        case(isa::Op::ADD): {
+            uint32_t result = uint32_t(src1Val) + uint32_t(src2Val);
+            destVal = static_cast<uint16_t>(result);
+            flagReg.setCarry(result > 0xFFFF);
+            flagReg.setZero(destVal == 0);
+            flagReg.setNegative((destVal & 0x8000) != 0);
+            bool overflow = (~(src1Val ^ src2Val) & (src1Val ^ destVal)) & 0x8000;
+            flagReg.setOverflow(overflow != 0);
             break;
-        case isa::Op::SUB:
+        }
+        case isa::Op::SUB: {
             destVal = src1Val - src2Val;
             //set flags
             flagReg.setCarry(src1Val < src2Val); //sets carry if borrow occured
@@ -130,53 +135,69 @@ uint16_t CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val) {
             flagReg.setZero(destVal == 0);
             flagReg.setNegative(resultNeg);
             break;
-        case (isa::Op::MULT):
+        }
+        case (isa::Op::MULT): {
             destVal = src1Val * src2Val;
             break;
-        case (isa::Op::DIV):
+        }
+        case (isa::Op::DIV): {
             if (src2Val == 0) src2Val = 1; //prevent divide by zero
             destVal = src1Val / src2Val;
             break;
-        case (isa::Op::MOD):
+        }
+        case (isa::Op::MOD):{
             if (src2Val == 0) src2Val = 1; //prevent divide by zero
             destVal = src1Val % src2Val;
             break;
-        case (isa::Op::AND):
+        }
+        case (isa::Op::AND): {
             destVal = src1Val & src2Val;
             break;
-        case (isa::Op::OR):
+        }
+        case (isa::Op::OR): {
             destVal = src1Val | src2Val;
             break;
-        case (isa::Op::XOR):
+        }
+        case (isa::Op::XOR): {
             destVal = src1Val ^ src2Val;
             break;
-        case (isa::Op::NOT):
+        }
+        case (isa::Op::NOT): {
             destVal = ~src1Val;
             break;
-        case (isa::Op::NAND):
+        }
+        case (isa::Op::NAND): {
             destVal = ~(src1Val & src2Val);
             break;
-        case (isa::Op::NOR):
+        }
+        case (isa::Op::NOR): {
             destVal = ~(src1Val | src2Val);
             break;
-        case (isa::Op::NEG):
+        }
+        case (isa::Op::NEG): {
             destVal = -src1Val;
             break;
-        case (isa::Op::LSH):
+        }
+        case (isa::Op::LSH): {
             destVal = src1Val << src2Val;
             break;
-        case (isa::Op::RSH):
+        }
+        case (isa::Op::RSH): {
             destVal = src1Val >> src2Val;
             break;
-        case (isa::Op::ROL):
+        }
+        case (isa::Op::ROL): {
             destVal = (src1Val << src2Val) | (src1Val >> (16 - src2Val));
             break;
-        case (isa::Op::ROR):
+        }
+        case (isa::Op::ROR): {
             destVal = (src1Val >> src2Val) | (src1Val << (16 - src2Val));
             break;
-        default:
+        }
+        default: {
             std::cout << "ERROR: Unknown op14" << std::endl;
             break;
+        }
     }
     return destVal;
 }
@@ -186,38 +207,50 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
     auto thisOp = static_cast<isa::Op>(op14);
     if (thisOp < isa::Op::Z) {
         switch (thisOp) {
-            case (isa::Op::EQ):
+            case (isa::Op::EQ): {
                 cond = src1Val == src2Val;
                 break;
-            case (isa::Op::NE):
+            }
+            case (isa::Op::NE): {
                 cond = src1Val != src2Val;
                 break;
-            case (isa::Op::LT):
+            }
+            case (isa::Op::LT): {
                 cond = static_cast<int16_t>(src1Val) < static_cast<int16_t>(src2Val);
                 break;
-            case (isa::Op::LE):
+            }
+            case (isa::Op::LE): {
                 cond = static_cast<int16_t>(src1Val) <= static_cast<int16_t>(src2Val);
                 break;
-            case (isa::Op::GT):
+            }
+            case (isa::Op::GT): {
                 cond = static_cast<int16_t>(src1Val) > static_cast<int16_t>(src2Val);
-            case (isa::Op::GE):
+                break;
+            }
+            case (isa::Op::GE): {
                 cond = static_cast<int16_t>(src1Val) >= static_cast<int16_t>(src2Val);
                 break;
-            case (isa::Op::ULT):
+            }
+            case (isa::Op::ULT): {
                 cond = src1Val < src2Val;
                 break;
-            case (isa::Op::ULE):
+            }
+            case (isa::Op::ULE): {
                 cond = src1Val <= src2Val;
                 break;
-            case (isa::Op::UGT):
+            }
+            case (isa::Op::UGT): {
                 cond = src1Val > src2Val;
                 break;
-            case (isa::Op::UGE):
+            }
+            case (isa::Op::UGE): {
                 cond = src1Val >= src2Val;
                 break;
-            default:
+            }
+            default: {
                 std::cout << "ERROR: Unknown op14" << std::endl;
                 break;
+            }
         }
         if (cond) {
             setPc(dest); //sets program counter to the value in dest (for single op jumps)
