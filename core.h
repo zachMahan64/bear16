@@ -41,7 +41,8 @@ public:
     void execute(parts::Instruction instr);
     uint16_t performOp(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest);
     uint16_t doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val);
-    uint16_t doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val);
+    void doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest);
+    void setPc(uint16_t newPc);
     uint16_t doDataTrans(uint16_t op14, uint16_t src1Val, uint16_t src2Val);
     uint16_t doCtrlFlow(uint16_t op14, uint16_t src1Val, uint16_t src2Val);
     uint16_t doVid(uint16_t op14, uint16_t src1Val, uint16_t src2Val);

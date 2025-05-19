@@ -134,9 +134,11 @@ uint16_t CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val) {
             destVal = src1Val * src2Val;
             break;
         case (isa::Op::DIV):
+            if (src2Val == 0) src2Val = 1; //prevent divide by zero
             destVal = src1Val / src2Val;
             break;
         case (isa::Op::MOD):
+            if (src2Val == 0) src2Val = 1; //prevent divide by zero
             destVal = src1Val % src2Val;
             break;
         case (isa::Op::AND):
@@ -178,7 +180,76 @@ uint16_t CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val) {
     }
     return destVal;
 }
-uint16_t CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val) {
+
+void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest) {
+    bool cond = false;
+    auto thisOp = static_cast<isa::Op>(op14);
+    if (thisOp < isa::Op::Z) {
+        switch (thisOp) {
+            case (isa::Op::EQ):
+                cond = src1Val == src2Val;
+                break;
+            case (isa::Op::NE):
+                cond = src1Val != src2Val;
+                break;
+            case (isa::Op::LT):
+                cond = static_cast<int16_t>(src1Val) < static_cast<int16_t>(src2Val);
+                break;
+            case (isa::Op::LE):
+                cond = static_cast<int16_t>(src1Val) <= static_cast<int16_t>(src2Val);
+                break;
+            case (isa::Op::GT):
+                cond = static_cast<int16_t>(src1Val) > static_cast<int16_t>(src2Val);
+            case (isa::Op::GE):
+                cond = static_cast<int16_t>(src1Val) >= static_cast<int16_t>(src2Val);
+                break;
+            case (isa::Op::ULT):
+                cond = src1Val < src2Val;
+                break;
+            case (isa::Op::ULE):
+                cond = src1Val <= src2Val;
+                break;
+            case (isa::Op::UGT):
+                cond = src1Val > src2Val;
+                break;
+            case (isa::Op::UGE):
+                cond = src1Val >= src2Val;
+                break;
+            default:
+                std::cout << "ERROR: Unknown op14" << std::endl;
+                break;
+        }
+        if (cond) {
+            setPc(dest); //sets program counter to the value in dest (for single op jumps)
+        }
+    } else {
+        switch (thisOp) { //set flags in flagReg manually
+            case (isa::Op::Z):
+                flagReg.setZero(true);
+                break;
+            case(isa::Op::NZ):
+                flagReg.setZero(false);
+                break;
+            case (isa::Op::C):
+                flagReg.setCarry(true);
+                break;
+                case (isa::Op::NC):
+                flagReg.setCarry(false);
+            case(isa::Op::N):
+                flagReg.setNegative(true);
+                break;
+            case (isa::Op::NN):
+                flagReg.setNegative(false);
+                break;
+            default:
+                std::cout << "ERROR: Unknown op14" << std::endl;
+                break;
+        }
+    }
+}
+
+void CPU16::setPc(const uint16_t newPc) {
+    pc = newPc;
 }
 
 void CPU16::writeback(uint16_t dest, uint16_t val) {

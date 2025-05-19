@@ -42,12 +42,13 @@ enum class Op : uint16_t {
         ULE = 0x0017,
         UGT = 0x0018,
         UGE = 0x0019,
-        Z   = 0x001A,
-        NZ  = 0x001B,
-        C   = 0x001C,
-        NC  = 0x001D,
-        N   = 0x001E,
-        NN  = 0x001F,
+        Z   = 0x001A, //sets flag
+        NZ  = 0x001B, //"
+        C   = 0x001C, //"
+        NC  = 0x001D, //"
+        N   = 0x001E, //"
+        NN  = 0x001F, //"
+        //Data Trans (add)
         //CTRL Flow
         CALL      = 0x0040,   // call sub-routine  (src1 = target PC)
         RET       = 0x0041,   // return from CALL
@@ -64,7 +65,6 @@ enum class Op : uint16_t {
         CLRFB  = 0x0080,  // clear framebuffer
         SETPX  = 0x0081,  // set pixel at (X,Y), dest = 0/1
         BLIT   = 0x0082   // block image transfer: srcAddr, byteCount, destAddr
-
     };
 };
 
