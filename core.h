@@ -30,7 +30,7 @@ class CPU16 {
     //REG
     std::vector<parts::GenRegister> genRegs = std::vector<parts::GenRegister>(NUM_GEN_REGS);
     parts::FlagRegister flagReg = parts::FlagRegister();
-    parts::GenRegister  stackPtr = parts::GenRegister();
+    parts::GenRegister  stackPtr = parts::GenRegister(); //sp
 public:
     //Constr
     CPU16(std::size_t romSize, std::size_t sramSize) : sram(sramSize), rom(romSize) {}

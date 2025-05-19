@@ -48,7 +48,18 @@ enum class Op : uint16_t {
         NC  = 0x001D, //"
         N   = 0x001E, //"
         NN  = 0x001F, //"
-        //Data Trans (add)
+        //Data Trans (wip)
+        MOV    = 0x0020,
+        LD     = 0x0021,
+        STO    = 0x0022, //add mult variants (half word, full word, double word) w/ offset support
+        LEA    = 0x0023,
+        PUSH   = 0x0024,
+        POP    = 0x0025,
+        CLR    = 0x0026,
+        INC    = 0x0027,
+        DEC    = 0x0028,
+        MEMCPY = 0x0029, //multicycle, simulate with a simCycDelayCnt that is set and decrements until zero when needed and prevents the PC from stepping
+        COMP   = 0x0030,
         //CTRL Flow
         CALL      = 0x0040,   // call sub-routine  (src1 = target PC)
         RET       = 0x0041,   // return from CALL

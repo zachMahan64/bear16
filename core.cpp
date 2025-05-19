@@ -248,10 +248,10 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
     }
 }
 
+
 void CPU16::setPc(const uint16_t newPc) {
     pc = newPc;
 }
-
 void CPU16::writeback(uint16_t dest, uint16_t val) {
     if (dest < NUM_GEN_REGS) {
         genRegs[dest].set(val);
