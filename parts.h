@@ -50,6 +50,10 @@ namespace parts {
         uint16_t val = 0;
         void set(uint16_t val);
         void reset();
+        explicit GenRegister(uint16_t startingVal) {
+            val = startingVal;
+        }
+        GenRegister() = default;
     };
 }
 #endif //PARTS_H

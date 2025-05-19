@@ -50,16 +50,18 @@ enum class Op : uint16_t {
         NN  = 0x001F, //"
         //Data Trans (wip)
         MOV    = 0x0020,
-        LD     = 0x0021,
-        STO    = 0x0022, //add mult variants (half word, full word, double word) w/ offset support
-        LEA    = 0x0023,
-        PUSH   = 0x0024,
-        POP    = 0x0025,
-        CLR    = 0x0026,
-        INC    = 0x0027,
-        DEC    = 0x0028,
-        MEMCPY = 0x0029, //multicycle, simulate with a simCycDelayCnt that is set and decrements until zero when needed and prevents the PC from stepping
-        COMP   = 0x0030,
+        LW     = 0x0021,
+        LB     = 0x0022,
+        COMP   = 0x0023,
+        LEA    = 0x0024,
+        PUSH   = 0x0025,
+        POP    = 0x0026,
+        CLR    = 0x0027,
+        INC    = 0x0028,
+        DEC    = 0x0029,
+        MEMCPY = 0x002A, //multicycle, simulate with a simCycDelayCnt that is set and decrements until zero when needed and prevents the PC from stepping
+        SW     = 0x002B, //store word (16 bit)
+        SB     = 0x002C, //store byte (8 bit)
         //CTRL Flow
         CALL      = 0x0040,   // call sub-routine  (src1 = target PC)
         RET       = 0x0041,   // return from CALL
@@ -76,6 +78,7 @@ enum class Op : uint16_t {
         CLRFB  = 0x0080,  // clear framebuffer
         SETPX  = 0x0081,  // set pixel at (X,Y), dest = 0/1
         BLIT   = 0x0082   // block image transfer: srcAddr, byteCount, destAddr
+        //add BLITCHAR support which reads from an ASCI based font ROM
     };
 };
 

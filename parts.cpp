@@ -23,7 +23,7 @@ void Clock::tick(auto delayMillis) {
     bit = 1 - bit;
 }
 
-// (template tick<> stays in header)
+// (tick<> in header)
 
 // ─── Instruction ctor ─────────────────────────────────
 Instruction::Instruction(uint64_t raw) {
