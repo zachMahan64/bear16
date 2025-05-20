@@ -77,7 +77,7 @@ enum class Op : uint16_t {
         //Video
         CLRFB  = 0x0080,  // clear framebuffer
         SETPX  = 0x0081,  // set pixel at (X,Y), dest = 0/1
-        BLIT   = 0x0082   // block image transfer: srcAddr, byteCount, destAddr
+        BLIT   = 0x0082   // block image transfer: destAddr, srcAddr, byteCount
         //add BLITCHAR support which reads from an ASCI based font ROM
     };
 };

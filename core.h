@@ -52,6 +52,7 @@ public:
     void doCtrlFlow(uint16_t op14, uint16_t src1Val, uint16_t src2Val);
     void doVid(uint16_t op14, uint16_t src1Val, uint16_t src2Val);
     void writeback(uint16_t dest, uint16_t val);
+    [[nodiscard]] uint16_t peekInReg(uint16_t reg) const;
     [[nodiscard]] uint16_t fetchByteAsWordFromMem(uint16_t addr) const;
     [[nodiscard]] uint8_t fetchByteFromMem(uint16_t addr) const;
     [[nodiscard]] uint16_t fetchWordFromMem(uint16_t addr) const; //little endian
@@ -65,10 +66,11 @@ class Board {
     const std::size_t SRAM_SIZE;
     uint64_t input  = 0;
     uint64_t output = 0;
-    CPU16 cpu;
 public:
+    CPU16 cpu; //public for testing purposes (change later)
     Board(std::size_t romSize, std::size_t sramSize);
     void loadRomFromBinFile(const std::string &path);
+    void loadRomFromManualBinVec(std::vector<uint8_t> rom);
 };
 
 #endif //CORE_H

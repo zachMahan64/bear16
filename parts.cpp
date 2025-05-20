@@ -28,9 +28,9 @@ void Clock::tick(auto delayMillis) {
 // ─── Instruction ctor ─────────────────────────────────
 Instruction::Instruction(uint64_t raw) {
     opcode   = (raw >> 48) & 0xFFFFu;
-    src1     = (raw >> 32) & 0xFFFFu;
-    src2     = (raw >> 16) & 0xFFFFu;
-    dest     =  raw        & 0xFFFFu;
+    dest     = (raw >> 32) & 0xFFFFu;
+    src1     = (raw >> 16) & 0xFFFFu;
+    src2     =  raw        & 0xFFFFu;
     immFlags =  opcode >> 14;
     opCode14 =  opcode & 0x3FFFu;
 }

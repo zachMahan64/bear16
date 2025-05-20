@@ -25,6 +25,11 @@ void Board::loadRomFromBinFile(const std::string &path) {
     std::vector<uint8_t> byteRom{};
     cpu.setRom(byteRom);
 }
+
+void Board::loadRomFromManualBinVec(std::vector<uint8_t> rom) {
+    cpu.setRom(std::move(rom));
+}
+
 void CPU16::setRom(std::vector<uint8_t> rom) {
     this->rom = std::move(rom);
 }
@@ -361,7 +366,6 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             writeByteToMem(src1Val + dest, static_cast<uint8_t>(src2Val));
             break;
         }
-
         default: {
             std::cout << "ERROR: Unknown op14" << std::endl;
         }
@@ -382,6 +386,20 @@ void CPU16::writeback(uint16_t dest, uint16_t val) {
     } else {
         std::cout << "ERROR: Unknown dest" << std::endl;
     }
+}
+
+uint16_t CPU16::peekInReg(uint16_t reg) const {
+    uint16_t regVal = 0;
+    if (reg < NUM_GEN_REGS) {
+        regVal = genRegs[reg].val;
+    } else if (reg < NUM_GEN_REGS + NUM_IO) {
+        regVal = inps[reg - NUM_GEN_REGS];
+    } else if (reg == 0x0012) {
+        regVal = stackPtr.val;
+    } else {
+        std::cout << "ERROR: Unknown dest" << std::endl;
+    }
+    return regVal;
 }
 
 inline uint16_t CPU16::fetchByteAsWordFromMem(uint16_t addr) const {
