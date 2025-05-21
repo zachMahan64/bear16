@@ -12,6 +12,7 @@ namespace isa {
     static constexpr size_t GEN_REG_COUNT = 16;
     static constexpr size_t IO_COUNT = 2;
     static constexpr size_t MAX_UINT_16BIT = 65536;
+    static constexpr size_t STACK_FRAME_SIZE = 32;
 
 enum class Op : uint16_t {
         //Arith & Bitwise
@@ -63,9 +64,9 @@ enum class Op : uint16_t {
         SW     = 0x002B, //store word (16 bit)
         SB     = 0x002C, //store byte (8 bit)
         //CTRL Flow
-        CALL      = 0x0040,   // call sub-routine  (src1 = target PC)
+        CALL      = 0x0040,   // call sub-routine  (dest = target PC)
         RET       = 0x0041,   // return from CALL
-        JMP       = 0x0042,   // unconditional jump        (src1 = target PC)
+        JMP       = 0x0042,   // unconditional jump        (dest = target PC)
         JCOND_Z   = 0x0043,   // jump if     Z flag == 1
         JCOND_NZ  = 0x0044,   // jump if     Z flag == 0
         JCOND_NEG = 0x0045,   // jump if     N flag == 1

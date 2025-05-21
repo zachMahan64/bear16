@@ -28,6 +28,7 @@ namespace parts {
         uint16_t dest;
         uint8_t  immFlags; //top 2 bits of Opcode
         uint16_t opCode14; //bottom 2 bits of Opcode
+        uint64_t val; //64 bit val
 
         explicit Instruction(uint64_t raw);
     };

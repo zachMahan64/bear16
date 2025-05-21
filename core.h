@@ -27,6 +27,7 @@ class CPU16 {
     uint16_t tickWaitCnt = 0; //for multicycle operations
     uint16_t tickWaitStopPt = 0;
     bool pcIsStopped = false;
+    bool cpuIsHalted = false;
     //CLOCK
     parts::Clock clk = parts::Clock();
     //IO
@@ -36,20 +37,23 @@ class CPU16 {
     std::vector<parts::GenRegister> genRegs = std::vector<parts::GenRegister>(NUM_GEN_REGS);
     parts::FlagRegister flagReg = parts::FlagRegister();
     parts::GenRegister  stackPtr = parts::GenRegister(static_cast<uint16_t>(isa::SRAM_SIZE)); //sp stacks at end of RAM for downward growth
+    parts::GenRegister  framePtr = parts::GenRegister(static_cast<uint16_t>(isa::SRAM_SIZE));
 public:
     //Constr
     CPU16(std::size_t romSize, std::size_t sramSize) : sram(sramSize), rom(romSize) {}
     //doStuff
+    [[nodiscard]] uint16_t getPc() const;
     void setRom(std::vector<uint8_t> rom);
+    void run();
     void step();
     uint64_t fetchInstruction();
     void execute(parts::Instruction instr);
-    void performOp(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val);
+    void performOp(const parts::Instruction &instr, uint16_t src1Val, uint16_t src2Val);
     void doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest);
     void doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest);
     void setPc(uint16_t newPc);
     void doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val);
-    void doCtrlFlow(uint16_t op14, uint16_t src1Val, uint16_t src2Val);
+    void doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val);
     void doVid(uint16_t op14, uint16_t src1Val, uint16_t src2Val);
     void writeback(uint16_t dest, uint16_t val);
     [[nodiscard]] uint16_t peekInReg(uint16_t reg) const;
@@ -69,7 +73,7 @@ class Board {
 public:
     CPU16 cpu; //public for testing purposes (change later)
     Board(std::size_t romSize, std::size_t sramSize);
-    void loadRomFromBinFile(const std::string &path);
+    void loadRomFromBinInTxtFile(const std::string &path);
     void loadRomFromManualBinVec(std::vector<uint8_t> rom);
 };
 

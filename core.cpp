@@ -14,6 +14,8 @@
 #include <iostream>
 #include <string>
 #include <cstddef>
+#include <filesystem>
+
 
 //Board and loading ROM stuff
 Board::Board(std::size_t romSize, std::size_t sramSize)
@@ -21,26 +23,68 @@ Board::Board(std::size_t romSize, std::size_t sramSize)
           SRAM_SIZE(sramSize),
           cpu(romSize, sramSize)
 {}
-void Board::loadRomFromBinFile(const std::string &path) {
+void Board::loadRomFromBinInTxtFile(const std::string &path) {
+    std::ifstream file(path);
     std::vector<uint8_t> byteRom{};
+    if (!file.is_open()) {
+        std::cout << "ERROR: Could not open file" << std::endl;
+        return;
+    }
+
+    std::string allBits;
+    char c;
+    while (file.get(c)) {
+        if (c == '0' || c == '1') {
+            allBits += c;
+        }
+    }
+    std::cout << "All bits: " << allBits << std::endl;
+
+    if (allBits.size() % 8 != 0) {
+        std::cout << "ERROR: Bitstream length (" << allBits.size()
+                  << ") is not divisible by 8. File must contain errors." << std::endl;
+        file.close();
+        return;
+    }
+
+    int byteNum = 0;
+    for (size_t i = 0; i < allBits.size(); i += 8) {
+        std::string byteStr = allBits.substr(i, 8);
+        auto byte = static_cast<uint8_t>(std::stoi(byteStr, nullptr, 2));
+        std::cout << "Byte " << byteNum << ": " << std::to_string(byte) << std::endl;
+        byteRom.push_back(byte);
+        byteNum++;
+    }
+
+    std::cout << "------------ROM loaded------------" << std::endl;
+    file.close();
     cpu.setRom(byteRom);
 }
-
 void Board::loadRomFromManualBinVec(std::vector<uint8_t> rom) {
     cpu.setRom(std::move(rom));
 }
-
+uint16_t CPU16::getPc() const {
+    return pc;
+}
 void CPU16::setRom(std::vector<uint8_t> rom) {
     this->rom = std::move(rom);
 }
-//CPU16 inner workings
 
+//CPU16 inner workings
+void CPU16::run() {
+    int i = 0;
+    do {
+        step();
+        i++;
+    } while (cpuIsHalted == false && i < rom.size());
+}
 void CPU16::step() {
     //fetch & prelim. decoding
+    std::cout << "PC: " << std::to_string(pc) << std::endl;
     auto instr = parts::Instruction(fetchInstruction());
+    pc += 8;
     //execute & writeback
     execute(instr);
-
 }
 //fetch
 uint64_t CPU16::fetchInstruction() {
@@ -49,7 +93,6 @@ uint64_t CPU16::fetchInstruction() {
         instr <<= 8;
         instr |= rom[pc + i];
     }
-    pc += 8;
     return instr;
 }
 //execute
@@ -89,7 +132,7 @@ void CPU16::execute(parts::Instruction instr) {
     performOp(instr, src1Val, src2Val);
 }
 //carry out execution and writeback (when applicable)
-void CPU16::performOp(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val) {
+void CPU16::performOp(const parts::Instruction &instr, uint16_t src1Val, uint16_t src2Val) {
     uint16_t op14 = instr.opCode14;
     uint16_t dest = instr.dest;
     bool const isArith = op14 < 0x0010;
@@ -103,13 +146,14 @@ void CPU16::performOp(parts::Instruction instr, uint16_t src1Val, uint16_t src2V
         doCond(op14, src1Val, src2Val, dest);
     }
     else if (isDataTrans) {
-        //fn
+        doDataTrans(instr, src1Val, src2Val);
     } else if (isCtrlFlow) {
-        //fn
+        doCtrlFlow(instr, src1Val, src2Val);
     } else if (isVid) {
         //fn
     } else {
-        //error in operation on SRC1 & SRC2
+        std::cout << "ERROR: Unknown op14, trace to performOp" << std::endl;
+        std::cout << "op14: " << std::to_string(op14) << std::endl;
     }
 }
 void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest) {
@@ -289,15 +333,15 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
     auto thisOp = static_cast<isa::Op>(op14);
     switch (thisOp) {
         case(isa::Op::MOV): {
-            writeback(dest, src1Val + src2Val);
+            writeback(dest, src1Val); //no offset progged in
             break;
         }
         case(isa::Op::LW): {
-            writeback(dest, fetchWordFromMem(src1Val + src2Val));
+            writeback(dest, fetchWordFromMem(src1Val)); //no offset progged in
             break;
         }
         case(isa::Op::LB): {
-            writeback(dest, fetchByteAsWordFromMem(src1Val + src2Val));
+            writeback(dest, fetchByteAsWordFromMem(src1Val)); //no offset progged in
             break;
         }
         case(isa::Op::COMP): {
@@ -371,6 +415,90 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         }
     }
 }
+void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val) {
+    uint16_t op14 = instr.opCode14;
+    uint16_t dest = instr.dest;
+    auto thisOp = static_cast<isa::Op>(op14);
+    switch (thisOp) {
+        case(isa::Op::CALL): {
+            //push old frame pointer
+            stackPtr.set(stackPtr.val - 2);
+            writeWordToMem(stackPtr.val, framePtr.val);
+
+            //push return address
+            stackPtr.set(stackPtr.val - 2);
+            writeWordToMem(stackPtr.val, pc);
+
+            //set new frame pointer --> points to return addr
+            framePtr.set(stackPtr.val);
+
+            //reserve 32 bytes for frame
+            stackPtr.set(stackPtr.val - isa::STACK_FRAME_SIZE); //=32
+
+            //jump
+            pc = dest;
+            break;
+        }
+        case(isa::Op::RET): {
+            //free local frame
+            stackPtr.set(stackPtr.val + isa::STACK_FRAME_SIZE); //=32
+
+            //restore return address
+            uint16_t retAddr = fetchWordFromMem(stackPtr.val);
+            stackPtr.set(stackPtr.val + 2);
+
+            //restore old frame pointer
+            uint16_t oldFP = fetchWordFromMem(stackPtr.val);
+            stackPtr.set(stackPtr.val + 2);
+            framePtr.set(oldFP);
+
+            //return to caller
+            pc = retAddr;
+            break;
+        }
+        case(isa::Op::JMP): {
+            pc = dest;
+            break;
+        }
+        case(isa::Op::JCOND_Z): {
+            if (flagReg.zero) pc = dest;
+            break;
+        }
+        case (isa::Op::JCOND_NZ): {
+            if (!flagReg.zero) pc = dest;
+            break;
+        }
+        case (isa::Op::JCOND_NEG): {
+            if (flagReg.negative) pc = dest;
+            break;
+        }
+        case (isa::Op::JCOND_NNEG): {
+            if (!flagReg.negative) pc = dest;
+            break;
+        }
+        case (isa::Op::JCOND_POS): {
+            if (!flagReg.negative && !flagReg.zero) pc = dest;
+            break;
+        }
+        case (isa::Op::JCOND_NPOS): {
+            if (flagReg.negative || flagReg.zero) pc = dest;
+            break;
+        }
+        case (isa::Op::NOP): {
+            //nada
+            break;
+        }
+        case(isa::Op::HLT): {
+            std::cout << "HALTED" << std::endl;
+            pcIsStopped = true;
+            cpuIsHalted = true;
+            break;
+        }
+        default: {
+            std::cout << "ERROR: Unknown op14" << std::endl;
+        }
+    }
+}
 
 //gen purpose
 void CPU16::setPc(const uint16_t newPc) {
@@ -384,10 +512,10 @@ void CPU16::writeback(uint16_t dest, uint16_t val) {
     } else if (dest == 0x0012) {
         stackPtr.set(val);
     } else {
-        std::cout << "ERROR: Unknown dest" << std::endl;
+        std::cout << "ERROR: Unknown dest when writing back" << std::endl;
+        std::cout << "ERROR: dest = " << dest << std::endl;
     }
 }
-
 uint16_t CPU16::peekInReg(uint16_t reg) const {
     uint16_t regVal = 0;
     if (reg < NUM_GEN_REGS) {
@@ -397,36 +525,30 @@ uint16_t CPU16::peekInReg(uint16_t reg) const {
     } else if (reg == 0x0012) {
         regVal = stackPtr.val;
     } else {
-        std::cout << "ERROR: Unknown dest" << std::endl;
+        std::cout << "ERROR: Unknown dest when peeking" << std::endl;
     }
     return regVal;
 }
-
 inline uint16_t CPU16::fetchByteAsWordFromMem(uint16_t addr) const {
     return static_cast<uint16_t>(sram[addr]);
 }
-
 inline uint8_t CPU16::fetchByteFromMem(uint16_t addr) const {
     return sram[addr];
 }
-
 inline uint16_t CPU16::fetchWordFromMem(uint16_t addr) const {
     uint16_t word = static_cast<uint16_t>(sram[addr]) | static_cast<uint16_t>(sram[addr + 1] << 8);
     return word;
 }
-
 inline std::array<uint8_t, 2> CPU16::convertWordToBytePair(uint16_t val) {
     std::array<uint8_t, 2> bytePair{};
     bytePair[0] = static_cast<uint8_t>(val & 0xFF);
     bytePair[1] = static_cast<uint8_t>((val >> 8) & 0xFF);
     return bytePair;
 }
-
 inline void CPU16::writeWordToMem(uint16_t addr, uint16_t val) {
     sram[addr] = static_cast<uint8_t>(val & 0xFF);
     sram[addr + 1] = static_cast<uint8_t>((val >> 8) & 0xFF);
 }
-
 void CPU16::writeByteToMem(uint16_t addr, uint8_t val) {
     sram[addr] = val;
 }

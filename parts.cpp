@@ -32,7 +32,8 @@ Instruction::Instruction(uint64_t raw) {
     src1     = (raw >> 16) & 0xFFFFu;
     src2     =  raw        & 0xFFFFu;
     immFlags =  opcode >> 14;
-    opCode14 =  opcode & 0x3FFFu;
+    opCode14 =  opcode & 0x3FFF;
+    val = raw;
 }
 
 
