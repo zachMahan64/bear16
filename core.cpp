@@ -60,6 +60,56 @@ void Board::loadRomFromBinInTxtFile(const std::string &path) {
     file.close();
     cpu.setRom(byteRom);
 }
+void Board::loadRomFromHexInTxtFile(const std::string &path) {
+    std::ifstream file(path, std::ios::in | std::ios::binary);
+    if (!file) {
+        std::cout << "ERROR: Could not open file" << std::endl;
+        return;
+    }
+
+    // Read whole file into buffer
+    std::string buffer((std::istreambuf_iterator<char>(file)),
+                        std::istreambuf_iterator<char>());
+
+    std::string allDigits;
+    allDigits.reserve(buffer.size()); // Reserve space for efficiency
+
+    bool inComment = false;
+    for (char c : buffer) {
+        if (inComment) {
+            if (c == '\n') inComment = false;
+            continue;
+        }
+        if (c == '#') {
+            inComment = true;
+            continue;
+        }
+        if (std::isxdigit(static_cast<unsigned char>(c))) {
+            allDigits += c;
+        }
+    }
+    std::cout << "All digits (debug): " << allDigits << std::endl;
+
+    if (allDigits.size() % 4 != 0) {
+        std::cout << "ERROR: Digit stream length (" << allDigits.size()
+                  << ") is not divisible by 4. File must contain errors." << std::endl;
+        return;
+    }
+
+    std::vector<uint8_t> byteRom;
+    byteRom.reserve(allDigits.size() / 2);
+    int byteNum = 0;
+    for (size_t i = 0; i < allDigits.size(); i += 2) {
+        std::string byteStr = allDigits.substr(i, 2);
+        auto byte = static_cast<uint8_t>(std::stoul(byteStr, nullptr, 16));
+        std::cout << "Byte " << byteNum << ": " << std::to_string(byte) << std::endl;
+        byteRom.push_back(byte);
+        byteNum++;
+    }
+
+    std::cout << "------------ROM loaded------------" << std::endl;
+    cpu.setRom(byteRom);
+}
 void Board::loadRomFromManualBinVec(std::vector<uint8_t> rom) {
     cpu.setRom(std::move(rom));
 }
@@ -72,12 +122,11 @@ void CPU16::setRom(std::vector<uint8_t> rom) {
 
 //CPU16 inner workings
 void CPU16::run() {
-    int i = 0;
     do {
         step();
-        i++;
-    } while (cpuIsHalted == false && i < rom.size());
-}
+    } while (cpuIsHalted == false);
+} //move this functionality to Board when possible
+
 void CPU16::step() {
     //fetch & prelim. decoding
     std::cout << "PC: " << std::to_string(pc) << std::endl;
@@ -301,6 +350,7 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
         }
         if (cond) {
             setPc(dest); //sets program counter to the value in dest (for single op jumps)
+            std::cout << "DEBUG: cond true, jumping to " << dest << std::endl;
         }
     } else {
         switch (thisOp) { //set flags in flagReg manually
@@ -337,11 +387,11 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             break;
         }
         case(isa::Op::LW): {
-            writeback(dest, fetchWordFromMem(src1Val)); //no offset progged in
+            writeback(dest, fetchWordFromMem(src1Val + src2Val));
             break;
         }
         case(isa::Op::LB): {
-            writeback(dest, fetchByteAsWordFromMem(src1Val)); //no offset progged in
+            writeback(dest, fetchByteAsWordFromMem(src1Val + src2Val));
             break;
         }
         case(isa::Op::COMP): {
@@ -404,6 +454,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         }
         case(isa::Op::SW): {
             writeWordToMem(src1Val + dest, src2Val);
+            std::cout << "DEBUG: SW " << std::endl;
             break;
         }
         case (isa::Op::SB): {
@@ -489,7 +540,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             break;
         }
         case(isa::Op::HLT): {
-            std::cout << "HALTED" << std::endl;
+            std::cout << "debug: HALTED" << std::endl;
             pcIsStopped = true;
             cpuIsHalted = true;
             break;
@@ -548,6 +599,7 @@ inline std::array<uint8_t, 2> CPU16::convertWordToBytePair(uint16_t val) {
 inline void CPU16::writeWordToMem(uint16_t addr, uint16_t val) {
     sram[addr] = static_cast<uint8_t>(val & 0xFF);
     sram[addr + 1] = static_cast<uint8_t>((val >> 8) & 0xFF);
+    std::cout << "addr: " << addr << " val:" << val << std::endl;
 }
 void CPU16::writeByteToMem(uint16_t addr, uint8_t val) {
     sram[addr] = val;

@@ -16,6 +16,7 @@
 #include <cstddef>
 
 class CPU16 {
+public: //only all public for debugging ease
     //ISA specs
     const short NUM_GEN_REGS = isa::GEN_REG_COUNT;
     const short NUM_IO = isa::IO_COUNT;
@@ -38,7 +39,7 @@ class CPU16 {
     parts::FlagRegister flagReg = parts::FlagRegister();
     parts::GenRegister  stackPtr = parts::GenRegister(static_cast<uint16_t>(isa::SRAM_SIZE)); //sp stacks at end of RAM for downward growth
     parts::GenRegister  framePtr = parts::GenRegister(static_cast<uint16_t>(isa::SRAM_SIZE));
-public:
+//public:
     //Constr
     CPU16(std::size_t romSize, std::size_t sramSize) : sram(sramSize), rom(romSize) {}
     //doStuff
@@ -74,6 +75,7 @@ public:
     CPU16 cpu; //public for testing purposes (change later)
     Board(std::size_t romSize, std::size_t sramSize);
     void loadRomFromBinInTxtFile(const std::string &path);
+    void loadRomFromHexInTxtFile(const std::string &path);
     void loadRomFromManualBinVec(std::vector<uint8_t> rom);
 };
 

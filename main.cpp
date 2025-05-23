@@ -19,12 +19,19 @@ int runEmu() {
     //                            0x00, 0x07,  //src1
     //                            0x00, 0x08}; //src2
     // board.loadRomFromManualBinVec(testRom);
-    board.loadRomFromBinInTxtFile("../programs/bin_prog.txt");
+    //board.loadRomFromBinInTxtFile("../programs/bin_prog.txt");
+    board.loadRomFromHexInTxtFile("../programs/hex_prog.txt");
     board.cpu.step();
     board.cpu.run();
+    cout << "RESULTS\n========" << endl;
     cout << "pc: " << board.cpu.getPc() << endl;
-    cout << board.cpu.peekInReg(0) << endl;
-    cout << board.cpu.peekInReg(1) << endl;
+    cout << "REG 0: " << board.cpu.peekInReg(0) << endl;
+    cout << "REG 1: " << board.cpu.peekInReg(1) << endl;
+    cout << "REG 2: " << board.cpu.peekInReg(2) << endl;
+    cout << "REG 3: " << board.cpu.peekInReg(3) << endl;
+    uint16_t addrToSee = 4;
+    cout << "MEM @ addr = " << addrToSee << endl;
+    cout << board.cpu.fetchWordFromMem(addrToSee) << endl;
     return 0;
 }
 

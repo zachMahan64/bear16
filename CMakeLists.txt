@@ -8,4 +8,6 @@ add_executable(cpu_emulator_take_1 main.cpp
         parts.cpp
         parts.h
         core.cpp
-        core.h)
+        core.h
+        asm.cpp
+        asm.h)
