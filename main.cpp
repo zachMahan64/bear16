@@ -3,6 +3,8 @@
 #include <map>
 #include <thread>
 #include <vector>
+
+#include "assembler.h"
 #include "isa.h"
 #include "parts.h"
 #include "core.h"
@@ -36,5 +38,8 @@ int runEmu() {
 }
 
 int main() {
-    return runEmu();
+    //assembler::asmToBinMapGenerator();
+    assembler::parseAsmFile("../programs/assembly_test.asm");
+    //runEmu();
+    return 0;
 }

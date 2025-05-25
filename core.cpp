@@ -66,13 +66,12 @@ void Board::loadRomFromHexInTxtFile(const std::string &path) {
         std::cout << "ERROR: Could not open file" << std::endl;
         return;
     }
-
-    // Read whole file into buffer
+    //read whole file into buffer
     std::string buffer((std::istreambuf_iterator<char>(file)),
                         std::istreambuf_iterator<char>());
 
     std::string allDigits;
-    allDigits.reserve(buffer.size()); // Reserve space for efficiency
+    allDigits.reserve(buffer.size()); //reserve space
 
     bool inComment = false;
     for (char c : buffer) {
@@ -126,7 +125,6 @@ void CPU16::run() {
         step();
     } while (cpuIsHalted == false);
 } //move this functionality to Board when possible
-
 void CPU16::step() {
     //fetch & prelim. decoding
     std::cout << "PC: " << std::to_string(pc) << std::endl;
@@ -146,15 +144,12 @@ uint64_t CPU16::fetchInstruction() {
 }
 //execute
 void CPU16::execute(parts::Instruction instr) {
-    //opcode
-    uint16_t op14 = instr.opCode14;
     //immediates
     bool im1 = instr.immFlags == 0x02 || instr.immFlags == 0x03;
     bool im2 = instr.immFlags == 0x01 || instr.immFlags == 0x03;
     //calc vals
     uint16_t src1Val = 0;
     uint16_t src2Val = 0;
-    uint16_t dest = instr.dest;
 
     if (im1) {
         src1Val = instr.src1;
@@ -164,8 +159,12 @@ void CPU16::execute(parts::Instruction instr) {
         src1Val = inps[instr.src1 - NUM_GEN_REGS];
     } else if (instr.src1 == 0x0012) {
         src1Val = stackPtr.val;
+    } else if (instr.src1 == 0x0013) {
+        src1Val = framePtr.val;
+    } else if (instr.src1 == 0x0013) {
+        src1Val = pc;
     } else {
-        //error in src1
+        std::cout << "ERROR: unknown operand (src1)" << instr.src1 << std::endl;
     }
     if (im2) {
         src2Val = instr.src2;
@@ -175,8 +174,10 @@ void CPU16::execute(parts::Instruction instr) {
         src2Val = inps[instr.src2 - NUM_GEN_REGS];
     } else if (instr.src2 == 0x0012) {
         src2Val = stackPtr.val;
+    } else if (instr.src1 == 0x0013) {
+        src1Val = pc;
     } else {
-        //error in src2
+        std::cout << "ERROR: unknown operand (src2)" << instr.src2 << std::endl;
     }
     performOp(instr, src1Val, src2Val);
 }
@@ -545,6 +546,15 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             cpuIsHalted = true;
             break;
         }
+        case(isa::Op::JAL): {
+            writeback(isa::RA_INDEX, pc); //set ra to next instruction
+            pc = dest;
+            break;
+            }
+        case(isa::Op::RETL): {
+            pc = genRegs[isa::RA_INDEX].val; //ra = r15
+            break;
+        }
         default: {
             std::cout << "ERROR: Unknown op14" << std::endl;
         }
@@ -562,6 +572,8 @@ void CPU16::writeback(uint16_t dest, uint16_t val) {
         outs[dest - NUM_GEN_REGS] = val;
     } else if (dest == 0x0012) {
         stackPtr.set(val);
+    } else if (dest == 0x0013) {
+        framePtr.set(val);
     } else {
         std::cout << "ERROR: Unknown dest when writing back" << std::endl;
         std::cout << "ERROR: dest = " << dest << std::endl;

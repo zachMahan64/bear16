@@ -7,12 +7,13 @@
 #include <cstddef>
 
 namespace isa {
-    static constexpr size_t SRAM_SIZE = 64 * 1024;
-    static constexpr size_t ROM_SIZE = 16 * 1024;
+    static constexpr size_t SRAM_SIZE = 64 * 1024; //bytes
+    static constexpr size_t ROM_SIZE = 16 * 1024; //bytes
     static constexpr size_t GEN_REG_COUNT = 16;
     static constexpr size_t IO_COUNT = 2;
     static constexpr size_t MAX_UINT_16BIT = 65536;
-    static constexpr size_t STACK_FRAME_SIZE = 32;
+    static constexpr size_t STACK_FRAME_SIZE = 32; //bytes
+    static constexpr size_t RA_INDEX = 0x000F;
 
 enum class Op : uint16_t {
         //Arith & Bitwise
@@ -74,7 +75,9 @@ enum class Op : uint16_t {
         JCOND_POS = 0x0047,   // jump if NOT N && Z == 0
         JCOND_NPOS= 0x0048,   // jump if     N flag == 1 || Z == 0
         NOP       = 0x0049,   // no-operation
-        HLT       = 0x004A,    // halt
+        HLT       = 0x004A,   // halt
+        JAL       = 0x004B,   // halt
+        RETL      = 0x004C,   // halt
         //Video
         CLRFB  = 0x0080,  // clear framebuffer
         SETPX  = 0x0081,  // set pixel at (X,Y), dest = 0/1
