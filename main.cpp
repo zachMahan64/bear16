@@ -39,7 +39,7 @@ int runEmu() {
 
 int main() {
     //assembler::asmToBinMapGenerator();
-    assembler::parseAsmFile("../programs/assembly_test.asm");
+    assembler::parseAsmFileFirstPass("../programs/asm_test.asm");
     //runEmu();
     return 0;
 }

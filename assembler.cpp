@@ -11,8 +11,13 @@
 #include <iomanip>
 #include <algorithm>
 #include <iterator>
+#include <regex>
 #include "assembler.h"
 
+#define LOG(x) std::cout << x << std::endl;
+#define LOG_ERR(x) std::cerr << x << std::endl;
+
+//tools
 void asmToBinMapGenerator() {
     struct Instr {
         std::string base;
@@ -108,39 +113,187 @@ void asmToBinMapGenerator() {
         }
     }
     std::cout << "};\n";
-}
-void assembler::parseAsmFile(const std::string &path) {
+} //currently out-of-date! (5/25/25)
+//parsing
+std::vector<assembler::Token> assembler::parseAsmFileFirstPass(const std::string &path) {
+    std::vector<Token> firstPassTokens {};
+
     std::ifstream file(path, std::ios::in | std::ios::binary);
     if (!file) {
+        std::cerr << "Current working directory: " << std::filesystem::current_path() << std::endl;
         std::cerr << "ERROR: Could not open .asm file: " << path << std::endl;
-        return;
+        return firstPassTokens;
     }
 
     std::string buffer((std::istreambuf_iterator<char>(file)),
                        std::istreambuf_iterator<char>());
 
-    std::string instrRelevantChars;
-    instrRelevantChars.reserve(buffer.size());
+    std::cout << "Orig asm (debug):\n" << buffer << std::endl;
 
+    std::string currentStr {};
     bool inComment = false;
+
     for (char c : buffer) {
         if (inComment) {
             if (c == '\n') {
                 inComment = false;
-                instrRelevantChars += c; //preserve newlines for line tracking
             }
+            currentStr += c;
             continue;
         }
         if (c == '#') {
             inComment = true;
+            currentStr += c;
             continue;
         }
-        instrRelevantChars += c;
+        if (c == ' ' || c == '\t' || c == '\n') {
+            if (!currentStr.empty()) {
+                firstPassTokens.emplace_back(currentStr);
+                currentStr.clear();
+            }
+            if (c == '\n') {
+                firstPassTokens.emplace_back("\n");
+            }
+        }
+        else if (c == ':') {
+            if (!currentStr.empty()) {
+                // append colon to current token (label case)
+                currentStr += c;
+                firstPassTokens.emplace_back(currentStr);
+                currentStr.clear();
+            } else {
+                // colon alone (rare case)
+                firstPassTokens.emplace_back(":");
+            }
+        }
+        else if (c == ',' || c == '[' || c == ']') {
+            if (!currentStr.empty()) {
+                firstPassTokens.emplace_back(currentStr);
+                currentStr.clear();
+            }
+            firstPassTokens.emplace_back(std::string(1, c));
+        }
+        else {
+            currentStr += c;
+        }
     }
-    std::cout << "All Instruction-relevant chars (debug):\n" << instrRelevantChars << std::endl;
-    // WIP: tokenize --> categorize tokens --> InstructionFromTokens --> binary
-    for (char c : instrRelevantChars) {
-        //go line-by-line then word-by-word and tokenize it all
 
+    // Add last token if exists
+    if (!currentStr.empty()) {
+        firstPassTokens.emplace_back(currentStr);
     }
+
+    std::cout << "First pass tokens:\n";
+    for (auto& token : firstPassTokens) {
+        std::cout << token.body << " ";
+    }
+    std::cout << std::endl;
+
+    return firstPassTokens;
+}
+
+std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoFinalPasses(std::vector<Token> &tokens) {
+    //look-up tables
+    std::unordered_map<std::string, uint16_t> labelMap = {};
+    std::unordered_map<std::string, uint16_t> constMap = {};
+    
+    //break down into lines --> count lines for labels, resolve declarations and usages of labels/const --> form tokenized instructions
+    std::vector<std::vector<Token>> tokenLines {};
+    std::vector<Token> currentLine {};
+    int numLinesInOrigAsm = 0;        //num lines on the editor
+    int numInstructions = 0; //num lines for the actual instructions (valuable to the PC)
+    //form lines
+    for (const Token &tkn: tokens) {
+        if (tkn.type == TokenType::MISTAKE) {
+            throwAFit(numLinesInOrigAsm);
+        }
+        else if (tkn.type == TokenType::EOL) {
+            if (!currentLine.empty()) {
+                tokenLines.push_back(currentLine);
+                currentLine.clear();
+            }
+            numLinesInOrigAsm++;
+        }
+        else if (tkn.type == TokenType::OPERATION) {
+            numInstructions++;
+        }
+        else if (tkn.type == TokenType::LABEL) {
+            labelMap.emplace(tkn.body.substr(0, tkn.body.length() - 1), numLinesInOrigAsm);
+        }
+        else if (tkn.type != TokenType::COMMENT || tkn.type != TokenType::COMMA) {
+            currentLine.push_back(tkn);
+        }
+    }
+    //za big dada of tokens
+    std::vector<TokenizedInstruction> finalPassTokens {};
+    //form instructions or some shit
+    for (const std::vector<Token> &line : tokenLines) {
+
+        if (line.empty()) {
+            continue; //just ignore dat hoe
+        }
+        TokenType firstTknType =  line.at(0).type;
+        if (firstTknType == TokenType::LABEL) {
+            labelMap.emplace(line.at(0).body.substr(0, line.at(0).body.length() - 1), numInstructions);
+        }
+        else if (firstTknType == TokenType::CONST) {
+            if (line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
+                && (line.at(3).type == TokenType::DECIMAL
+                || line.at(3).type == TokenType::HEX
+                || line.at(3).type == TokenType::BIN))
+            {
+                int value = 0;
+                if (line.at(3).type == TokenType::DECIMAL) {
+                    value = std::stoi(line.at(3).body, nullptr, 10);
+                } else if (line.at(3).type == TokenType::HEX) {
+                    value = std::stoi(line.at(3).body, nullptr, 16);
+                } else if (line.at(3).type == TokenType::BIN) {
+                    // skip the '0b' prefix
+                    value = std::stoi(line.at(3).body.substr(2), nullptr, 2);
+                }
+                constMap.emplace(line.at(1).body, value);
+            } else if (line.size() > 1){
+                std::string complaint = line.at(1).body;
+                throwAFit(complaint);
+            } else {
+                LOG_ERR("ERROR: bad const declaration");
+            }
+        }
+        else if (firstTknType == TokenType::OPERATION) {
+            for (const Token &tkn : line) {
+                if (tkn.type == TokenType::REF) {
+                    if (labelMap.contains(tkn.body)) {
+                        //operand = std::to_string(labelMap.at(tkn.body));
+                    }
+                }
+            }
+        }
+    }
+    return finalPassTokens;
+}
+
+//helpers
+assembler::TokenType assembler::Token::deduceTokenType(const std::string &text) {
+    TokenType type = TokenType::MISTAKE;
+    if (opcodeToBinMap.contains(text)) {
+        type = TokenType::OPERATION;
+    } else if (namedOperandToBinMap.contains(text)) {
+        if (text == "pc" || text == "sp" || text == "fp") {
+            type = TokenType::SPEC_REG;
+        } else if (text == "io0" || text == "io1") {
+            type = TokenType::IO_PSEUDO_REG;
+        } else {
+            type = TokenType::GEN_REG;
+        }
+    }
+    else if (symbolToTokenMap.contains(text)) type = symbolToTokenMap.at(text); //for '[', ']', ',', and ':'
+    else if (std::regex_match(text, std::regex("^0x[0-9A-Fa-f]+$"))) type = TokenType::HEX;
+    else if (std::regex_match(text, std::regex("^0b[01]+$"))) type = TokenType::BIN;
+    else if (std::regex_match(text, std::regex("^[0-9]+$"))) type = TokenType::DECIMAL;
+    else if (text[0] == '#') type = TokenType::COMMENT;
+    else if (text[0] == '\n') type = TokenType::EOL;
+    else if (text.length() > 1 && text.back() == ':') type = TokenType::LABEL; //needs trimming
+    else if (text.substr(0, 6) == ".const") type = TokenType::CONST; //needs trimming
+    else if (std::ranges::all_of(text, [](char c) { return std::isalnum(c); })) type = TokenType::REF;
+    return type;
 }

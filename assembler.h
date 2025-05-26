@@ -5,13 +5,19 @@
 #include <unordered_map>
 #include <string>
 #include <cstdint>
+
+#include "assembler.h"
 #include "isa.h"
 #include "parts.h"
 
 #ifndef ASSEMBLER_H
 #define ASSEMBLER_H
 namespace assembler {
+    class Token;
+    class TokenizedInstruction;
+
     void asmToBinMapGenerator();
+    //string body to binary map (for turing tokenized instr to binary)
     inline const std::unordered_map<std::string, uint16_t> opcodeToBinMap = {
         {"add", 0x0000},
         {"addi", 0xC000},
@@ -257,7 +263,7 @@ namespace assembler {
         {"bliti", 0xC082},
         {"bliti1", 0x8082},
         {"bliti2", 0x4082},
-    }; //WIP, add operand values too
+    };
     inline const std::unordered_map<std::string, uint16_t> namedOperandToBinMap = {
         // temporaries (volatile)
         {"r0", 0}, {"t0", 0},
@@ -287,54 +293,62 @@ namespace assembler {
         {"pc", 20}};
 
     //reading asm file
-    void parseAsmFile(const std::string &filename);
+    std::vector<Token> parseAsmFileFirstPass(const std::string &filename);
+    std::vector<TokenizedInstruction> parseFirstPassIntoFinalPasses(std::vector<Token> &tokens);
+    inline void throwAFit(int &lineNum) {
+        std::cerr << "MISTAKE MADE ON LINE " << lineNum << std::endl;
+    }
+    inline void throwAFit(std::string &ref) {
+        std::cerr << "MISTAKE MADE IN USAGE OR DEF OF (likely DEF) " << ref << std::endl;
+    }
 
     //generic tokens
     enum class TokenType {
-        REGISTER,      // s1, s2
-        DECIMAL,       // 10
-        LBRACKET,      // [
-        RBRACKET,      // ]
-        OPERATION,     // mov, add, etc.
-        COMMA,         // ,
-        COLON,         // (for labels)
-        LABEL,         // label:
-        COMMENT,       // # comment
-        SYMBOL,        // $, @, etc.
-        STRING,        // "string"
-        HEX,           // 0x1000
-        BIN,           // 0b1000
-        EOL,           // end of line
-        MISTAKE,       // obvious error
-    };
-    class Token {
+        MISTAKE, // obvious error
+        GEN_REG, // s1, s2
+        SPEC_REG, // sp, fp, pc
+        IO_PSEUDO_REG, // io0, io1
+        LBRACKET, // [
+        RBRACKET, // ]
+        EQUALS, // =
+        OPERATION, // mov, add, etc.
+        COMMA, // ,
+        COLON, // (for labels)
+        DECIMAL, // 10
+        HEX, // 0x1000
+        BIN, // 0b1000
+        EOL, // end of line
+        COMMENT, // # comment
+        LABEL, // label:
+        CONST,  // .const
+        REF,  // (to label or const, use look up table)
+
+        STRING, // "string" --> not supported currently
+};
+    class Token{
+    public:
         TokenType type;
-        std::string text;
-        explicit Token(const std::string &text) : text(text) {
+        std::string body;
+        explicit Token(const std::string & text): body(text) {
             type = deduceTokenType(text);
         }
-        TokenType deduceTokenType(std::string text);
+        explicit Token(const char c) {
+            body = std::string(1, c);
+            type = deduceTokenType(body);
+        }
+        static TokenType deduceTokenType(const std::string &text);
     };
+    //string to TokenType Map
+    inline const std::unordered_map<std::string, TokenType> symbolToTokenMap = {
+        {",", TokenType::COMMA},
+        {":", TokenType::COLON},
+        {"=", TokenType::EQUALS},
+        {"]", TokenType::RBRACKET},
+        {"[", TokenType::LBRACKET},};
+    //specific tokens - take vectors of tokens, not sing tokens
     enum class Resolution {
         RESOLVED,
         SYMBOLIC
-    };
-    //specific tokens
-    enum class OperandType {
-        REGISTER,
-        DECIMAL,
-        SYMBOL,
-        STRING,
-        HEX,
-        BIN,
-        LABEL,
-        IRRELEVANT, // for operands that are not needed for the instruction
-    };
-    class Operand {
-        std::string body;   // "s2", "0x1000"
-        OperandType type;
-        Resolution resolution;
-        Operand(Token token);
     };
     enum class OpCodeType {
         SINGLE_MAP,  // 1:1 mapping to a single instruction -> 1 cycle
@@ -347,14 +361,40 @@ namespace assembler {
         Resolution resolution;
         OpCode(Token token);
     };
+    enum class OperandType {
+        REGISTER,
+        DECIMAL,
+        HEX,
+        BIN,
+
+        LABEL,
+
+        STRING,
+        IRRELEVANT, // for operands that are not needed for the instruction
+    };
+    enum class AddressingMode {
+        NONE,
+        DIRECT,           // s1, label, 10, etc.
+        INDIRECT,         // [s1]
+        BASE_OFFSET,      // [s1 + 4]
+        SYMBOLIC_MEMORY,  // [label]
+    };
+    class Operand {
+        std::string body;   // "s2", "0x1000"
+        OperandType type;
+        AddressingMode addrMode;
+        Resolution resolution;
+        Operand(Token token);
+    };
+
     //tokenized instructions
-    class InstructionFromTokens {
+    class TokenizedInstruction {
         OpCode opcode;
         std::optional<Operand> dest;
         std::optional<Operand> src1; // not needed for a couple Ops
         std::optional<Operand> src2; // optional for many Ops
         bool isValid = false;
-        InstructionFromTokens::InstructionFromTokens(
+        TokenizedInstruction(
             OpCode opcode,
             std::optional<Operand> dest,
             std::optional<Operand> src1,
@@ -363,7 +403,7 @@ namespace assembler {
             validate();
         }
         void validate();
-        std::vector<InstructionFromTokens> resolve();
+        std::vector<TokenizedInstruction> resolve();
         parts::Instruction getLiteralInstruction();
     };
 
