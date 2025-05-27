@@ -39,7 +39,8 @@ int runEmu() {
 
 int main() {
     //assembler::asmToBinMapGenerator();
-    assembler::parseAsmFileFirstPass("../programs/asm_test.asm");
+    auto jawnt = assembler::tokenizeAsmFirstPass("../programs/asm_test.asm");
+    assembler::parseFirstPassIntoSecondPass(jawnt);
     //runEmu();
     return 0;
 }

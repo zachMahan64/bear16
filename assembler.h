@@ -293,16 +293,15 @@ namespace assembler {
         {"pc", 20}};
 
     //reading asm file
-    std::vector<Token> parseAsmFileFirstPass(const std::string &filename);
-    std::vector<TokenizedInstruction> parseFirstPassIntoFinalPasses(std::vector<Token> &tokens);
+    std::vector<Token> tokenizeAsmFirstPass(const std::string &filename);
+    std::vector<TokenizedInstruction> parseFirstPassIntoSecondPass(std::vector<Token> &tokens);
     inline void throwAFit(int &lineNum) {
-        std::cerr << "MISTAKE MADE ON LINE " << lineNum << std::endl;
+        std::cerr << "MISTAKE MADE ON WRITTEN LINE " << lineNum << std::endl;
     }
     inline void throwAFit(std::string &ref) {
-        std::cerr << "MISTAKE MADE IN USAGE OR DEF OF (likely DEF) " << ref << std::endl;
+        std::cerr << "MISTAKE MADE IN USAGE OR DEFINITION OF " << ref << std::endl;
     }
 
-    //generic tokens
     enum class TokenType {
         MISTAKE, // obvious error
         GEN_REG, // s1, s2
@@ -311,6 +310,7 @@ namespace assembler {
         LBRACKET, // [
         RBRACKET, // ]
         EQUALS, // =
+        PLUS, // +
         OPERATION, // mov, add, etc.
         COMMA, // ,
         COLON, // (for labels)
@@ -322,9 +322,34 @@ namespace assembler {
         LABEL, // label:
         CONST,  // .const
         REF,  // (to label or const, use look up table)
+        STRING // "string" --> not supported currently
+    };
+    inline std::string toString(TokenType type) {
+        switch (type) {
+            case TokenType::MISTAKE:        return "MISTAKE";
+            case TokenType::GEN_REG:        return "GEN_REG";
+            case TokenType::SPEC_REG:       return "SPEC_REG";
+            case TokenType::IO_PSEUDO_REG:  return "IO_PSEUDO_REG";
+            case TokenType::LBRACKET:       return "LBRACKET";
+            case TokenType::RBRACKET:       return "RBRACKET";
+            case TokenType::EQUALS:         return "EQUALS";
+            case TokenType::PLUS:           return "PLUS";
+            case TokenType::OPERATION:      return "OPERATION";
+            case TokenType::COMMA:          return "COMMA";
+            case TokenType::COLON:          return "COLON";
+            case TokenType::DECIMAL:        return "DECIMAL";
+            case TokenType::HEX:            return "HEX";
+            case TokenType::BIN:            return "BIN";
+            case TokenType::EOL:            return "EOL";
+            case TokenType::COMMENT:        return "COMMENT";
+            case TokenType::LABEL:          return "LABEL";
+            case TokenType::CONST:          return "CONST";
+            case TokenType::REF:            return "REF";
+            case TokenType::STRING:         return "STRING";
+            default:                        return "UNKNOWN";
+        }
+    }
 
-        STRING, // "string" --> not supported currently
-};
     class Token{
     public:
         TokenType type;
@@ -343,6 +368,7 @@ namespace assembler {
         {",", TokenType::COMMA},
         {":", TokenType::COLON},
         {"=", TokenType::EQUALS},
+        {"+", TokenType::PLUS},
         {"]", TokenType::RBRACKET},
         {"[", TokenType::LBRACKET},};
     //specific tokens - take vectors of tokens, not sing tokens
@@ -350,16 +376,11 @@ namespace assembler {
         RESOLVED,
         SYMBOLIC
     };
-    enum class OpCodeType {
-        SINGLE_MAP,  // 1:1 mapping to a single instruction -> 1 cycle
-        MULTI_STEP,  // 1:1 mapping to a single instruction -> but takes multiple cycles
-        MULTI_MAP,   // pseudo-instruction -> expands to multiple real instructions
-    };
     class OpCode {
-        std::string body;
-        OpCodeType type;
+    public:
+        Token token;
         Resolution resolution;
-        OpCode(Token token);
+        explicit OpCode(Token token);
     };
     enum class OperandType {
         REGISTER,
@@ -367,7 +388,8 @@ namespace assembler {
         HEX,
         BIN,
 
-        LABEL,
+        LABEL_REF,
+        CONST_REF,
 
         STRING,
         IRRELEVANT, // for operands that are not needed for the instruction
@@ -377,18 +399,19 @@ namespace assembler {
         DIRECT,           // s1, label, 10, etc.
         INDIRECT,         // [s1]
         BASE_OFFSET,      // [s1 + 4]
-        SYMBOLIC_MEMORY,  // [label]
     };
     class Operand {
-        std::string body;   // "s2", "0x1000"
+        std::vector<Token> tokens;
+        std::string operandBody;
         OperandType type;
         AddressingMode addrMode;
         Resolution resolution;
-        Operand(Token token);
+        Operand(std::vector<Token> tokens);
     };
 
     //tokenized instructions
     class TokenizedInstruction {
+    public:
         OpCode opcode;
         std::optional<Operand> dest;
         std::optional<Operand> src1; // not needed for a couple Ops
@@ -402,6 +425,10 @@ namespace assembler {
             ) : opcode(std::move(opcode)), dest(std::move(dest)), src1(std::move(src1)), src2(std::move(src2)) {
             validate();
         }
+        explicit TokenizedInstruction(OpCode opcode) : opcode(std::move(opcode)) {}
+        void setDest(Operand operand) { dest = std::move(operand); }
+        void setSrc1(Operand operand) { src1 = std::move(operand); }
+        void setSrc2(Operand operand) { src2 = std::move(operand); }
         void validate();
         std::vector<TokenizedInstruction> resolve();
         parts::Instruction getLiteralInstruction();
