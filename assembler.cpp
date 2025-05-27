@@ -170,7 +170,7 @@ std::vector<assembler::Token> assembler::tokenizeAsmFirstPass(const std::string 
                 firstPassTokens.emplace_back(":");
             }
         }
-        else if (c == ',' || c == '[' || c == ']') {
+        else if (symbolToTokenMap.contains(std::string(1, c))) {
             if (!currentStr.empty()) {
                 firstPassTokens.emplace_back(currentStr);
                 currentStr.clear();
@@ -195,7 +195,6 @@ std::vector<assembler::Token> assembler::tokenizeAsmFirstPass(const std::string 
 
     return firstPassTokens;
 }
-
 std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecondPass(std::vector<Token> &tokens) {
     //look-up tables
     std::unordered_map<std::string, uint16_t> labelMap = {};
@@ -248,7 +247,7 @@ std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecond
     }
 
     //za big dada of tokens
-    std::vector<TokenizedInstruction> finalPassTokens {};
+    std::vector<TokenizedInstruction> finalPassTokenizedInstructions {};
     //form instructions or some shit, resolve references
     int numLines = 0;
     int instructionIndex = 0;
@@ -263,7 +262,7 @@ std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecond
             continue; //blank line
         }
         if (firstTknType == TokenType::LABEL) {
-            labelMap.emplace(line.at(0).body.substr(0, line.at(0).body.length() - 1), instructionIndex);
+            labelMap.emplace(line.at(0).body.substr(0, line.at(0).body.length() - 1), instructionIndex * 8);
         }
         else if (firstTknType == TokenType::CONST) {
             if (line.size() > 3 && line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
@@ -301,27 +300,70 @@ std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecond
         //lines that SHOULD get made into instructions
         else if (firstTknType == TokenType::OPERATION) {
             instructionIndex++;
-            //first token is the OPCODE!
-            OpCode opCode(line.at(0));
-            TokenizedInstruction instrForThisLine(opCode);
-            std::vector<Token> revisedTokens {}; //use this to build finalized operands, also make a function for this
-            //add operands, STARTS at pos i = 1!
-            for (int i = 1; i < line.size(); i++) {
-                Token tkn = line.at(i);
-                if (tkn.type == TokenType::REF) {
-                    std::string revisedRef = tkn.body;
-                    if (labelMap.contains(tkn.body)) {
-                        revisedRef = std::to_string(labelMap.at(tkn.body));
-                    } else if (constMap.contains(tkn.body)) {
-                        revisedRef = std::to_string(constMap.at(tkn.body));
-                    }
-                    revisedTokens.emplace_back(revisedRef);
-                }
-            }
+            finalPassTokenizedInstructions.emplace_back(parseLineOfTokens(line, labelMap, constMap, instructionIndex));
         }
     }
-    return finalPassTokens;
+    return finalPassTokenizedInstructions;
 }
+assembler::TokenizedInstruction assembler::parseLineOfTokens(std::vector<Token> line,
+        std::unordered_map<std::string, uint16_t> &labelMap,
+        std::unordered_map<std::string, uint16_t> &constMap,
+        int &instructionIndex
+        ) {
+    //first token is the OPCODE!
+    OpCode opCode(line.at(0));
+    TokenizedInstruction instrForThisLine(opCode);
+
+    std::vector<Token> revisedTokens {}; //use this to build finalized operands, also make a function for this
+    //resolve refs
+    for (int i = 1; i < line.size(); i++) {
+        Token tkn = line.at(i);
+        std::string revisedRef = tkn.body;
+        if (tkn.type == TokenType::REF) {
+            if (labelMap.contains(tkn.body)) {
+                revisedRef = std::to_string(labelMap.at(tkn.body));
+            } else if (constMap.contains(tkn.body)) {
+                revisedRef = std::to_string(constMap.at(tkn.body));
+            } else {
+                throwAFit(tkn.body);
+                LOG_ERR("ERROR: bad reference in instruction #" << + instructionIndex);
+                LOG_ERR("label map: " + unorderedMapToString(labelMap));
+                LOG_ERR("const map: " + unorderedMapToString(constMap));
+            }
+        }
+        revisedTokens.emplace_back(revisedRef);
+    }
+    bool inPtr = false;
+    bool inChar = false;
+    std::vector<Operand> operands {};
+    std::vector<Token> tokensForOperand {};
+    for (Token &tkn : revisedTokens) {
+        if (tkn.type == TokenType::LBRACKET) {
+            inPtr = true;
+            tokensForOperand.emplace_back(tkn);
+        } else if (inPtr && tkn.type == TokenType::RBRACKET) {
+            inPtr = false;
+            tokensForOperand.emplace_back(tkn);
+            operands.emplace_back(tokensForOperand);
+            tokensForOperand.clear();
+        } else if (inChar && tkn.type == TokenType::SING_QUOTE) {
+            inChar = false;
+            tokensForOperand.emplace_back(tkn);
+            operands.emplace_back(tokensForOperand);
+            tokensForOperand.clear();
+        } else if (tkn.type == TokenType::SING_QUOTE) {
+            inChar = true;
+            tokensForOperand.emplace_back(tkn);
+        } else if (inPtr || inChar) {
+            tokensForOperand.emplace_back(tkn);
+        } else {
+            tokensForOperand.emplace_back(tkn);
+            operands.emplace_back(tokensForOperand);
+            tokensForOperand.clear();
+        }
+    }
+    return instrForThisLine;
+} //WIP, make instructions
 
 //helpers
 assembler::TokenType assembler::Token::deduceTokenType(const std::string &text) {
@@ -343,27 +385,43 @@ assembler::TokenType assembler::Token::deduceTokenType(const std::string &text) 
     else if (std::regex_match(text, std::regex("^[0-9]+$"))) type = TokenType::DECIMAL;
     else if (text[0] == '#') type = TokenType::COMMENT;
     else if (text[0] == '\n') type = TokenType::EOL;
+    else if (text.length() == 1 && std::isalpha(text[0])) type = TokenType::CHAR;
     else if (text.length() > 1 && text.back() == ':') type = TokenType::LABEL; //needs trimming
     else if (text == ".const") type = TokenType::CONST; //needs trimming
     else if (std::ranges::all_of(text, [](char c) { return std::isalnum(c); })) type = TokenType::REF;
     return type;
 }
-
 assembler::OpCode::OpCode(Token token): token(std::move(token)) {
     //also symbolic support in the future
     resolution = Resolution::RESOLVED;
 }
-
-assembler::Operand::Operand(std::vector<Token> tokens) {
-
+assembler::Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens)), significantToken('\0') {
+    significantToken = this->tokens.at(0);
+    //also symbolic support in the future
+    resolution = Resolution::RESOLVED;
+    if (this->tokens.size() == 1) {
+        significantBody = this->tokens.at(0).body;
+        fullBody = significantBody;
+    } else {
+        fullBody = "";
+        for (Token &tkn: this->tokens) {
+            fullBody += tkn.body;
+        }
+        significantBody = fullBody.substr(1, fullBody.length() - 2);
+        Token sigTkn(significantBody);
+        significantToken = sigTkn;
+        if (significantToken.type == TokenType::OPERATION) {
+            significantToken.type = TokenType::CHAR;
+        } //handles the weird edge case of single letter operations!
+    }
+    LOG("full body:" + fullBody + ", significant body: " + significantBody + ", significant type: " + toString(significantToken.type));
 }
-
-
+//WIP
 void assembler::TokenizedInstruction::validate() {
 }
-
 std::vector<assembler::TokenizedInstruction> assembler::TokenizedInstruction::resolve() {
 }
-
 parts::Instruction assembler::TokenizedInstruction::getLiteralInstruction() {
 }
+
+

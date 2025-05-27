@@ -295,6 +295,11 @@ namespace assembler {
     //reading asm file
     std::vector<Token> tokenizeAsmFirstPass(const std::string &filename);
     std::vector<TokenizedInstruction> parseFirstPassIntoSecondPass(std::vector<Token> &tokens);
+    TokenizedInstruction parseLineOfTokens(std::vector<Token> line,
+        std::unordered_map<std::string, uint16_t> &labelMap,
+        std::unordered_map<std::string, uint16_t> &constMap,
+        int &instructionIndex
+        );
     inline void throwAFit(int &lineNum) {
         std::cerr << "MISTAKE MADE ON WRITTEN LINE " << lineNum << std::endl;
     }
@@ -309,6 +314,8 @@ namespace assembler {
         IO_PSEUDO_REG, // io0, io1
         LBRACKET, // [
         RBRACKET, // ]
+        SING_QUOTE, // '
+        DOUB_QUOTE, // "
         EQUALS, // =
         PLUS, // +
         OPERATION, // mov, add, etc.
@@ -318,6 +325,7 @@ namespace assembler {
         HEX, // 0x1000
         BIN, // 0b1000
         EOL, // end of line
+        CHAR, //character
         COMMENT, // # comment
         LABEL, // label:
         CONST,  // .const
@@ -333,11 +341,14 @@ namespace assembler {
             case TokenType::LBRACKET:       return "LBRACKET";
             case TokenType::RBRACKET:       return "RBRACKET";
             case TokenType::EQUALS:         return "EQUALS";
+            case TokenType::SING_QUOTE:     return "SING_QUOTE";
+            case TokenType::DOUB_QUOTE:     return "DOUB_QUOTE";
             case TokenType::PLUS:           return "PLUS";
             case TokenType::OPERATION:      return "OPERATION";
             case TokenType::COMMA:          return "COMMA";
             case TokenType::COLON:          return "COLON";
             case TokenType::DECIMAL:        return "DECIMAL";
+            case TokenType::CHAR:           return "CHAR";
             case TokenType::HEX:            return "HEX";
             case TokenType::BIN:            return "BIN";
             case TokenType::EOL:            return "EOL";
@@ -346,7 +357,7 @@ namespace assembler {
             case TokenType::CONST:          return "CONST";
             case TokenType::REF:            return "REF";
             case TokenType::STRING:         return "STRING";
-            default:                        return "UNKNOWN";
+            default:                        return "*UNKNOWN";
         }
     }
 
@@ -369,6 +380,8 @@ namespace assembler {
         {":", TokenType::COLON},
         {"=", TokenType::EQUALS},
         {"+", TokenType::PLUS},
+        {"'", TokenType::SING_QUOTE},
+        {"\"", TokenType::DOUB_QUOTE},
         {"]", TokenType::RBRACKET},
         {"[", TokenType::LBRACKET},};
     //specific tokens - take vectors of tokens, not sing tokens
@@ -382,31 +395,14 @@ namespace assembler {
         Resolution resolution;
         explicit OpCode(Token token);
     };
-    enum class OperandType {
-        REGISTER,
-        DECIMAL,
-        HEX,
-        BIN,
-
-        LABEL_REF,
-        CONST_REF,
-
-        STRING,
-        IRRELEVANT, // for operands that are not needed for the instruction
-    };
-    enum class AddressingMode {
-        NONE,
-        DIRECT,           // s1, label, 10, etc.
-        INDIRECT,         // [s1]
-        BASE_OFFSET,      // [s1 + 4]
-    };
     class Operand {
+    public:
         std::vector<Token> tokens;
-        std::string operandBody;
-        OperandType type;
-        AddressingMode addrMode;
+        std::string significantBody;
+        Token significantToken;
+        std::string fullBody;
         Resolution resolution;
-        Operand(std::vector<Token> tokens);
+        explicit Operand(std::vector<Token> tokens);
     };
 
     //tokenized instructions
@@ -426,13 +422,21 @@ namespace assembler {
             validate();
         }
         explicit TokenizedInstruction(OpCode opcode) : opcode(std::move(opcode)) {}
-        void setDest(Operand operand) { dest = std::move(operand); }
-        void setSrc1(Operand operand) { src1 = std::move(operand); }
-        void setSrc2(Operand operand) { src2 = std::move(operand); }
         void validate();
         std::vector<TokenizedInstruction> resolve();
         parts::Instruction getLiteralInstruction();
     };
-
+    template <typename K, typename V>
+    std::string unorderedMapToString(const std::unordered_map<K, V>& map) {
+        std::ostringstream oss;
+        oss << "{ ";
+        for (auto it = map.begin(); it != map.end(); ++it) {
+            oss << it->first << "|" << it->second;
+            if (std::next(it) != map.end())
+                oss << ", ";
+        }
+        oss << " }";
+        return oss.str();
+    }
 }
 #endif //ASSEMBLER_H
