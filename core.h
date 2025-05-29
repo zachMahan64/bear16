@@ -45,7 +45,6 @@ public: //only all public for debugging ease
     //doStuff
     [[nodiscard]] uint16_t getPc() const;
     void setRom(std::vector<uint8_t> rom);
-    void run();
     void step();
     uint64_t fetchInstruction();
     void execute(parts::Instruction instr);
@@ -74,6 +73,7 @@ class Board {
 public:
     CPU16 cpu; //public for testing purposes (change later)
     Board(std::size_t romSize, std::size_t sramSize);
+    void run();
     void loadRomFromBinInTxtFile(const std::string &path);
     void loadRomFromHexInTxtFile(const std::string &path);
     void loadRomFromManualBinVec(std::vector<uint8_t> rom);

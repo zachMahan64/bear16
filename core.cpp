@@ -120,11 +120,11 @@ void CPU16::setRom(std::vector<uint8_t> rom) {
 }
 
 //CPU16 inner workings
-void CPU16::run() {
+void Board::run() {
     do {
-        step();
-    } while (cpuIsHalted == false);
-} //move this functionality to Board when possible
+        cpu.step();
+    } while (cpu.cpuIsHalted == false);
+} //incomplete, doesn't use clock
 void CPU16::step() {
     //fetch & prelim. decoding
     std::cout << "PC: " << std::to_string(pc) << std::endl;
@@ -209,9 +209,9 @@ void CPU16::performOp(const parts::Instruction &instr, uint16_t src1Val, uint16_
 void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest) {
     uint16_t destVal = 0;
     //note flag updates not fully good to go
-    auto thisOp = static_cast<isa::Op>(op14);
+    auto thisOp = static_cast<isa::Opcode_E>(op14);
     switch (thisOp) {
-        case(isa::Op::ADD): {
+        case(isa::Opcode_E::ADD): {
             uint32_t result = uint32_t(src1Val) + uint32_t(src2Val);
             destVal = static_cast<uint16_t>(result);
             flagReg.setCarry(result > 0xFFFF);
@@ -221,7 +221,7 @@ void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t 
             flagReg.setOverflow(overflow != 0);
             break;
         }
-        case isa::Op::SUB: {
+        case isa::Opcode_E::SUB: {
             destVal = src1Val - src2Val;
             //set flags
             flagReg.setCarry(src1Val < src2Val); //sets carry if borrow occured
@@ -234,61 +234,61 @@ void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t 
             flagReg.setNegative(resultNeg);
             break;
         }
-        case (isa::Op::MULT): {
+        case (isa::Opcode_E::MULT): {
             destVal = src1Val * src2Val;
             break;
         }
-        case (isa::Op::DIV): {
+        case (isa::Opcode_E::DIV): {
             if (src2Val == 0) src2Val = 1; //prevent divide by zero
             destVal = src1Val / src2Val;
             break;
         }
-        case (isa::Op::MOD):{
+        case (isa::Opcode_E::MOD):{
             if (src2Val == 0) src2Val = 1; //prevent divide by zero
             destVal = src1Val % src2Val;
             break;
         }
-        case (isa::Op::AND): {
+        case (isa::Opcode_E::AND): {
             destVal = src1Val & src2Val;
             break;
         }
-        case (isa::Op::OR): {
+        case (isa::Opcode_E::OR): {
             destVal = src1Val | src2Val;
             break;
         }
-        case (isa::Op::XOR): {
+        case (isa::Opcode_E::XOR): {
             destVal = src1Val ^ src2Val;
             break;
         }
-        case (isa::Op::NOT): {
+        case (isa::Opcode_E::NOT): {
             destVal = ~src1Val;
             break;
         }
-        case (isa::Op::NAND): {
+        case (isa::Opcode_E::NAND): {
             destVal = ~(src1Val & src2Val);
             break;
         }
-        case (isa::Op::NOR): {
+        case (isa::Opcode_E::NOR): {
             destVal = ~(src1Val | src2Val);
             break;
         }
-        case (isa::Op::NEG): {
+        case (isa::Opcode_E::NEG): {
             destVal = -src1Val;
             break;
         }
-        case (isa::Op::LSH): {
+        case (isa::Opcode_E::LSH): {
             destVal = src1Val << src2Val;
             break;
         }
-        case (isa::Op::RSH): {
+        case (isa::Opcode_E::RSH): {
             destVal = src1Val >> src2Val;
             break;
         }
-        case (isa::Op::ROL): {
+        case (isa::Opcode_E::ROL): {
             destVal = (src1Val << src2Val) | (src1Val >> (16 - src2Val));
             break;
         }
-        case (isa::Op::ROR): {
+        case (isa::Opcode_E::ROR): {
             destVal = (src1Val >> src2Val) | (src1Val << (16 - src2Val));
             break;
         }
@@ -301,46 +301,46 @@ void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t 
 }
 void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest) {
     bool cond = false;
-    auto thisOp = static_cast<isa::Op>(op14);
-    if (thisOp < isa::Op::Z) {
+    auto thisOp = static_cast<isa::Opcode_E>(op14);
+    if (thisOp < isa::Opcode_E::Z) {
         switch (thisOp) {
-            case (isa::Op::EQ): {
+            case (isa::Opcode_E::EQ): {
                 cond = src1Val == src2Val;
                 break;
             }
-            case (isa::Op::NE): {
+            case (isa::Opcode_E::NE): {
                 cond = src1Val != src2Val;
                 break;
             }
-            case (isa::Op::LT): {
+            case (isa::Opcode_E::LT): {
                 cond = static_cast<int16_t>(src1Val) < static_cast<int16_t>(src2Val);
                 break;
             }
-            case (isa::Op::LE): {
+            case (isa::Opcode_E::LE): {
                 cond = static_cast<int16_t>(src1Val) <= static_cast<int16_t>(src2Val);
                 break;
             }
-            case (isa::Op::GT): {
+            case (isa::Opcode_E::GT): {
                 cond = static_cast<int16_t>(src1Val) > static_cast<int16_t>(src2Val);
                 break;
             }
-            case (isa::Op::GE): {
+            case (isa::Opcode_E::GE): {
                 cond = static_cast<int16_t>(src1Val) >= static_cast<int16_t>(src2Val);
                 break;
             }
-            case (isa::Op::ULT): {
+            case (isa::Opcode_E::ULT): {
                 cond = src1Val < src2Val;
                 break;
             }
-            case (isa::Op::ULE): {
+            case (isa::Opcode_E::ULE): {
                 cond = src1Val <= src2Val;
                 break;
             }
-            case (isa::Op::UGT): {
+            case (isa::Opcode_E::UGT): {
                 cond = src1Val > src2Val;
                 break;
             }
-            case (isa::Op::UGE): {
+            case (isa::Opcode_E::UGE): {
                 cond = src1Val >= src2Val;
                 break;
             }
@@ -355,21 +355,21 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
         }
     } else {
         switch (thisOp) { //set flags in flagReg manually
-            case (isa::Op::Z):
+            case (isa::Opcode_E::Z):
                 flagReg.setZero(true);
                 break;
-            case(isa::Op::NZ):
+            case(isa::Opcode_E::NZ):
                 flagReg.setZero(false);
                 break;
-            case (isa::Op::C):
+            case (isa::Opcode_E::C):
                 flagReg.setCarry(true);
                 break;
-                case (isa::Op::NC):
+                case (isa::Opcode_E::NC):
                 flagReg.setCarry(false);
-            case(isa::Op::N):
+            case(isa::Opcode_E::N):
                 flagReg.setNegative(true);
                 break;
-            case (isa::Op::NN):
+            case (isa::Opcode_E::NN):
                 flagReg.setNegative(false);
                 break;
             default:
@@ -381,21 +381,21 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
 void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val) {
     uint16_t op14 = instr.opCode14;
     uint16_t dest = instr.dest;
-    auto thisOp = static_cast<isa::Op>(op14);
+    auto thisOp = static_cast<isa::Opcode_E>(op14);
     switch (thisOp) {
-        case(isa::Op::MOV): {
+        case(isa::Opcode_E::MOV): {
             writeback(dest, src1Val); //no offset progged in
             break;
         }
-        case(isa::Op::LW): {
+        case(isa::Opcode_E::LW): {
             writeback(dest, fetchWordFromMem(src1Val + src2Val));
             break;
         }
-        case(isa::Op::LB): {
+        case(isa::Opcode_E::LB): {
             writeback(dest, fetchByteAsWordFromMem(src1Val + src2Val));
             break;
         }
-        case(isa::Op::COMP): {
+        case(isa::Opcode_E::COMP): {
             uint16_t testVal = src1Val - src2Val;
             flagReg.setCarry(src1Val < src2Val); //sets carry if borrow occurred
             bool src1Neg = (src1Val & 0x8000) != 0;
@@ -407,34 +407,34 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             flagReg.setNegative(resultNeg);
             break;
         }
-        case(isa::Op::LEA): {
+        case(isa::Opcode_E::LEA): {
             writeback(dest, src1Val + src2Val);
             break;
         }
-        case(isa::Op::PUSH): {
+        case(isa::Opcode_E::PUSH): {
             stackPtr.set(stackPtr.val - 2);
             writeWordToMem(stackPtr.val, src1Val);
             break;
         }
-        case(isa::Op::POP): {
+        case(isa::Opcode_E::POP): {
             src1Val = fetchWordFromMem(stackPtr.val);
             stackPtr.set(stackPtr.val + 2);
             writeback(dest, src1Val);
             break;
         }
-        case (isa::Op::CLR): {
+        case (isa::Opcode_E::CLR): {
             writeback(src1Val, 0); //use first arg as register to clear
             break;
         }
-        case (isa::Op::INC): {
+        case (isa::Opcode_E::INC): {
             writeback(dest, genRegs[dest].val + 1);
             break;
         }
-        case (isa::Op::DEC): {
+        case (isa::Opcode_E::DEC): {
             writeback(dest, genRegs[dest].val + 2);
             break;
         }
-        case(isa::Op::MEMCPY): {
+        case(isa::Opcode_E::MEMCPY): {
             //enter loop
             if (tickWaitCnt == 0 && tickWaitStopPt == 0) {
                 tickWaitStopPt = src2Val;
@@ -453,12 +453,12 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
                 tickWaitCnt++;
             }
         }
-        case(isa::Op::SW): {
+        case(isa::Opcode_E::SW): {
             writeWordToMem(src1Val + dest, src2Val);
             std::cout << "DEBUG: SW " << std::endl;
             break;
         }
-        case (isa::Op::SB): {
+        case (isa::Opcode_E::SB): {
             writeByteToMem(src1Val + dest, static_cast<uint8_t>(src2Val));
             break;
         }
@@ -470,9 +470,9 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
 void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val) {
     uint16_t op14 = instr.opCode14;
     uint16_t dest = instr.dest;
-    auto thisOp = static_cast<isa::Op>(op14);
+    auto thisOp = static_cast<isa::Opcode_E>(op14);
     switch (thisOp) {
-        case(isa::Op::CALL): {
+        case(isa::Opcode_E::CALL): {
             //push old frame pointer
             stackPtr.set(stackPtr.val - 2);
             writeWordToMem(stackPtr.val, framePtr.val);
@@ -491,7 +491,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             pc = dest;
             break;
         }
-        case(isa::Op::RET): {
+        case(isa::Opcode_E::RET): {
             //free local frame
             stackPtr.set(stackPtr.val + isa::STACK_FRAME_SIZE); //=32
 
@@ -508,50 +508,50 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             pc = retAddr;
             break;
         }
-        case(isa::Op::JMP): {
+        case(isa::Opcode_E::JMP): {
             pc = dest;
             break;
         }
-        case(isa::Op::JCOND_Z): {
+        case(isa::Opcode_E::JCOND_Z): {
             if (flagReg.zero) pc = dest;
             break;
         }
-        case (isa::Op::JCOND_NZ): {
+        case (isa::Opcode_E::JCOND_NZ): {
             if (!flagReg.zero) pc = dest;
             break;
         }
-        case (isa::Op::JCOND_NEG): {
+        case (isa::Opcode_E::JCOND_NEG): {
             if (flagReg.negative) pc = dest;
             break;
         }
-        case (isa::Op::JCOND_NNEG): {
+        case (isa::Opcode_E::JCOND_NNEG): {
             if (!flagReg.negative) pc = dest;
             break;
         }
-        case (isa::Op::JCOND_POS): {
+        case (isa::Opcode_E::JCOND_POS): {
             if (!flagReg.negative && !flagReg.zero) pc = dest;
             break;
         }
-        case (isa::Op::JCOND_NPOS): {
+        case (isa::Opcode_E::JCOND_NPOS): {
             if (flagReg.negative || flagReg.zero) pc = dest;
             break;
         }
-        case (isa::Op::NOP): {
+        case (isa::Opcode_E::NOP): {
             //nada
             break;
         }
-        case(isa::Op::HLT): {
+        case(isa::Opcode_E::HLT): {
             std::cout << "debug: HALTED" << std::endl;
             pcIsStopped = true;
             cpuIsHalted = true;
             break;
         }
-        case(isa::Op::JAL): {
+        case(isa::Opcode_E::JAL): {
             writeback(isa::RA_INDEX, pc); //set ra to next instruction
             pc = dest;
             break;
             }
-        case(isa::Op::RETL): {
+        case(isa::Opcode_E::RETL): {
             pc = genRegs[isa::RA_INDEX].val; //ra = r15
             break;
         }

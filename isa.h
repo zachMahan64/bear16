@@ -15,7 +15,7 @@ namespace isa {
     static constexpr size_t STACK_FRAME_SIZE = 32; //bytes
     static constexpr size_t RA_INDEX = 0x000F;
 
-enum class Op : uint16_t {
+enum class Opcode_E : uint16_t {
         //Arith & Bitwise
         ADD  = 0x0000,
         SUB  = 0x0001,
@@ -76,8 +76,8 @@ enum class Op : uint16_t {
         JCOND_NPOS= 0x0048,   // jump if     N flag == 1 || Z == 0
         NOP       = 0x0049,   // no-operation
         HLT       = 0x004A,   // halt
-        JAL       = 0x004B,   // halt
-        RETL      = 0x004C,   // halt
+        JAL       = 0x004B,   // Jump and link
+        RETL      = 0x004C,   // Ret from link (in ra)
         //Video
         CLRFB  = 0x0080,  // clear framebuffer
         SETPX  = 0x0081,  // set pixel at (X,Y), dest = 0/1

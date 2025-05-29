@@ -84,6 +84,8 @@ void asmToBinMapGenerator() {
         {"jcond_npos", 0x0048},
         {"nop", 0x0049},
         {"hlt", 0x004A},
+        {"jal", 0x004B},
+        {"retl", 0x004C},
         // Video
         {"clrfb", 0x0080},
         {"setpx", 0x0081},
@@ -113,7 +115,7 @@ void asmToBinMapGenerator() {
         }
     }
     std::cout << "};\n";
-} //currently out-of-date! (5/25/25)
+} //updated 5/28/2025
 //parsing
 std::vector<assembler::Token> assembler::tokenizeAsmFirstPass(const std::string &path) {
     std::vector<Token> firstPassTokens {};
@@ -301,9 +303,12 @@ std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecond
         else if (firstTknType == TokenType::OPERATION) {
             instructionIndex++;
             finalPassTokenizedInstructions.emplace_back(parseLineOfTokens(line, labelMap, constMap, instructionIndex));
+        } else {
+            throwAFit(numLines);
+            LOG_ERR(line.at(0).body + " (" + toString(line.at(0).type) + ") cannot begin a line");
         }
     }
-    return finalPassTokenizedInstructions;
+    return finalPassTokenizedInstructions; //wip, return not doing anything yet
 }
 assembler::TokenizedInstruction assembler::parseLineOfTokens(std::vector<Token> line,
         std::unordered_map<std::string, uint16_t> &labelMap,
@@ -317,7 +322,7 @@ assembler::TokenizedInstruction assembler::parseLineOfTokens(std::vector<Token> 
     std::vector<Token> revisedTokens {}; //use this to build finalized operands, also make a function for this
     //resolve refs
     for (int i = 1; i < line.size(); i++) {
-        Token tkn = line.at(i);
+        const Token& tkn = line.at(i);
         std::string revisedRef = tkn.body;
         if (tkn.type == TokenType::REF) {
             if (labelMap.contains(tkn.body)) {
@@ -363,8 +368,8 @@ assembler::TokenizedInstruction assembler::parseLineOfTokens(std::vector<Token> 
         }
     }
     return instrForThisLine;
-} //WIP, make instructions
-
+}
+// -> WIP, make instructions
 //helpers
 assembler::TokenType assembler::Token::deduceTokenType(const std::string &text) {
     TokenType type = TokenType::MISTAKE;
@@ -392,8 +397,22 @@ assembler::TokenType assembler::Token::deduceTokenType(const std::string &text) 
     return type;
 }
 assembler::OpCode::OpCode(Token token): token(std::move(token)) {
-    //also symbolic support in the future
     resolution = Resolution::RESOLVED;
+    auto opCodeStrSplit = splitOpcodeStr(this->token.body);
+    if (!stringToOpcodeMap.contains(opCodeStrSplit.first)) {
+        LOG_ERR("Unknown opcode: " + opCodeStrSplit.first + " (" + toString(token.type) + ", " + this->token.body + ")");
+        throw std::runtime_error("Unknown opcode: -" + this->token.body + "-");
+    }
+    opcode_e = stringToOpcodeMap.at(opCodeStrSplit.first);
+    if (opCodeStrSplit.second == "i") {
+        immType = ImmType::I;
+    } else if (opCodeStrSplit.second == "i1") {
+        immType = ImmType::I1;
+    } else if (opCodeStrSplit.second == "i2") {
+        immType = ImmType::I2; // Fix here!
+    } else {
+        immType = ImmType::NO_IM;
+    }
 }
 assembler::Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens)), significantToken('\0') {
     significantToken = this->tokens.at(0);
@@ -416,12 +435,41 @@ assembler::Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens
     }
     LOG("full body:" + fullBody + ", significant body: " + significantBody + ", significant type: " + toString(significantToken.type));
 }
+
+void assembler::TokenizedInstruction::setOperands(std::vector<Operand> operands) {
+    if (operands.size() < opcodeToOperandCountMap.at(opcode.opcode_e)) {
+        LOG_ERR("ERROR: bad number of operands for opcode: " + opcode.token.body);
+        return;
+    }
+    if (operands.size() == 3) {
+        dest = operands.at(0);
+        src1 = operands.at(1);
+        src2 = operands.at(2);
+    } else if (operands.size() == 2) {
+    }
+} //WIP
+
+
 //WIP
 void assembler::TokenizedInstruction::validate() {
 }
 std::vector<assembler::TokenizedInstruction> assembler::TokenizedInstruction::resolve() {
 }
 parts::Instruction assembler::TokenizedInstruction::getLiteralInstruction() {
+}
+
+std::pair<std::string, std::string> assembler::splitOpcodeStr(std::string opcodeStr) {
+    char lastChar = opcodeStr.back();
+    if (lastChar == 'i') {
+        return {opcodeStr.substr(0, opcodeStr.length() - 1), "i"};
+    }
+    if (lastChar == '1') {
+        return {opcodeStr.substr(0, opcodeStr.length() - 2), "i1"};
+    }
+    if (lastChar == '2') {
+        return {opcodeStr.substr(0, opcodeStr.length() - 2), "i2"};
+    }
+    return {opcodeStr, ""};
 }
 
 

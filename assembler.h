@@ -291,6 +291,78 @@ namespace assembler {
         {"sp", 18},
         {"fp", 19},
         {"pc", 20}};
+    //Enum maps
+    inline const std::unordered_map<std::string, isa::Opcode_E> stringToOpcodeMap = {
+    // Arith & Bitwise
+    {"add", isa::Opcode_E::ADD}, {"sub", isa::Opcode_E::SUB}, {"mult", isa::Opcode_E::MULT},
+    {"div", isa::Opcode_E::DIV}, {"mod", isa::Opcode_E::MOD}, {"and", isa::Opcode_E::AND},
+    {"or", isa::Opcode_E::OR}, {"xor", isa::Opcode_E::XOR}, {"not", isa::Opcode_E::NOT},
+    {"nand", isa::Opcode_E::NAND}, {"nor", isa::Opcode_E::NOR}, {"neg", isa::Opcode_E::NEG},
+    {"lsh", isa::Opcode_E::LSH}, {"rsh", isa::Opcode_E::RSH}, {"rol", isa::Opcode_E::ROL},
+    {"ror", isa::Opcode_E::ROR},
+
+    // Cond
+    {"eq", isa::Opcode_E::EQ}, {"ne", isa::Opcode_E::NE}, {"lt", isa::Opcode_E::LT},
+    {"le", isa::Opcode_E::LE}, {"gt", isa::Opcode_E::GT}, {"ge", isa::Opcode_E::GE},
+    {"ult", isa::Opcode_E::ULT}, {"ule", isa::Opcode_E::ULE}, {"ugt", isa::Opcode_E::UGT},
+    {"uge", isa::Opcode_E::UGE}, {"z", isa::Opcode_E::Z}, {"nz", isa::Opcode_E::NZ},
+    {"c", isa::Opcode_E::C}, {"nc", isa::Opcode_E::NC}, {"n", isa::Opcode_E::N},
+    {"nn", isa::Opcode_E::NN},
+
+    // Data Trans
+    {"mov", isa::Opcode_E::MOV}, {"lw", isa::Opcode_E::LW}, {"lb", isa::Opcode_E::LB},
+    {"comp", isa::Opcode_E::COMP}, {"lea", isa::Opcode_E::LEA}, {"push", isa::Opcode_E::PUSH},
+    {"pop", isa::Opcode_E::POP}, {"clr", isa::Opcode_E::CLR}, {"inc", isa::Opcode_E::INC},
+    {"dec", isa::Opcode_E::DEC}, {"memcpy", isa::Opcode_E::MEMCPY}, {"sw", isa::Opcode_E::SW},
+    {"sb", isa::Opcode_E::SB},
+
+    // Ctrl Flow
+    {"call", isa::Opcode_E::CALL}, {"ret", isa::Opcode_E::RET}, {"jmp", isa::Opcode_E::JMP},
+    {"jcond_z", isa::Opcode_E::JCOND_Z}, {"jcond_nz", isa::Opcode_E::JCOND_NZ},
+    {"jcond_neg", isa::Opcode_E::JCOND_NEG}, {"jcond_nneg", isa::Opcode_E::JCOND_NNEG},
+    {"jcond_pos", isa::Opcode_E::JCOND_POS}, {"jcond_npos", isa::Opcode_E::JCOND_NPOS},
+    {"nop", isa::Opcode_E::NOP}, {"hlt", isa::Opcode_E::HLT}, {"jal", isa::Opcode_E::JAL},
+    {"retl", isa::Opcode_E::RETL},
+
+    // Video
+    {"clrfb", isa::Opcode_E::CLRFB}, {"setpx", isa::Opcode_E::SETPX}, {"blit", isa::Opcode_E::BLIT}};
+    inline const std::unordered_map<isa::Opcode_E, int> opcodeToOperandCountMap = {
+        // Arith & Bitwise
+        {isa::Opcode_E::ADD, 3}, {isa::Opcode_E::SUB, 3}, {isa::Opcode_E::MULT, 3},
+        {isa::Opcode_E::DIV, 3}, {isa::Opcode_E::MOD, 3}, {isa::Opcode_E::AND, 3},
+        {isa::Opcode_E::OR, 3}, {isa::Opcode_E::XOR, 3}, {isa::Opcode_E::NOT, 3},
+        {isa::Opcode_E::NAND, 3}, {isa::Opcode_E::NOR, 3}, {isa::Opcode_E::NEG, 3},
+        {isa::Opcode_E::LSH, 3}, {isa::Opcode_E::RSH, 3}, {isa::Opcode_E::ROL, 3},
+        {isa::Opcode_E::ROR, 3},
+
+        // Cond
+        {isa::Opcode_E::EQ, 3}, {isa::Opcode_E::NE, 3}, {isa::Opcode_E::LT, 3},
+        {isa::Opcode_E::LE, 3}, {isa::Opcode_E::GT, 3}, {isa::Opcode_E::GE, 3},
+        {isa::Opcode_E::ULT, 3}, {isa::Opcode_E::ULE, 3}, {isa::Opcode_E::UGT, 3},
+        {isa::Opcode_E::UGE, 3}, {isa::Opcode_E::Z, 0}, {isa::Opcode_E::NZ, 0},
+        {isa::Opcode_E::C, 0}, {isa::Opcode_E::NC, 0}, {isa::Opcode_E::N, 0},
+        {isa::Opcode_E::NN, 0},
+
+        // Data Trans
+        {isa::Opcode_E::MOV, 2},
+        {isa::Opcode_E::LW, 2}, {isa::Opcode_E::LB, 2}, //(3) but offset
+        {isa::Opcode_E::COMP, 2}, {isa::Opcode_E::LEA, 2}, //(3) but offset
+        {isa::Opcode_E::PUSH, 1}, {isa::Opcode_E::POP, 1},
+        {isa::Opcode_E::CLR, 1}, {isa::Opcode_E::INC, 1}, {isa::Opcode_E::DEC, 1},
+        {isa::Opcode_E::MEMCPY, 3},
+        {isa::Opcode_E::SW, 2}, {isa::Opcode_E::SB, 2}, //(3) but offset (in src1!)
+
+        // Ctrl Flow
+        {isa::Opcode_E::CALL, 1}, {isa::Opcode_E::RET, 0}, {isa::Opcode_E::JMP, 1},
+        {isa::Opcode_E::JCOND_Z, 1}, {isa::Opcode_E::JCOND_NZ, 1},
+        {isa::Opcode_E::JCOND_NEG, 1}, {isa::Opcode_E::JCOND_NNEG, 1},
+        {isa::Opcode_E::JCOND_POS, 1}, {isa::Opcode_E::JCOND_NPOS, 1},
+        {isa::Opcode_E::NOP, 0}, {isa::Opcode_E::HLT, 0}, {isa::Opcode_E::JAL, 1},
+        {isa::Opcode_E::RETL, 0},
+
+        // Video
+        {isa::Opcode_E::CLRFB, 0}, {isa::Opcode_E::SETPX, 3}, {isa::Opcode_E::BLIT, 3}
+    };
 
     //reading asm file
     std::vector<Token> tokenizeAsmFirstPass(const std::string &filename);
@@ -300,10 +372,10 @@ namespace assembler {
         std::unordered_map<std::string, uint16_t> &constMap,
         int &instructionIndex
         );
-    inline void throwAFit(int &lineNum) {
+    inline void throwAFit(const int &lineNum) {
         std::cerr << "MISTAKE MADE ON WRITTEN LINE " << lineNum << std::endl;
     }
-    inline void throwAFit(std::string &ref) {
+    inline void throwAFit(const std::string &ref) {
         std::cerr << "MISTAKE MADE IN USAGE OR DEFINITION OF " << ref << std::endl;
     }
 
@@ -384,14 +456,19 @@ namespace assembler {
         {"\"", TokenType::DOUB_QUOTE},
         {"]", TokenType::RBRACKET},
         {"[", TokenType::LBRACKET},};
-    //specific tokens - take vectors of tokens, not sing tokens
+    //specific tokens
     enum class Resolution {
         RESOLVED,
         SYMBOLIC
     };
+    enum class ImmType {
+        NO_IM, I, I1, I2
+    };
     class OpCode {
     public:
         Token token;
+        ImmType immType;
+        isa::Opcode_E opcode_e;
         Resolution resolution;
         explicit OpCode(Token token);
     };
@@ -422,10 +499,12 @@ namespace assembler {
             validate();
         }
         explicit TokenizedInstruction(OpCode opcode) : opcode(std::move(opcode)) {}
+        void setOperands(std::vector<Operand> operands);
         void validate();
         std::vector<TokenizedInstruction> resolve();
         parts::Instruction getLiteralInstruction();
     };
+    std::pair<std::string, std::string> splitOpcodeStr(std::string opcodeStr);
     template <typename K, typename V>
     std::string unorderedMapToString(const std::unordered_map<K, V>& map) {
         std::ostringstream oss;

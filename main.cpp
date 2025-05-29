@@ -23,8 +23,7 @@ int runEmu() {
     // board.loadRomFromManualBinVec(testRom);
     //board.loadRomFromBinInTxtFile("../programs/bin_prog.txt");
     board.loadRomFromHexInTxtFile("../programs/hex_prog.txt");
-    board.cpu.step();
-    board.cpu.run();
+    board.run();
     cout << "RESULTS\n========" << endl;
     cout << "pc: " << board.cpu.getPc() << endl;
     cout << "REG 0: " << board.cpu.peekInReg(0) << endl;
