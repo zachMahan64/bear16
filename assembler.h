@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <string>
 #include <cstdint>
+#include <unordered_set>
 
 #include "assembler.h"
 #include "isa.h"
@@ -15,6 +16,20 @@
 namespace assembler {
     class Token;
     class TokenizedInstruction;
+
+    //main dude
+    class Assembler {
+    public: //temporarily
+        bool isEnableDebug = true;
+        bool doNotAutoCorrectImmediates = false;
+        Assembler(bool enableDebug, bool doNotAutoCorrectImmediates)
+        : isEnableDebug(enableDebug), doNotAutoCorrectImmediates(doNotAutoCorrectImmediates) {};
+        void initInstance();
+        void killInstance() {
+            this->~Assembler();
+        }
+        std::vector<uint8_t> assembleFromFile(const std::string &path);
+    };
 
     void asmToBinMapGenerator();
     //string body to binary map (for turing tokenized instr to binary)
@@ -326,7 +341,7 @@ namespace assembler {
 
     // Video
     {"clrfb", isa::Opcode_E::CLRFB}, {"setpx", isa::Opcode_E::SETPX}, {"blit", isa::Opcode_E::BLIT}};
-    inline const std::unordered_map<isa::Opcode_E, int> opcodeToOperandCountMap = {
+    inline const std::unordered_map<isa::Opcode_E, int> opcodeToOperandMinimumCountMap = {
         // Arith & Bitwise
         {isa::Opcode_E::ADD, 3}, {isa::Opcode_E::SUB, 3}, {isa::Opcode_E::MULT, 3},
         {isa::Opcode_E::DIV, 3}, {isa::Opcode_E::MOD, 3}, {isa::Opcode_E::AND, 3},
@@ -346,9 +361,10 @@ namespace assembler {
         // Data Trans
         {isa::Opcode_E::MOV, 2},
         {isa::Opcode_E::LW, 2}, {isa::Opcode_E::LB, 2}, //(3) but offset
-        {isa::Opcode_E::COMP, 2}, {isa::Opcode_E::LEA, 2}, //(3) but offset
+        {isa::Opcode_E::COMP, 2},
+        {isa::Opcode_E::LEA, 2}, //(3) but offset
         {isa::Opcode_E::PUSH, 1}, {isa::Opcode_E::POP, 1},
-        {isa::Opcode_E::CLR, 1}, {isa::Opcode_E::INC, 1}, {isa::Opcode_E::DEC, 1},
+        {isa::Opcode_E::CLR, 1}, {isa::Opcode_E::INC, 1}, {isa::Opcode_E::DEC, 1}, //dest only
         {isa::Opcode_E::MEMCPY, 3},
         {isa::Opcode_E::SW, 2}, {isa::Opcode_E::SB, 2}, //(3) but offset (in src1!)
 
@@ -363,15 +379,23 @@ namespace assembler {
         // Video
         {isa::Opcode_E::CLRFB, 0}, {isa::Opcode_E::SETPX, 3}, {isa::Opcode_E::BLIT, 3}
     };
+    inline const std::unordered_set<isa::Opcode_E> opCodesWithOptionalSrc2OffsetArgument = {
+        isa::Opcode_E::LW,
+        isa::Opcode_E::LB,
+        isa::Opcode_E::LEA
+        };
+    inline const std::unordered_set<isa::Opcode_E> opCodesWithOptionalSrc1OffsetArgument = {
+        isa::Opcode_E::SW, isa::Opcode_E::SB
+    };
 
     //reading asm file
     std::vector<Token> tokenizeAsmFirstPass(const std::string &filename);
     std::vector<TokenizedInstruction> parseFirstPassIntoSecondPass(std::vector<Token> &tokens);
-    TokenizedInstruction parseLineOfTokens(std::vector<Token> line,
-        std::unordered_map<std::string, uint16_t> &labelMap,
-        std::unordered_map<std::string, uint16_t> &constMap,
-        int &instructionIndex
-        );
+    TokenizedInstruction parseLineOfTokens(const std::vector<Token> &line,
+                                           std::unordered_map<std::string, uint16_t> &labelMap,
+                                           std::unordered_map<std::string, uint16_t> &constMap,
+                                           int &instructionIndex
+    );
     inline void throwAFit(const int &lineNum) {
         std::cerr << "MISTAKE MADE ON WRITTEN LINE " << lineNum << std::endl;
     }
@@ -379,6 +403,7 @@ namespace assembler {
         std::cerr << "MISTAKE MADE IN USAGE OR DEFINITION OF " << ref << std::endl;
     }
 
+    //gen tokens
     enum class TokenType {
         MISTAKE, // obvious error
         GEN_REG, // s1, s2
@@ -432,6 +457,11 @@ namespace assembler {
             default:                        return "*UNKNOWN";
         }
     }
+    inline const std::unordered_set<TokenType> validOperandArguments = {
+        TokenType::REF, TokenType::STRING, TokenType::GEN_REG, TokenType::SPEC_REG,
+        TokenType::IO_PSEUDO_REG, TokenType::DECIMAL, TokenType::HEX, TokenType::BIN,
+        TokenType::CHAR
+    };
 
     class Token{
     public:
@@ -459,10 +489,14 @@ namespace assembler {
     //specific tokens
     enum class Resolution {
         RESOLVED,
+        UNRESOLVED,
         SYMBOLIC
     };
     enum class ImmType {
         NO_IM, I, I1, I2
+    };
+    enum class ValueType {
+        IMM, NAMED
     };
     class OpCode {
     public:
@@ -478,6 +512,7 @@ namespace assembler {
         std::string significantBody;
         Token significantToken;
         std::string fullBody;
+        ValueType valueType;
         Resolution resolution;
         explicit Operand(std::vector<Token> tokens);
     };
@@ -486,22 +521,20 @@ namespace assembler {
     class TokenizedInstruction {
     public:
         OpCode opcode;
+        bool i1 = false;
+        bool i2 = false;
         std::optional<Operand> dest;
         std::optional<Operand> src1; // not needed for a couple Ops
         std::optional<Operand> src2; // optional for many Ops
-        bool isValid = false;
         TokenizedInstruction(
             OpCode opcode,
             std::optional<Operand> dest,
             std::optional<Operand> src1,
             std::optional<Operand> src2
-            ) : opcode(std::move(opcode)), dest(std::move(dest)), src1(std::move(src1)), src2(std::move(src2)) {
-            validate();
-        }
+            ) : opcode(std::move(opcode)), dest(std::move(dest)), src1(std::move(src1)), src2(std::move(src2)) {}
         explicit TokenizedInstruction(OpCode opcode) : opcode(std::move(opcode)) {}
-        void setOperands(std::vector<Operand> operands);
-        void validate();
-        std::vector<TokenizedInstruction> resolve();
+        void setOperandsAndAutocorrectImmediates(const bool& doNotAutoCorrectImmediates, std::vector<Operand> operands);
+        void resolve();
         parts::Instruction getLiteralInstruction();
     };
     std::pair<std::string, std::string> splitOpcodeStr(std::string opcodeStr);

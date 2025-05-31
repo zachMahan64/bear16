@@ -116,7 +116,12 @@ void asmToBinMapGenerator() {
     }
     std::cout << "};\n";
 } //updated 5/28/2025
-//parsing
+std::vector<uint8_t> assembler::Assembler::assembleFromFile(const std::string &path) {
+    auto allTokens = tokenizeAsmFirstPass("../programs/asm_test.asm");
+    parseFirstPassIntoSecondPass(allTokens);
+}
+
+//main passes
 std::vector<assembler::Token> assembler::tokenizeAsmFirstPass(const std::string &path) {
     std::vector<Token> firstPassTokens {};
 
@@ -302,15 +307,17 @@ std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecond
         //lines that SHOULD get made into instructions
         else if (firstTknType == TokenType::OPERATION) {
             instructionIndex++;
-            finalPassTokenizedInstructions.emplace_back(parseLineOfTokens(line, labelMap, constMap, instructionIndex));
+            TokenizedInstruction instrForThisLine = parseLineOfTokens(line, labelMap, constMap, instructionIndex);
+            finalPassTokenizedInstructions.emplace_back(instrForThisLine);
         } else {
             throwAFit(numLines);
             LOG_ERR(line.at(0).body + " (" + toString(line.at(0).type) + ") cannot begin a line");
         }
     }
-    return finalPassTokenizedInstructions; //wip, return not doing anything yet
+    return finalPassTokenizedInstructions;
 }
-assembler::TokenizedInstruction assembler::parseLineOfTokens(std::vector<Token> line,
+//sub section of pass two
+assembler::TokenizedInstruction assembler::parseLineOfTokens(const std::vector<Token> &line,
         std::unordered_map<std::string, uint16_t> &labelMap,
         std::unordered_map<std::string, uint16_t> &constMap,
         int &instructionIndex
@@ -367,9 +374,10 @@ assembler::TokenizedInstruction assembler::parseLineOfTokens(std::vector<Token> 
             tokensForOperand.clear();
         }
     }
+    bool doNotAutocorrectImmediates = false; //WIP, make this pass properly, trace back
+    instrForThisLine.setOperandsAndAutocorrectImmediates(doNotAutocorrectImmediates, operands);
     return instrForThisLine;
 }
-// -> WIP, make instructions
 //helpers
 assembler::TokenType assembler::Token::deduceTokenType(const std::string &text) {
     TokenType type = TokenType::MISTAKE;
@@ -391,13 +399,14 @@ assembler::TokenType assembler::Token::deduceTokenType(const std::string &text) 
     else if (text[0] == '#') type = TokenType::COMMENT;
     else if (text[0] == '\n') type = TokenType::EOL;
     else if (text.length() == 1 && std::isalpha(text[0])) type = TokenType::CHAR;
-    else if (text.length() > 1 && text.back() == ':') type = TokenType::LABEL; //needs trimming
-    else if (text == ".const") type = TokenType::CONST; //needs trimming
-    else if (std::ranges::all_of(text, [](char c) { return std::isalnum(c); })) type = TokenType::REF;
+    else if (text.length() > 1 && text.back() == ':') type = TokenType::LABEL; //needs trimming?
+    else if (text == ".const") type = TokenType::CONST;
+    else if (std::ranges::all_of(text, [](char c) { return (std::isalnum(c) || c == '_'); })) type = TokenType::REF;
     return type;
 }
+//constructors
 assembler::OpCode::OpCode(Token token): token(std::move(token)) {
-    resolution = Resolution::RESOLVED;
+    resolution = Resolution::UNRESOLVED;
     auto opCodeStrSplit = splitOpcodeStr(this->token.body);
     if (!stringToOpcodeMap.contains(opCodeStrSplit.first)) {
         LOG_ERR("Unknown opcode: " + opCodeStrSplit.first + " (" + toString(token.type) + ", " + this->token.body + ")");
@@ -429,31 +438,67 @@ assembler::Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens
         significantBody = fullBody.substr(1, fullBody.length() - 2);
         Token sigTkn(significantBody);
         significantToken = sigTkn;
+        //handle edge cases
         if (significantToken.type == TokenType::OPERATION) {
             significantToken.type = TokenType::CHAR;
         } //handles the weird edge case of single letter operations!
+        else if (significantToken.type == TokenType::CONST || significantToken.type == TokenType::LABEL) {
+            LOG_ERR("MISUSED DECLARATION: " + significantBody + " (" + toString(significantToken.type));
+        }
+        //set imm/named delineation for operand
+        if (significantToken.type == TokenType::HEX
+            || significantToken.type == TokenType::BIN
+            || significantToken.type == TokenType::DECIMAL
+            || significantToken.type == TokenType::CHAR)
+        {
+            valueType = ValueType::IMM;
+        } else {
+            valueType = ValueType::NAMED;
+        }
+    }
+    if (!validOperandArguments.contains(significantToken.type)) {
+        LOG_ERR("INVALID OPERAND: " + significantBody + " (" + toString(significantToken.type) + ")");
     }
     LOG("full body:" + fullBody + ", significant body: " + significantBody + ", significant type: " + toString(significantToken.type));
 }
 
-void assembler::TokenizedInstruction::setOperands(std::vector<Operand> operands) {
-    if (operands.size() < opcodeToOperandCountMap.at(opcode.opcode_e)) {
-        LOG_ERR("ERROR: bad number of operands for opcode: " + opcode.token.body);
+void assembler::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const bool& doNotAutoCorrectImmediates, std::vector<Operand> operands) {
+    const isa::Opcode_E &opE = opcode.opcode_e;
+    bool opHasNoWritImm = opcode.immType == ImmType::NO_IM;
+    if (operands.size() < opcodeToOperandMinimumCountMap.at(opE)) {
+        LOG_ERR("ERROR: too few of operands for opcode: " + opcode.token.body);
+        return;
+    }
+    if (operands.size() > opcodeToOperandMinimumCountMap.at(opE)
+        && !(opCodesWithOptionalSrc2OffsetArgument.contains(opE) || opCodesWithOptionalSrc1OffsetArgument.contains(opE))) {
+        LOG_ERR("ERROR: too many operands for opcode: " + opcode.token.body);
         return;
     }
     if (operands.size() == 3) {
         dest = operands.at(0);
         src1 = operands.at(1);
         src2 = operands.at(2);
+    } else if (operands.size() == 2 && opCodesWithOptionalSrc1OffsetArgument.contains(opE)) {
+        dest = operands.at(0);
+        src2 = operands.at(1);
     } else if (operands.size() == 2) {
+        dest = operands.at(0);
+        src1 = operands.at(1);
+    } else if (operands.size() == 1) {
+        dest = operands.at(0);
+    }
+    //set imm
+    if (src1 && opHasNoWritImm && src1->valueType == ValueType::IMM) {
+        i1 = true;
+    }
+    if (src2 && opHasNoWritImm && src2->valueType == ValueType::IMM) {
+        i2 = true;
     }
 } //WIP
 
-
 //WIP
-void assembler::TokenizedInstruction::validate() {
-}
-std::vector<assembler::TokenizedInstruction> assembler::TokenizedInstruction::resolve() {
+void assembler::TokenizedInstruction::resolve() {
+    opcode.resolution = Resolution::RESOLVED;
 }
 parts::Instruction assembler::TokenizedInstruction::getLiteralInstruction() {
 }
