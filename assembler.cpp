@@ -118,7 +118,9 @@ void asmToBinMapGenerator() {
 } //updated 5/28/2025
 std::vector<uint8_t> assembler::Assembler::assembleFromFile(const std::string &path) {
     auto allTokens = tokenizeAsmFirstPass("../programs/asm_test.asm");
-    parseFirstPassIntoSecondPass(allTokens);
+    auto allTokenizedInstructions = parseFirstPassIntoSecondPass(allTokens);
+    auto literalInstructions = getLiteralInstructions(allTokenizedInstructions);
+    return buildByteVecFromLiteralInstructions(literalInstructions);
 }
 
 //main passes
@@ -378,6 +380,36 @@ assembler::TokenizedInstruction assembler::parseLineOfTokens(const std::vector<T
     instrForThisLine.setOperandsAndAutocorrectImmediates(doNotAutocorrectImmediates, operands);
     return instrForThisLine;
 }
+
+std::vector<parts::Instruction> assembler::getLiteralInstructions(const std::vector<TokenizedInstruction>& tknInstructions) {
+    std::vector<parts::Instruction> literalInstructions {};
+    literalInstructions.reserve(tknInstructions.size());
+    for (const TokenizedInstruction &tknInstr : tknInstructions) {
+        literalInstructions.emplace_back(tknInstr.getLiteralInstruction());
+    }
+    return literalInstructions;
+}
+
+std::vector<uint8_t> assembler::buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction>& literalInstructions) {
+    std::vector<uint8_t> byteVec {};
+    for (const auto& instr: literalInstructions) {
+        std::vector<uint8_t>&& vec8Byte = build8ByteVecFromSingleLiteralInstruction(instr);
+        byteVec.insert(byteVec.end(), vec8Byte.begin(), vec8Byte.end());
+    }
+    return byteVec;
+}
+
+std::vector<uint8_t> assembler::build8ByteVecFromSingleLiteralInstruction(const parts::Instruction& literalInstruction) {
+    const uint64_t raw = literalInstruction.toRaw();
+    std::vector<uint8_t> byteVec {};
+    byteVec.reserve(8);
+    for (int i = 0; i < 8; ++i) {
+        uint8_t byte = (raw >> (8 * i)) & 0xFF;
+        byteVec.emplace_back(byte);
+    }
+    return byteVec;
+}
+
 //helpers
 assembler::TokenType assembler::Token::deduceTokenType(const std::string &text) {
     TokenType type = TokenType::MISTAKE;
@@ -404,6 +436,53 @@ assembler::TokenType assembler::Token::deduceTokenType(const std::string &text) 
     else if (std::ranges::all_of(text, [](char c) { return (std::isalnum(c) || c == '_'); })) type = TokenType::REF;
     return type;
 }
+std::pair<std::string, std::string> assembler::splitOpcodeStr(std::string opcodeStr) {
+    char lastChar = opcodeStr.back();
+    if (lastChar == 'i') {
+        return {opcodeStr.substr(0, opcodeStr.length() - 1), "i"};
+    }
+    if (lastChar == '1') {
+        return {opcodeStr.substr(0, opcodeStr.length() - 2), "i1"};
+    }
+    if (lastChar == '2') {
+        return {opcodeStr.substr(0, opcodeStr.length() - 2), "i2"};
+    }
+    return {opcodeStr, ""};
+}
+void assembler::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const bool& doNotAutoCorrectImmediates, std::vector<Operand> operands) {
+    const isa::Opcode_E &opE = opcode.opcode_e;
+    bool opHasNoWritImm = opcode.immType == ImmType::NO_IM;
+    if (operands.size() < opcodeToOperandMinimumCountMap.at(opE)) {
+        LOG_ERR("ERROR: too few of operands for opcode: " + opcode.token.body);
+        return;
+    }
+    if (operands.size() > opcodeToOperandMinimumCountMap.at(opE)
+        && !(opCodesWithOptionalSrc2OffsetArgument.contains(opE) || opCodesWithOptionalSrc1OffsetArgument.contains(opE))) {
+        LOG_ERR("ERROR: too many operands for opcode: " + opcode.token.body);
+        return;
+        }
+    if (operands.size() == 3) {
+        dest = operands.at(0);
+        src1 = operands.at(1);
+        src2 = operands.at(2);
+    } else if (operands.size() == 2 && opCodesWithOptionalSrc1OffsetArgument.contains(opE)) {
+        dest = operands.at(0);
+        src2 = operands.at(1);
+    } else if (operands.size() == 2) {
+        dest = operands.at(0);
+        src1 = operands.at(1);
+    } else if (operands.size() == 1) {
+        dest = operands.at(0);
+    }
+    //set imm
+    if (src1 && opHasNoWritImm && src1->valueType == ValueType::IMM) {
+        i1 = true;
+    }
+    if (src2 && opHasNoWritImm && src2->valueType == ValueType::IMM) {
+        i2 = true;
+    }
+} //WIP
+
 //constructors
 assembler::OpCode::OpCode(Token token): token(std::move(token)) {
     resolution = Resolution::UNRESOLVED;
@@ -462,59 +541,53 @@ assembler::Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens
     LOG("full body:" + fullBody + ", significant body: " + significantBody + ", significant type: " + toString(significantToken.type));
 }
 
-void assembler::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const bool& doNotAutoCorrectImmediates, std::vector<Operand> operands) {
-    const isa::Opcode_E &opE = opcode.opcode_e;
-    bool opHasNoWritImm = opcode.immType == ImmType::NO_IM;
-    if (operands.size() < opcodeToOperandMinimumCountMap.at(opE)) {
-        LOG_ERR("ERROR: too few of operands for opcode: " + opcode.token.body);
-        return;
+uint16_t assembler::Operand::resolveInto16BitLiteral() const {
+    if (namedOperandToBinMap.contains(significantBody)) {
+        return namedOperandToBinMap.at(significantBody);
     }
-    if (operands.size() > opcodeToOperandMinimumCountMap.at(opE)
-        && !(opCodesWithOptionalSrc2OffsetArgument.contains(opE) || opCodesWithOptionalSrc1OffsetArgument.contains(opE))) {
-        LOG_ERR("ERROR: too many operands for opcode: " + opcode.token.body);
-        return;
+    if (significantToken.type == TokenType::HEX) {
+        return std::stoi(significantBody.substr(2), nullptr, 16);
     }
-    if (operands.size() == 3) {
-        dest = operands.at(0);
-        src1 = operands.at(1);
-        src2 = operands.at(2);
-    } else if (operands.size() == 2 && opCodesWithOptionalSrc1OffsetArgument.contains(opE)) {
-        dest = operands.at(0);
-        src2 = operands.at(1);
-    } else if (operands.size() == 2) {
-        dest = operands.at(0);
-        src1 = operands.at(1);
-    } else if (operands.size() == 1) {
-        dest = operands.at(0);
+    if (significantToken.type == TokenType::DECIMAL) {
+        return std::stoi(significantBody, nullptr, 10);
     }
-    //set imm
-    if (src1 && opHasNoWritImm && src1->valueType == ValueType::IMM) {
-        i1 = true;
+    if (significantToken.type == TokenType::BIN) {
+        return std::stoi(significantBody.substr(2), nullptr, 2);
     }
-    if (src2 && opHasNoWritImm && src2->valueType == ValueType::IMM) {
-        i2 = true;
-    }
-} //WIP
+    return {};
+}
 
-//WIP
+//resolution (largely WIP)
 void assembler::TokenizedInstruction::resolve() {
     opcode.resolution = Resolution::RESOLVED;
 }
-parts::Instruction assembler::TokenizedInstruction::getLiteralInstruction() {
+
+parts::Instruction assembler::TokenizedInstruction::getLiteralInstruction() const {
+    parts::Instruction thisInstr{};
+    thisInstr.opCode14 = static_cast<uint16_t>(opcode.opcode_e);
+    uint8_t i1 = this->i1 ? 1 : 0;
+    uint8_t i2 = this->i2 ? 1 : 0;
+    thisInstr.immFlags = i1 << 1 | i2;
+    thisInstr.opcode = thisInstr.immFlags << 14 | thisInstr.opCode14;
+    if (dest) {
+        thisInstr.dest = dest->resolveInto16BitLiteral();
+    } else {
+        thisInstr.dest = 0;
+    }
+    if (src1) {
+        thisInstr.src1 = src1->resolveInto16BitLiteral();
+    } else {
+        thisInstr.src1 = 0;
+    }
+    if (src2) {
+        thisInstr.src2 = src2->resolveInto16BitLiteral();
+    } else {
+        thisInstr.src2 = 0;
+    }
+    return thisInstr;
+
 }
 
-std::pair<std::string, std::string> assembler::splitOpcodeStr(std::string opcodeStr) {
-    char lastChar = opcodeStr.back();
-    if (lastChar == 'i') {
-        return {opcodeStr.substr(0, opcodeStr.length() - 1), "i"};
-    }
-    if (lastChar == '1') {
-        return {opcodeStr.substr(0, opcodeStr.length() - 2), "i1"};
-    }
-    if (lastChar == '2') {
-        return {opcodeStr.substr(0, opcodeStr.length() - 2), "i2"};
-    }
-    return {opcodeStr, ""};
-}
+
 
 

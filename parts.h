@@ -31,6 +31,8 @@ namespace parts {
         uint64_t val; //64 bit val
 
         explicit Instruction(uint64_t raw);
+        Instruction() = default;
+        [[nodiscard]] uint64_t toRaw() const;
     };
     class FlagRegister {
     public:

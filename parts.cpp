@@ -35,6 +35,12 @@ Instruction::Instruction(uint64_t raw) {
     opCode14 =  opcode & 0x3FFF;
     val = raw;
 }
+uint64_t Instruction::toRaw() const {
+    return (static_cast<uint64_t>(opcode) << 48) |
+           (static_cast<uint64_t>(dest)   << 32) |
+           (static_cast<uint64_t>(src1)   << 16) |
+           static_cast<uint64_t>(src2);
+}
 
 
 

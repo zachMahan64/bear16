@@ -17,20 +17,6 @@ namespace assembler {
     class Token;
     class TokenizedInstruction;
 
-    //main dude
-    class Assembler {
-    public: //temporarily
-        bool isEnableDebug = true;
-        bool doNotAutoCorrectImmediates = false;
-        Assembler(bool enableDebug, bool doNotAutoCorrectImmediates)
-        : isEnableDebug(enableDebug), doNotAutoCorrectImmediates(doNotAutoCorrectImmediates) {};
-        void initInstance();
-        void killInstance() {
-            this->~Assembler();
-        }
-        std::vector<uint8_t> assembleFromFile(const std::string &path);
-    };
-
     void asmToBinMapGenerator();
     //string body to binary map (for turing tokenized instr to binary)
     inline const std::unordered_map<std::string, uint16_t> opcodeToBinMap = {
@@ -388,6 +374,22 @@ namespace assembler {
         isa::Opcode_E::SW, isa::Opcode_E::SB
     };
 
+    //main dude
+    class Assembler {
+    public: //temporarily
+        bool isEnableDebug = true;
+        bool doNotAutoCorrectImmediates = false;
+        Assembler(bool enableDebug, bool doNotAutoCorrectImmediates)
+        : isEnableDebug(enableDebug), doNotAutoCorrectImmediates(doNotAutoCorrectImmediates) {};
+        Assembler& initInstance(bool enableDebug, bool doNotAutoCorrectImmediates) {
+            return Assembler(enableDebug, doNotAutoCorrectImmediates);
+        };
+        void killInstance() {
+            this->~Assembler();
+        }
+        std::vector<uint8_t> assembleFromFile(const std::string &path);
+    };
+
     //reading asm file
     std::vector<Token> tokenizeAsmFirstPass(const std::string &filename);
     std::vector<TokenizedInstruction> parseFirstPassIntoSecondPass(std::vector<Token> &tokens);
@@ -396,6 +398,9 @@ namespace assembler {
                                            std::unordered_map<std::string, uint16_t> &constMap,
                                            int &instructionIndex
     );
+    std::vector<parts::Instruction> getLiteralInstructions(const std::vector<TokenizedInstruction>& tknInstructions);
+    std::vector<uint8_t> buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction> &literalInstructions);
+    std::vector<uint8_t> build8ByteVecFromSingleLiteralInstruction(const parts::Instruction &literalInstruction);
     inline void throwAFit(const int &lineNum) {
         std::cerr << "MISTAKE MADE ON WRITTEN LINE " << lineNum << std::endl;
     }
@@ -515,6 +520,7 @@ namespace assembler {
         ValueType valueType;
         Resolution resolution;
         explicit Operand(std::vector<Token> tokens);
+        [[nodiscard]] uint16_t resolveInto16BitLiteral() const;
     };
 
     //tokenized instructions
@@ -535,7 +541,7 @@ namespace assembler {
         explicit TokenizedInstruction(OpCode opcode) : opcode(std::move(opcode)) {}
         void setOperandsAndAutocorrectImmediates(const bool& doNotAutoCorrectImmediates, std::vector<Operand> operands);
         void resolve();
-        parts::Instruction getLiteralInstruction();
+        parts::Instruction getLiteralInstruction() const;
     };
     std::pair<std::string, std::string> splitOpcodeStr(std::string opcodeStr);
     template <typename K, typename V>
