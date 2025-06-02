@@ -381,9 +381,10 @@ namespace assembler {
         bool doNotAutoCorrectImmediates = false;
         Assembler(bool enableDebug, bool doNotAutoCorrectImmediates)
         : isEnableDebug(enableDebug), doNotAutoCorrectImmediates(doNotAutoCorrectImmediates) {};
-        Assembler& initInstance(bool enableDebug, bool doNotAutoCorrectImmediates) {
-            return Assembler(enableDebug, doNotAutoCorrectImmediates);
-        };
+
+        static Assembler initInstance(bool enableDebug, bool doNotAutoCorrectImmediates) {
+            return {enableDebug, doNotAutoCorrectImmediates};
+        }
         void killInstance() {
             this->~Assembler();
         }
@@ -399,6 +400,7 @@ namespace assembler {
                                            int &instructionIndex
     );
     std::vector<parts::Instruction> getLiteralInstructions(const std::vector<TokenizedInstruction>& tknInstructions);
+    void printLiteralInstruction(const parts::Instruction &litInstr); //debug
     std::vector<uint8_t> buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction> &literalInstructions);
     std::vector<uint8_t> build8ByteVecFromSingleLiteralInstruction(const parts::Instruction &literalInstruction);
     inline void throwAFit(const int &lineNum) {
@@ -541,7 +543,7 @@ namespace assembler {
         explicit TokenizedInstruction(OpCode opcode) : opcode(std::move(opcode)) {}
         void setOperandsAndAutocorrectImmediates(const bool& doNotAutoCorrectImmediates, std::vector<Operand> operands);
         void resolve();
-        parts::Instruction getLiteralInstruction() const;
+        [[nodiscard]] parts::Instruction getLiteralInstruction() const;
     };
     std::pair<std::string, std::string> splitOpcodeStr(std::string opcodeStr);
     template <typename K, typename V>

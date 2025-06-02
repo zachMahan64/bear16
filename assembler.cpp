@@ -117,10 +117,10 @@ void asmToBinMapGenerator() {
     std::cout << "};\n";
 } //updated 5/28/2025
 std::vector<uint8_t> assembler::Assembler::assembleFromFile(const std::string &path) {
-    auto allTokens = tokenizeAsmFirstPass("../programs/asm_test.asm");
+    auto allTokens = tokenizeAsmFirstPass(path);
     auto allTokenizedInstructions = parseFirstPassIntoSecondPass(allTokens);
     auto literalInstructions = getLiteralInstructions(allTokenizedInstructions);
-    return buildByteVecFromLiteralInstructions(literalInstructions);
+    return buildByteVecFromLiteralInstructions(literalInstructions); //completely broken apparently
 }
 
 //main passes
@@ -385,26 +385,44 @@ std::vector<parts::Instruction> assembler::getLiteralInstructions(const std::vec
     std::vector<parts::Instruction> literalInstructions {};
     literalInstructions.reserve(tknInstructions.size());
     for (const TokenizedInstruction &tknInstr : tknInstructions) {
-        literalInstructions.emplace_back(tknInstr.getLiteralInstruction());
+        parts::Instruction litInstr = tknInstr.getLiteralInstruction();
+        printLiteralInstruction(litInstr); //for debug
+        literalInstructions.emplace_back(litInstr);
+
     }
     return literalInstructions;
 }
 
+void assembler::printLiteralInstruction(const parts::Instruction &litInstr) {
+    std::cout << "INSTR (DEBUG):\n";
+    std::cout << "Opcode: " << std::hex << std::setw(4) << std::setfill('0') << litInstr.opcode << "\n";
+    std::cout << "Imm: " << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(litInstr.immFlags) << "\n";
+    std::cout << "Op14: " << std::hex << std::setw(4) << std::setfill('0') << litInstr.opCode14 << "\n";
+    std::cout << "dest: " << std::hex << std::setw(4) << std::setfill('0') << litInstr.dest << "\n";
+    std::cout << "src1: " << std::hex << std::setw(4) << std::setfill('0') << litInstr.src1 << "\n";
+    std::cout << "src2: " << std::hex << std::setw(4) << std::setfill('0') << litInstr.src2 << "\n";
+    std::cout << "\n";
+} //debug
+
 std::vector<uint8_t> assembler::buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction>& literalInstructions) {
-    std::vector<uint8_t> byteVec {};
-    for (const auto& instr: literalInstructions) {
-        std::vector<uint8_t>&& vec8Byte = build8ByteVecFromSingleLiteralInstruction(instr);
+    std::vector<uint8_t> byteVec;
+    byteVec.reserve(literalInstructions.size() * 8);
+
+    for (const auto& instr : literalInstructions) {
+        std::vector<uint8_t> vec8Byte = build8ByteVecFromSingleLiteralInstruction(instr);
         byteVec.insert(byteVec.end(), vec8Byte.begin(), vec8Byte.end());
     }
+
     return byteVec;
 }
-
 std::vector<uint8_t> assembler::build8ByteVecFromSingleLiteralInstruction(const parts::Instruction& literalInstruction) {
     const uint64_t raw = literalInstruction.toRaw();
+    //std::cout << "Raw Instr (debug): " << std::hex << std::setw(16) << std::setfill('0') << raw << "\n";
     std::vector<uint8_t> byteVec {};
     byteVec.reserve(8);
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 7; i >= 0; --i) {
         uint8_t byte = (raw >> (8 * i)) & 0xFF;
+        //std::cout << "Raw Byte (debug): " << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte) << "\n";
         byteVec.emplace_back(byte);
     }
     return byteVec;
@@ -476,11 +494,20 @@ void assembler::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const 
     }
     //set imm
     if (src1 && opHasNoWritImm && src1->valueType == ValueType::IMM) {
+        LOG("Corrected imm to i1 for " + opcode.token.body);
         i1 = true;
-    }
-    if (src2 && opHasNoWritImm && src2->valueType == ValueType::IMM) {
+    } if (src2 && opHasNoWritImm && src2->valueType == ValueType::IMM) {
+        LOG("Corrected imm to i2 for " + opcode.token.body);
+        i2 = true;
+    } if (opcode.immType == ImmType::I) {
+        i1 = true;
+        i2 = true;
+    } else if (opcode.immType == ImmType::I1) {
+        i1 = true;
+    } else if (opcode.immType == ImmType::I2) {
         i2 = true;
     }
+
 } //WIP
 
 //constructors
@@ -524,16 +551,16 @@ assembler::Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens
         else if (significantToken.type == TokenType::CONST || significantToken.type == TokenType::LABEL) {
             LOG_ERR("MISUSED DECLARATION: " + significantBody + " (" + toString(significantToken.type));
         }
-        //set imm/named delineation for operand
-        if (significantToken.type == TokenType::HEX
-            || significantToken.type == TokenType::BIN
-            || significantToken.type == TokenType::DECIMAL
-            || significantToken.type == TokenType::CHAR)
-        {
-            valueType = ValueType::IMM;
-        } else {
-            valueType = ValueType::NAMED;
-        }
+    }
+    //set imm/named delineation for operand
+    if (significantToken.type == TokenType::HEX
+        || significantToken.type == TokenType::BIN
+        || significantToken.type == TokenType::DECIMAL
+        || significantToken.type == TokenType::CHAR)
+    {
+        valueType = ValueType::IMM;
+    } else {
+        valueType = ValueType::NAMED;
     }
     if (!validOperandArguments.contains(significantToken.type)) {
         LOG_ERR("INVALID OPERAND: " + significantBody + " (" + toString(significantToken.type) + ")");

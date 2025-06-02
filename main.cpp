@@ -15,17 +15,19 @@ int runEmu() {
     constexpr std::size_t ROM_SIZE  = isa::ROM_SIZE;
     constexpr std::size_t SRAM_SIZE = isa::SRAM_SIZE;
 
+    std::string path = "../programs/asm_test.asm";
+    assembler::Assembler testAssembler = assembler::Assembler::initInstance(true, false);
+    auto byteVec = testAssembler.assembleFromFile(path);
+
     Board board(ROM_SIZE, SRAM_SIZE);
-    // vector<uint8_t> testRom = {0xC0, 0x02,  //opcode
-    //                            0x00, 0x00,  //dest
-    //                            0x00, 0x07,  //src1
-    //                            0x00, 0x08}; //src2
-    // board.loadRomFromManualBinVec(testRom);
+    board.loadRomFromManualBinVec(byteVec);
     //board.loadRomFromBinInTxtFile("../programs/bin_prog.txt");
-    board.loadRomFromHexInTxtFile("../programs/hex_prog.txt");
+    //board.loadRomFromHexInTxtFile("../programs/hex_prog.txt");
     board.run();
+    std::cout << std::dec;
     cout << "RESULTS\n========" << endl;
     cout << "pc: " << board.cpu.getPc() << endl;
+    int x = board.cpu.peekInReg(0);
     cout << "REG 0: " << board.cpu.peekInReg(0) << endl;
     cout << "REG 1: " << board.cpu.peekInReg(1) << endl;
     cout << "REG 2: " << board.cpu.peekInReg(2) << endl;
@@ -37,7 +39,6 @@ int runEmu() {
 }
 
 int main() {
-    //assembler::asmToBinMapGenerator();
-    //runEmu();
+    runEmu();
     return 0;
 }

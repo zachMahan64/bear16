@@ -123,7 +123,8 @@ void CPU16::setRom(std::vector<uint8_t> rom) {
 void Board::run() {
     do {
         cpu.step();
-    } while (cpu.cpuIsHalted == false);
+    } while (cpu.cpuIsHalted == false && cpu.pc <= ROM_SIZE);
+    if (cpu.pc >+ ROM_SIZE) std::cerr << "ERROR: PC overflowed" << std::endl;
 } //incomplete, doesn't use clock
 void CPU16::step() {
     //fetch & prelim. decoding
@@ -164,7 +165,7 @@ void CPU16::execute(parts::Instruction instr) {
     } else if (instr.src1 == 0x0013) {
         src1Val = pc;
     } else {
-        std::cout << "ERROR: unknown operand (src1)" << instr.src1 << std::endl;
+        std::cout << "ERROR: unknown operand (src1): " << std::hex << std::setw(4) << std::setfill('0') << instr.src1 << std::endl;
     }
     if (im2) {
         src2Val = instr.src2;
@@ -177,7 +178,7 @@ void CPU16::execute(parts::Instruction instr) {
     } else if (instr.src1 == 0x0013) {
         src1Val = pc;
     } else {
-        std::cout << "ERROR: unknown operand (src2)" << instr.src2 << std::endl;
+        std::cout << "ERROR: unknown operand (src2): "  << std::hex << std::setw(4) << std::setfill('0') << instr.src2 << std::endl;
     }
     performOp(instr, src1Val, src2Val);
 }
@@ -202,7 +203,7 @@ void CPU16::performOp(const parts::Instruction &instr, uint16_t src1Val, uint16_
     } else if (isVid) {
         //fn
     } else {
-        std::cout << "ERROR: Unknown op14, trace to performOp" << std::endl;
+        std::cout << "ERROR: Unknown op14, trace to performOp | op14: " << std::hex << std::setw(4) << std::setfill('0') << op14 << std::endl;
         std::cout << "op14: " << std::to_string(op14) << std::endl;
     }
 }
@@ -566,6 +567,7 @@ void CPU16::setPc(const uint16_t newPc) {
     pc = newPc;
 }
 void CPU16::writeback(uint16_t dest, uint16_t val) {
+    std::cout << "DEBUG: writeback: " << std::hex << std::setw(4) << std::setfill('0') << dest << " " << val << std::endl;
     if (dest < NUM_GEN_REGS) {
         genRegs[dest].set(val);
     } else if (dest < NUM_GEN_REGS + NUM_IO) {
@@ -575,8 +577,7 @@ void CPU16::writeback(uint16_t dest, uint16_t val) {
     } else if (dest == 0x0013) {
         framePtr.set(val);
     } else {
-        std::cout << "ERROR: Unknown dest when writing back" << std::endl;
-        std::cout << "ERROR: dest = " << dest << std::endl;
+        std::cout << "ERROR: Unknown dest when writing back: " << std::hex << std::setw(4) << std::setfill('0') << dest << std::endl;
     }
 }
 uint16_t CPU16::peekInReg(uint16_t reg) const {
