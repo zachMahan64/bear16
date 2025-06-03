@@ -1,0 +1,6 @@
+#this program tests memory functionality, working on 5/23/25
+C02B 0004, 0000 0100 # SWi 3, 0 257
+C021 0002, 0004 0000 # LWi r2, 0 4
+0025 0000, 0002 0000 # PUSH 0, r2 0
+0026 0003, 0000 0000 # POP r3, 0 0
+004A 0000, 0000 0000 # HLT

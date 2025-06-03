@@ -373,6 +373,9 @@ namespace assembler {
     inline const std::unordered_set<isa::Opcode_E> opCodesWithOptionalSrc1OffsetArgument = {
         isa::Opcode_E::SW, isa::Opcode_E::SB
     };
+    inline const std::unordered_set<char> validSymbols = {
+        '!'
+    };
 
     //main dude
     class Assembler {
@@ -430,6 +433,7 @@ namespace assembler {
         BIN, // 0b1000
         EOL, // end of line
         CHAR, //character
+        CHAR_SPACE,
         COMMENT, // # comment
         LABEL, // label:
         CONST,  // .const
@@ -453,6 +457,7 @@ namespace assembler {
             case TokenType::COLON:          return "COLON";
             case TokenType::DECIMAL:        return "DECIMAL";
             case TokenType::CHAR:           return "CHAR";
+            case TokenType::CHAR_SPACE:     return "CHAR_SPACE";
             case TokenType::HEX:            return "HEX";
             case TokenType::BIN:            return "BIN";
             case TokenType::EOL:            return "EOL";
@@ -467,7 +472,7 @@ namespace assembler {
     inline const std::unordered_set<TokenType> validOperandArguments = {
         TokenType::REF, TokenType::STRING, TokenType::GEN_REG, TokenType::SPEC_REG,
         TokenType::IO_PSEUDO_REG, TokenType::DECIMAL, TokenType::HEX, TokenType::BIN,
-        TokenType::CHAR
+        TokenType::CHAR, TokenType::CHAR_SPACE
     };
 
     class Token{

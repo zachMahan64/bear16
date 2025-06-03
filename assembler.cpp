@@ -213,6 +213,7 @@ std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecond
     std::vector<std::vector<Token>> tokenLines {};
     std::vector<Token> currentLine {};
     int lineNumInOrigAsm = 1;        //num lines on the editor
+    int instructionIndex = 0;        //num instructions in the program
     //form lines
     for (const Token &tkn: tokens) {
         if (tkn.type == TokenType::MISTAKE) {
@@ -228,9 +229,11 @@ std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecond
         }
         else if (tkn.type == TokenType::OPERATION) {
             currentLine.push_back(tkn);
+            instructionIndex++;
         }
         else if (tkn.type == TokenType::LABEL) {
             currentLine.push_back(tkn);
+            labelMap.emplace(tkn.body.substr(0, tkn.body.length() - 1), instructionIndex * 8);
         }
         else if (tkn.type != TokenType::COMMENT && tkn.type != TokenType::COMMA) {
             currentLine.push_back(tkn);
@@ -259,7 +262,7 @@ std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecond
     std::vector<TokenizedInstruction> finalPassTokenizedInstructions {};
     //form instructions or some shit, resolve references
     int numLines = 0;
-    int instructionIndex = 0;
+    int instructionIndex_ = 0;
     for (const std::vector<Token> &line : tokenLines) {
          numLines++;
         if (line.empty()) {
@@ -271,9 +274,9 @@ std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecond
             continue; //blank line
         }
         if (firstTknType == TokenType::LABEL) {
-            labelMap.emplace(line.at(0).body.substr(0, line.at(0).body.length() - 1), instructionIndex * 8);
+            continue;
         }
-        else if (firstTknType == TokenType::CONST) {
+        if (firstTknType == TokenType::CONST) {
             if (line.size() > 3 && line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
                     && (line.at(3).type == TokenType::DECIMAL
                     || line.at(3).type == TokenType::HEX
@@ -308,8 +311,8 @@ std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecond
         }
         //lines that SHOULD get made into instructions
         else if (firstTknType == TokenType::OPERATION) {
-            instructionIndex++;
-            TokenizedInstruction instrForThisLine = parseLineOfTokens(line, labelMap, constMap, instructionIndex);
+            instructionIndex_++;
+            TokenizedInstruction instrForThisLine = parseLineOfTokens(line, labelMap, constMap, instructionIndex_);
             finalPassTokenizedInstructions.emplace_back(instrForThisLine);
         } else {
             throwAFit(numLines);
@@ -351,7 +354,8 @@ assembler::TokenizedInstruction assembler::parseLineOfTokens(const std::vector<T
     bool inChar = false;
     std::vector<Operand> operands {};
     std::vector<Token> tokensForOperand {};
-    for (Token &tkn : revisedTokens) {
+    Token prevTkn{'\0'};
+    for (const Token &tkn : revisedTokens) {
         if (tkn.type == TokenType::LBRACKET) {
             inPtr = true;
             tokensForOperand.emplace_back(tkn);
@@ -363,6 +367,20 @@ assembler::TokenizedInstruction assembler::parseLineOfTokens(const std::vector<T
         } else if (inChar && tkn.type == TokenType::SING_QUOTE) {
             inChar = false;
             tokensForOperand.emplace_back(tkn);
+
+            // If the char literal is just '', replace it with '\s'
+            if (tokensForOperand.size() == 2 &&
+                tokensForOperand[0].type == TokenType::SING_QUOTE &&
+                tokensForOperand[1].type == TokenType::SING_QUOTE) {
+
+                tokensForOperand = {
+                    Token("'"),
+                    Token("\\s"),
+                    Token("'")
+                };
+                LOG("Empty char literal detected. Assumed a space was written or intended -> substituted with \\s");
+                }
+
             operands.emplace_back(tokensForOperand);
             tokensForOperand.clear();
         } else if (tkn.type == TokenType::SING_QUOTE) {
@@ -448,7 +466,8 @@ assembler::TokenType assembler::Token::deduceTokenType(const std::string &text) 
     else if (std::regex_match(text, std::regex("^[0-9]+$"))) type = TokenType::DECIMAL;
     else if (text[0] == '#') type = TokenType::COMMENT;
     else if (text[0] == '\n') type = TokenType::EOL;
-    else if (text.length() == 1 && std::isalpha(text[0])) type = TokenType::CHAR;
+    else if (text.length() == 1 && (std::isalpha(text[0]) || validSymbols.contains(text[0]))) type = TokenType::CHAR;
+    else if (text == "\\s") type = TokenType::CHAR_SPACE;
     else if (text.length() > 1 && text.back() == ':') type = TokenType::LABEL; //needs trimming?
     else if (text == ".const") type = TokenType::CONST;
     else if (std::ranges::all_of(text, [](char c) { return (std::isalnum(c) || c == '_'); })) type = TokenType::REF;
@@ -489,6 +508,8 @@ void assembler::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const 
     } else if (operands.size() == 2) {
         dest = operands.at(0);
         src1 = operands.at(1);
+    } else if (operands.size() == 1 && opE == isa::Opcode_E::PUSH) {
+        src1 = operands.at(0);
     } else if (operands.size() == 1) {
         dest = operands.at(0);
     }
@@ -556,7 +577,8 @@ assembler::Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens
     if (significantToken.type == TokenType::HEX
         || significantToken.type == TokenType::BIN
         || significantToken.type == TokenType::DECIMAL
-        || significantToken.type == TokenType::CHAR)
+        || significantToken.type == TokenType::CHAR
+        || significantToken.type == TokenType::CHAR_SPACE)
     {
         valueType = ValueType::IMM;
     } else {
@@ -580,6 +602,12 @@ uint16_t assembler::Operand::resolveInto16BitLiteral() const {
     }
     if (significantToken.type == TokenType::BIN) {
         return std::stoi(significantBody.substr(2), nullptr, 2);
+    }
+    if (significantToken.type == TokenType::CHAR) {
+        return static_cast<uint16_t>(significantBody.at(0));
+    }
+    if (significantToken.type == TokenType::CHAR_SPACE) {
+        return 32; //value of space character
     }
     return {};
 }

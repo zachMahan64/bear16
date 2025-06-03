@@ -130,7 +130,7 @@ void CPU16::step() {
     //fetch & prelim. decoding
     std::cout << "PC: " << std::to_string(pc) << std::endl;
     auto instr = parts::Instruction(fetchInstruction());
-    pc += 8;
+    if (!pcIsStopped) pc += 8;
     //execute & writeback
     execute(instr);
 }
@@ -415,10 +415,12 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         case(isa::Opcode_E::PUSH): {
             stackPtr.set(stackPtr.val - 2);
             writeWordToMem(stackPtr.val, src1Val);
+            std::cout << "DEBUG: pushing " << src1Val << " to " << stackPtr.val << std::endl;
             break;
         }
         case(isa::Opcode_E::POP): {
             src1Val = fetchWordFromMem(stackPtr.val);
+            std::cout << "DEBUG: popping " << src1Val << " from " << stackPtr.val << std::endl;
             stackPtr.set(stackPtr.val + 2);
             writeback(dest, src1Val);
             break;
@@ -437,12 +439,16 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         }
         case(isa::Opcode_E::MEMCPY): {
             //enter loop
+            std::cout << "DEBUG: MEMCPY" << std::endl;
             if (tickWaitCnt == 0 && tickWaitStopPt == 0) {
                 tickWaitStopPt = src2Val;
                 pcIsStopped = true;
+                pc -= 8; //repeat this instr
             }
             //instr loops to copy bytes in order
             if (pcIsStopped) {
+                std::cout << "DEBUG: MEMCPY LOOP" << std::endl;
+                std::cout << "tickWaitStopPt: " << tickWaitCnt << std::endl;
                 uint16_t startingSrcAddr = src1Val;
                 uint16_t startingDestAddr = dest;
                 writeByteToMem(startingDestAddr + tickWaitCnt, fetchByteFromMem(startingSrcAddr + tickWaitCnt));
@@ -450,9 +456,12 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
                     tickWaitCnt = 0; //reset
                     tickWaitStopPt = 0; //reset
                     pcIsStopped = false;
+                    pc += 8; //restore proper pc
+                } else {
+                    tickWaitCnt++;
                 }
-                tickWaitCnt++;
             }
+            break;
         }
         case(isa::Opcode_E::SW): {
             writeWordToMem(src1Val + dest, src2Val);
@@ -612,10 +621,19 @@ inline std::array<uint8_t, 2> CPU16::convertWordToBytePair(uint16_t val) {
 inline void CPU16::writeWordToMem(uint16_t addr, uint16_t val) {
     sram[addr] = static_cast<uint8_t>(val & 0xFF);
     sram[addr + 1] = static_cast<uint8_t>((val >> 8) & 0xFF);
-    std::cout << "addr: " << addr << " val:" << val << std::endl;
+    std::cout << std::dec << "DEBUG: addr: " << addr << " val:" << val << std::endl << std::hex;
 }
 void CPU16::writeByteToMem(uint16_t addr, uint8_t val) {
     sram[addr] = val;
+    std::cout << std::dec << "DEBUG: addr: " << addr << " val:" << val << std::endl << std::hex;
+}
+
+void CPU16::printSectionOfMem(uint16_t& startingAddr, uint16_t& numBytes, bool asChar) const {
+    std::cout << "Starting Address: " << startingAddr << " | # bytes read: " << numBytes << std::endl;
+    for (uint16_t i = 0; i < numBytes; i++) {
+        if (asChar) std::cout << "Index: " << i << " = " << sram.at(startingAddr + i) << "\n";
+        else std::cout << "Index: " << i << " = " << static_cast<int>(sram.at(startingAddr + i)) << "\n";
+       }
 }
 
 

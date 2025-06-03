@@ -63,6 +63,9 @@ public: //only all public for debugging ease
     static std::array<uint8_t, 2> convertWordToBytePair(uint16_t val);
     void writeWordToMem(uint16_t addr, uint16_t val); //little endian
     void writeByteToMem(uint16_t addr, uint8_t val);
+
+    //diagnostic
+    void printSectionOfMem(uint16_t& startingAddr, uint16_t& numBytes, bool asChars) const;
 };
 class Board {
     bool power = true;
