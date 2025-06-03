@@ -520,6 +520,14 @@ void assembler::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const 
     } if (src2 && opHasNoWritImm && src2->valueType == ValueType::IMM) {
         LOG("Corrected imm to i2 for " + opcode.token.body);
         i2 = true;
+    }
+    if (!src1) {
+        LOG("Corrected imm to i1 for (absent operand)" + opcode.token.body);
+        i1 = true;
+    }
+    if (!src2) {
+        LOG("Corrected imm to i2 for (absent operand)" + opcode.token.body);
+        i2 = true;
     } if (opcode.immType == ImmType::I) {
         i1 = true;
         i2 = true;
