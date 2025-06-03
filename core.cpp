@@ -176,6 +176,8 @@ void CPU16::execute(parts::Instruction instr) {
     } else if (instr.src2 == 0x0012) {
         src2Val = stackPtr.val;
     } else if (instr.src1 == 0x0013) {
+        src1Val = framePtr.val;
+    } else if (instr.src1 == 0x0014) {
         src1Val = pc;
     } else {
         std::cout << "ERROR: unknown operand (src2): "  << std::hex << std::setw(4) << std::setfill('0') << instr.src2 << std::endl;
@@ -464,7 +466,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             break;
         }
         case(isa::Opcode_E::SW): {
-            writeWordToMem(src1Val + dest, src2Val);
+            writeWordToMem(src1Val + getValInReg(dest), src2Val);
             std::cout << "DEBUG: SW " << std::endl;
             break;
         }
@@ -589,7 +591,7 @@ void CPU16::writeback(uint16_t dest, uint16_t val) {
         std::cout << "ERROR: Unknown dest when writing back: " << std::hex << std::setw(4) << std::setfill('0') << dest << std::endl;
     }
 }
-uint16_t CPU16::peekInReg(uint16_t reg) const {
+uint16_t CPU16::getValInReg(uint16_t reg) const {
     uint16_t regVal = 0;
     if (reg < NUM_GEN_REGS) {
         regVal = genRegs[reg].val;
@@ -597,8 +599,10 @@ uint16_t CPU16::peekInReg(uint16_t reg) const {
         regVal = inps[reg - NUM_GEN_REGS];
     } else if (reg == 0x0012) {
         regVal = stackPtr.val;
-    } else {
-        std::cout << "ERROR: Unknown dest when peeking" << std::endl;
+    } else if (reg == 0x0013) {
+        regVal = framePtr.val;
+    }else {
+        std::cout << "ERROR: Unknown dest when getValInReg" << std::endl;
     }
     return regVal;
 }

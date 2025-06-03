@@ -4,8 +4,8 @@ start:
     mov a0, FIB_END #pass desired fib num to calculate
     call fibonacci
 end:
-    lea t0, RESULT_LOC ####
-    sw 0, t0, s2 # issue lies in the fact that dest is being handled literally (reading reg name, not reg value)
+    lea t0, RESULT_LOC
+    sw t0, s2 # storing result little-endian @ RESULT_LOC
     hlt
 
 fibonacci:

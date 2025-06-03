@@ -56,7 +56,7 @@ public: //only all public for debugging ease
     void doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val);
     void doVid(uint16_t op14, uint16_t src1Val, uint16_t src2Val);
     void writeback(uint16_t dest, uint16_t val);
-    [[nodiscard]] uint16_t peekInReg(uint16_t reg) const;
+    [[nodiscard]] uint16_t getValInReg(uint16_t reg) const;
     [[nodiscard]] uint16_t fetchByteAsWordFromMem(uint16_t addr) const;
     [[nodiscard]] uint8_t fetchByteFromMem(uint16_t addr) const;
     [[nodiscard]] uint16_t fetchWordFromMem(uint16_t addr) const; //little endian
