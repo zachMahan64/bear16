@@ -17,12 +17,41 @@
 #include <filesystem>
 
 
-//Board and loading ROM stuff
-Board::Board(std::size_t romSize, std::size_t sramSize)
-        : ROM_SIZE(romSize),
-          SRAM_SIZE(sramSize),
-          cpu(romSize, sramSize)
-{}
+Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(enableDebug) {}
+
+//Board and loading ROM stuff -------------------------------------------------------
+int Board::run() {
+    constexpr int DELAY = 0;
+    clock.resetCycles(); //set clock cycles to zero @ the start of a new process
+    do {
+        clock.tick(DELAY);
+        if (clock.bit) cpu.step();
+    } while (cpu.cpuIsHalted == false && cpu.pc <= ROM_SIZE);
+    if (cpu.pc >= ROM_SIZE) std::cerr << "ERROR: PC overflowed" << std::endl;
+    return 0;
+}
+void Board::printDiagnostics() const {
+    std::cout << std::dec;
+    std::cout << "RESULTS\n========" << std::endl;
+    std::cout << "pc: " << cpu.getPc() << std::endl;
+    std::cout << "t0: " << cpu.getValInReg(0) << std::endl;
+    std::cout << "t1: " << cpu.getValInReg(1) << std::endl;
+    std::cout << "t2: " << cpu.getValInReg(2) << std::endl;
+    std::cout << "t3: " << cpu.getValInReg(3) << std::endl;
+    std::cout << "s0: " << cpu.getValInReg(4) << std::endl;
+    std::cout << "s1: " << cpu.getValInReg(5) << std::endl;
+    std::cout << "s2: " << cpu.getValInReg(6) << std::endl;
+    std::cout << "s3: " << cpu.getValInReg(7) << std::endl;
+    std::cout << "s4: " << cpu.getValInReg(8) << std::endl;
+    std::cout << "s5: " << cpu.getValInReg(9) << std::endl;
+    std::cout << "s6: " << cpu.getValInReg(10) << std::endl;
+    uint16_t startingAddr = 4096;
+    uint16_t numBytes = 20;
+    cpu.printSectionOfMem(startingAddr, numBytes, false);
+    std::cout << "Total cycles: " << clock.getCycles() << std::endl;
+    std::cout << "=====================" << std::endl;
+}
+
 void Board::loadRomFromBinInTxtFile(const std::string &path) {
     std::ifstream file(path);
     std::vector<uint8_t> byteRom{};
@@ -109,26 +138,26 @@ void Board::loadRomFromHexInTxtFile(const std::string &path) {
     std::cout << "------------ROM loaded------------" << std::endl;
     cpu.setRom(byteRom);
 }
-void Board::loadRomFromManualBinVec(std::vector<uint8_t> rom) {
-    cpu.setRom(std::move(rom));
+void Board::loadRomFromByteVector(std::vector<uint8_t>& rom) {
+    cpu.setRom(rom);
 }
+
+//CPU ----------------------------------------------------------------------------
 uint16_t CPU16::getPc() const {
     return pc;
 }
-void CPU16::setRom(std::vector<uint8_t> rom) {
-    this->rom = std::move(rom);
+void CPU16::setRom(std::vector<uint8_t>& rom) {
+    if (rom.size() > isa::ROM_SIZE) {
+        std::cerr << "ERROR: ROM size exceeds " << isa::ROM_SIZE << " bytes" << std::endl;
+        return;
+    }
+    std::ranges::copy(rom, this->rom.begin());
 }
 
-//CPU16 inner workings
-void Board::run() {
-    do {
-        cpu.step();
-    } while (cpu.cpuIsHalted == false && cpu.pc <= ROM_SIZE);
-    if (cpu.pc >+ ROM_SIZE) std::cerr << "ERROR: PC overflowed" << std::endl;
-} //incomplete, doesn't use clock
+//CPU16 flow of execution
 void CPU16::step() {
     //fetch & prelim. decoding
-    std::cout << "PC: " << std::to_string(pc) << std::endl;
+    if (isEnableDebug) std::cout << "DEBUG: PC = " << std::to_string(pc) << std::endl;
     auto instr = parts::Instruction(fetchInstruction());
     if (!pcIsStopped) pc += 8;
     //execute & writeback
@@ -354,7 +383,7 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
         }
         if (cond) {
             setPc(dest); //sets program counter to the value in dest (for single op jumps)
-            std::cout << "DEBUG: cond true, jumping to " << dest << std::endl;
+            if (isEnableDebug) std::cout << "DEBUG: cond true, jumping to " << dest << std::endl;
         }
     } else {
         switch (thisOp) { //set flags in flagReg manually
@@ -417,12 +446,12 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         case(isa::Opcode_E::PUSH): {
             stackPtr.set(stackPtr.val - 2);
             writeWordToMem(stackPtr.val, src1Val);
-            std::cout << "DEBUG: pushing " << src1Val << " to " << stackPtr.val << std::endl;
+            if (isEnableDebug) std::cout << "DEBUG: pushing " << src1Val << " to " << stackPtr.val << std::endl;
             break;
         }
         case(isa::Opcode_E::POP): {
             src1Val = fetchWordFromMem(stackPtr.val);
-            std::cout << "DEBUG: popping " << src1Val << " from " << stackPtr.val << std::endl;
+            if (isEnableDebug) std::cout << "DEBUG: popping " << src1Val << " from " << stackPtr.val << std::endl;
             stackPtr.set(stackPtr.val + 2);
             writeback(dest, src1Val);
             break;
@@ -441,7 +470,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         }
         case(isa::Opcode_E::MEMCPY): {
             //enter loop
-            std::cout << "DEBUG: MEMCPY" << std::endl;
+            if (isEnableDebug) std::cout << "DEBUG: MEMCPY" << std::endl;
             if (tickWaitCnt == 0 && tickWaitStopPt == 0) {
                 tickWaitStopPt = src2Val;
                 pcIsStopped = true;
@@ -449,7 +478,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             }
             //instr loops to copy bytes in order
             if (pcIsStopped) {
-                std::cout << "DEBUG: MEMCPY LOOP" << std::endl;
+                if (isEnableDebug) std::cout << "DEBUG: MEMCPY LOOP" << std::endl;
                 std::cout << "tickWaitStopPt: " << tickWaitCnt << std::endl;
                 uint16_t startingSrcAddr = src1Val;
                 uint16_t startingDestAddr = dest;
@@ -467,7 +496,6 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         }
         case(isa::Opcode_E::SW): {
             writeWordToMem(src1Val + getValInReg(dest), src2Val);
-            std::cout << "DEBUG: SW " << std::endl;
             break;
         }
         case (isa::Opcode_E::SB): {
@@ -553,7 +581,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             break;
         }
         case(isa::Opcode_E::HLT): {
-            std::cout << "debug: HALTED" << std::endl;
+            if (isEnableDebug) std::cout << "debug: HALTED" << std::endl;
             pcIsStopped = true;
             cpuIsHalted = true;
             break;
@@ -578,7 +606,7 @@ void CPU16::setPc(const uint16_t newPc) {
     pc = newPc;
 }
 void CPU16::writeback(uint16_t dest, uint16_t val) {
-    std::cout << "DEBUG: writeback: " << std::hex << std::setw(4) << std::setfill('0') << dest << " " << val << std::endl;
+    if (isEnableDebug) std::cout << "DEBUG: writeback: " << std::hex << std::setw(4) << std::setfill('0') << dest << " " << val << std::endl;
     if (dest < NUM_GEN_REGS) {
         genRegs[dest].set(val);
     } else if (dest < NUM_GEN_REGS + NUM_IO) {
@@ -625,15 +653,16 @@ inline std::array<uint8_t, 2> CPU16::convertWordToBytePair(uint16_t val) {
 inline void CPU16::writeWordToMem(uint16_t addr, uint16_t val) {
     sram[addr] = static_cast<uint8_t>(val & 0xFF);
     sram[addr + 1] = static_cast<uint8_t>((val >> 8) & 0xFF);
-    std::cout << std::dec << "DEBUG: addr: " << addr << " val:" << val << std::endl << std::hex;
+    if (isEnableDebug) std::cout << std::dec << "DEBUG: wrote word to addr " << addr << ", val:" << val << std::endl << std::hex;
 }
 void CPU16::writeByteToMem(uint16_t addr, uint8_t val) {
     sram[addr] = val;
-    std::cout << std::dec << "DEBUG: addr: " << addr << " val:" << val << std::endl << std::hex;
+    if (isEnableDebug) std::cout << std::dec << "DEBUG: wrote byte to addr " << addr << ", val:" << val << std::endl << std::hex;
 }
 
 void CPU16::printSectionOfMem(uint16_t& startingAddr, uint16_t& numBytes, bool asChar) const {
     std::cout << "Starting Address: " << startingAddr << " | # bytes read: " << numBytes << std::endl;
+    std::cout << "Leading word @ starting addr: " << fetchWordFromMem(startingAddr) << "\n";
     for (uint16_t i = 0; i < numBytes; i++) {
         if (asChar) std::cout << "Index: " << i << " = " << sram.at(startingAddr + i) << "\n";
         else std::cout << "Index: " << i << " = " << static_cast<int>(sram.at(startingAddr + i)) << "\n";

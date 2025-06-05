@@ -7,25 +7,24 @@
 
 using namespace parts;
 
-// ─── Clock definitions ────────────────────────────────
+//clock
 void Clock::freeze()  { frozen = true;  }
 void Clock::unfreeze(){ frozen = false; }
 void Clock::tick() {
     if (frozen) return;
-    ++cycles;
     lastBit = bit;
     bit     = 1 - bit;
+    if (bit) ++cycles;
 }
-void Clock::tick(auto delayMillis) {
+void Clock::tick(int delayMillis) {
     if (frozen) return;
     std::this_thread::sleep_for(std::chrono::milliseconds(delayMillis));
     lastBit = bit;
     bit = 1 - bit;
+    if (bit) ++cycles;
 }
 
-// (tick<> in header)
-
-// ─── Instruction ctor ─────────────────────────────────
+//instr
 Instruction::Instruction(uint64_t raw) {
     opcode   = (raw >> 48) & 0xFFFFu;
     dest     = (raw >> 32) & 0xFFFFu;
@@ -44,13 +43,13 @@ uint64_t Instruction::toRaw() const {
 
 
 
-// ─── FlagRegister definitions ────────────────────────
+//flagRegister definitions
 void FlagRegister::reset() { carry = zero = negative = overflow = false; }
 void FlagRegister::setCarry(const bool carry)    { this->carry    = carry; }
 void FlagRegister::setZero(const bool zero)     { this->zero     = zero; }
 void FlagRegister::setNegative(const bool neg) { negative = neg; }
 void FlagRegister::setOverflow(const bool v) { overflow = v; }
 
-// ─── GenRegister definitions ─────────────────────────
+//genRegister definitions
 void GenRegister::set(uint16_t v) { val = v; }
 void GenRegister::reset()         { val = 0; }

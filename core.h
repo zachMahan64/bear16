@@ -16,35 +16,33 @@
 #include <cstddef>
 
 class CPU16 {
+    bool isEnableDebug = false;
 public: //only all public for debugging ease
     //ISA specs
-    const short NUM_GEN_REGS = isa::GEN_REG_COUNT;
+    const size_t NUM_GEN_REGS = isa::GEN_REG_COUNT;
     const short NUM_IO = isa::IO_COUNT;
     //MEMORY
-    std::vector<uint8_t> sram;
-    std::vector<uint8_t> rom;
+    std::array<uint8_t, isa::SRAM_SIZE> sram {};
+    std::array<uint8_t, isa::SRAM_SIZE> rom {};
     //CTRL FLOW (primitive registers)
     uint16_t pc = 0;
     uint16_t tickWaitCnt = 0; //for multicycle operations
     uint16_t tickWaitStopPt = 0;
     bool pcIsStopped = false;
     bool cpuIsHalted = false;
-    //CLOCK
-    parts::Clock clk = parts::Clock();
     //IO
-    std::vector<uint16_t> inps  = std::vector<uint16_t>(NUM_IO);
-    std::vector<uint16_t> outs  = std::vector<uint16_t>(NUM_IO);
+    std::array<uint16_t, isa::IO_COUNT> inps {};
+    std::array<uint16_t, isa::IO_COUNT> outs {};
     //REG
-    std::vector<parts::GenRegister> genRegs = std::vector<parts::GenRegister>(NUM_GEN_REGS);
+    std::array<parts::GenRegister, isa::GEN_REG_COUNT> genRegs{};
     parts::FlagRegister flagReg = parts::FlagRegister();
     parts::GenRegister  stackPtr = parts::GenRegister(static_cast<uint16_t>(isa::SRAM_SIZE)); //sp stacks at end of RAM for downward growth
     parts::GenRegister  framePtr = parts::GenRegister(static_cast<uint16_t>(isa::SRAM_SIZE));
-//public:
     //Constr
-    CPU16(std::size_t romSize, std::size_t sramSize) : sram(sramSize), rom(romSize) {}
+    explicit CPU16(bool enableDebug) : isEnableDebug(enableDebug) {};
     //doStuff
     [[nodiscard]] uint16_t getPc() const;
-    void setRom(std::vector<uint8_t> rom);
+    void setRom(std::vector<uint8_t>& rom);
     void step();
     uint64_t fetchInstruction();
     void execute(parts::Instruction instr);
@@ -69,17 +67,20 @@ public: //only all public for debugging ease
 };
 class Board {
     bool power = true;
-    const std::size_t ROM_SIZE;
-    const std::size_t SRAM_SIZE;
+    bool isEnableDebug = false;
+    const std::size_t ROM_SIZE = isa::ROM_SIZE;
+    const std::size_t SRAM_SIZE = isa::SRAM_SIZE;
     uint64_t input  = 0;
     uint64_t output = 0;
 public:
     CPU16 cpu; //public for testing purposes (change later)
-    Board(std::size_t romSize, std::size_t sramSize);
-    void run();
+    parts::Clock clock = parts::Clock();
+    explicit Board(bool enableDebug);
+    int run();
+    void printDiagnostics() const;
     void loadRomFromBinInTxtFile(const std::string &path);
     void loadRomFromHexInTxtFile(const std::string &path);
-    void loadRomFromManualBinVec(std::vector<uint8_t> rom);
+    void loadRomFromByteVector(std::vector<uint8_t>& rom);
 };
 
 #endif //CORE_H

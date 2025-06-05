@@ -10,7 +10,9 @@ add_executable(cpu_emulator_take_1
         parts.h
         core.cpp
         core.h
-        assembler.cpp
-        assembler.h
+        assembly.cpp
+        assembly.h
+        emu.cpp
+        emu.h
 )
 

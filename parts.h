@@ -10,15 +10,21 @@
 namespace parts {
     class Clock {
         uint64_t cycles = 0;
-        uint16_t bit = 0;
-        uint16_t lastBit = 0;
-        bool frozen = false;
     public:
+        [[nodiscard]] uint64_t getCycles() const {
+            return cycles;
+        }
+        void resetCycles() {
+            cycles = 0;
+        }
+        bool bit = false;
+        bool lastBit = false;
+        bool frozen = false;
         Clock() = default;
         void freeze();
         void unfreeze();
         void tick();
-        void tick(auto delayMillis);
+        void tick(int delayMillis);
     };
     class Instruction {
     public:

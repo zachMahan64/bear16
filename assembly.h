@@ -7,13 +7,13 @@
 #include <cstdint>
 #include <unordered_set>
 
-#include "assembler.h"
+#include "assembly.h"
 #include "isa.h"
 #include "parts.h"
 
 #ifndef ASSEMBLER_H
 #define ASSEMBLER_H
-namespace assembler {
+namespace assembly {
     class Token;
     class TokenizedInstruction;
 
@@ -374,12 +374,12 @@ namespace assembler {
         isa::Opcode_E::SW, isa::Opcode_E::SB
     };
     inline const std::unordered_set<char> validSymbols = {
-        '!'
+        '!', '@', '/', '\\', '$', '%', '&', '^', '*', '(', ')', '\'', '~'
     };
 
-    //main dude
+    //main class
     class Assembler {
-    public: //temporarily
+    public:
         bool isEnableDebug = true;
         bool doNotAutoCorrectImmediates = false;
         Assembler(bool enableDebug, bool doNotAutoCorrectImmediates)
@@ -387,31 +387,28 @@ namespace assembler {
 
         static Assembler initInstance(bool enableDebug, bool doNotAutoCorrectImmediates) {
             return {enableDebug, doNotAutoCorrectImmediates};
-        }
-        void killInstance() {
-            this->~Assembler();
-        }
+        } //likely unnecessary
+        //reading asm file
         std::vector<uint8_t> assembleFromFile(const std::string &path);
-    };
-
-    //reading asm file
-    std::vector<Token> tokenizeAsmFirstPass(const std::string &filename);
-    std::vector<TokenizedInstruction> parseFirstPassIntoSecondPass(std::vector<Token> &tokens);
-    TokenizedInstruction parseLineOfTokens(const std::vector<Token> &line,
+    private:
+        static std::vector<Token> tokenizeAsmFirstPass(const std::string &filename);
+        static std::vector<TokenizedInstruction> parseFirstPassIntoSecondPass(std::vector<Token> &tokens);
+        static TokenizedInstruction parseLineOfTokens(const std::vector<Token> &line,
                                            std::unordered_map<std::string, uint16_t> &labelMap,
                                            std::unordered_map<std::string, uint16_t> &constMap,
                                            int &instructionIndex
-    );
-    std::vector<parts::Instruction> getLiteralInstructions(const std::vector<TokenizedInstruction>& tknInstructions);
-    void printLiteralInstruction(const parts::Instruction &litInstr); //debug
-    std::vector<uint8_t> buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction> &literalInstructions);
-    std::vector<uint8_t> build8ByteVecFromSingleLiteralInstruction(const parts::Instruction &literalInstruction);
-    inline void throwAFit(const int &lineNum) {
-        std::cerr << "MISTAKE MADE ON WRITTEN LINE " << lineNum << std::endl;
-    }
-    inline void throwAFit(const std::string &ref) {
-        std::cerr << "MISTAKE MADE IN USAGE OR DEFINITION OF " << ref << std::endl;
-    }
+        );
+        static std::vector<parts::Instruction> getLiteralInstructions(const std::vector<TokenizedInstruction>& tknInstructions);
+        static void printLiteralInstruction(const parts::Instruction &litInstr); //debug
+        static std::vector<uint8_t> buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction> &literalInstructions);
+        static std::vector<uint8_t> build8ByteVecFromSingleLiteralInstruction(const parts::Instruction &literalInstruction);
+        static void throwAFit(const int &lineNum) {
+            std::cerr << "MISTAKE MADE ON WRITTEN LINE " << lineNum << std::endl;
+        }
+        static void throwAFit(const std::string &ref) {
+            std::cerr << "MISTAKE MADE IN USAGE OR DEFINITION OF " << ref << std::endl;
+        }
+    };
 
     //gen tokens
     enum class TokenType {

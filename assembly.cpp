@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <iterator>
 #include <regex>
-#include "assembler.h"
+#include "assembly.h"
 
 #define LOG(x) std::cout << x << std::endl
 #define LOG_ERR(x) std::cerr << x << std::endl
@@ -116,7 +116,7 @@ void asmToBinMapGenerator() {
     }
     std::cout << "};\n";
 } //updated 5/28/2025
-std::vector<uint8_t> assembler::Assembler::assembleFromFile(const std::string &path) {
+std::vector<uint8_t> assembly::Assembler::assembleFromFile(const std::string &path) {
     auto allTokens = tokenizeAsmFirstPass(path);
     auto allTokenizedInstructions = parseFirstPassIntoSecondPass(allTokens);
     auto literalInstructions = getLiteralInstructions(allTokenizedInstructions);
@@ -124,7 +124,7 @@ std::vector<uint8_t> assembler::Assembler::assembleFromFile(const std::string &p
 }
 
 //main passes
-std::vector<assembler::Token> assembler::tokenizeAsmFirstPass(const std::string &path) {
+std::vector<assembly::Token> assembly::Assembler::tokenizeAsmFirstPass(const std::string &path) {
     std::vector<Token> firstPassTokens {};
 
     std::ifstream file(path, std::ios::in | std::ios::binary);
@@ -204,7 +204,7 @@ std::vector<assembler::Token> assembler::tokenizeAsmFirstPass(const std::string 
 
     return firstPassTokens;
 }
-std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecondPass(std::vector<Token> &tokens) {
+std::vector<assembly::TokenizedInstruction> assembly::Assembler::parseFirstPassIntoSecondPass(std::vector<Token> &tokens) {
     //look-up tables
     std::unordered_map<std::string, uint16_t> labelMap = {};
     std::unordered_map<std::string, uint16_t> constMap = {};
@@ -322,7 +322,7 @@ std::vector<assembler::TokenizedInstruction> assembler::parseFirstPassIntoSecond
     return finalPassTokenizedInstructions;
 }
 //sub section of pass two
-assembler::TokenizedInstruction assembler::parseLineOfTokens(const std::vector<Token> &line,
+assembly::TokenizedInstruction assembly::Assembler::parseLineOfTokens(const std::vector<Token> &line,
         std::unordered_map<std::string, uint16_t> &labelMap,
         std::unordered_map<std::string, uint16_t> &constMap,
         int &instructionIndex
@@ -399,7 +399,7 @@ assembler::TokenizedInstruction assembler::parseLineOfTokens(const std::vector<T
     return instrForThisLine;
 }
 
-std::vector<parts::Instruction> assembler::getLiteralInstructions(const std::vector<TokenizedInstruction>& tknInstructions) {
+std::vector<parts::Instruction> assembly::Assembler::getLiteralInstructions(const std::vector<TokenizedInstruction>& tknInstructions) {
     std::vector<parts::Instruction> literalInstructions {};
     literalInstructions.reserve(tknInstructions.size());
     for (const TokenizedInstruction &tknInstr : tknInstructions) {
@@ -411,7 +411,7 @@ std::vector<parts::Instruction> assembler::getLiteralInstructions(const std::vec
     return literalInstructions;
 }
 
-void assembler::printLiteralInstruction(const parts::Instruction &litInstr) {
+void assembly::Assembler::printLiteralInstruction(const parts::Instruction &litInstr) {
     std::cout << "INSTR (DEBUG):\n";
     std::cout << "Opcode: " << std::hex << std::setw(4) << std::setfill('0') << litInstr.opcode << "\n";
     std::cout << "Imm: " << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(litInstr.immFlags) << "\n";
@@ -422,7 +422,7 @@ void assembler::printLiteralInstruction(const parts::Instruction &litInstr) {
     std::cout << "\n";
 } //debug
 
-std::vector<uint8_t> assembler::buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction>& literalInstructions) {
+std::vector<uint8_t> assembly::Assembler::buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction>& literalInstructions) {
     std::vector<uint8_t> byteVec;
     byteVec.reserve(literalInstructions.size() * 8);
 
@@ -433,7 +433,7 @@ std::vector<uint8_t> assembler::buildByteVecFromLiteralInstructions(const std::v
 
     return byteVec;
 }
-std::vector<uint8_t> assembler::build8ByteVecFromSingleLiteralInstruction(const parts::Instruction& literalInstruction) {
+std::vector<uint8_t> assembly::Assembler::build8ByteVecFromSingleLiteralInstruction(const parts::Instruction& literalInstruction) {
     const uint64_t raw = literalInstruction.toRaw();
     //std::cout << "Raw Instr (debug): " << std::hex << std::setw(16) << std::setfill('0') << raw << "\n";
     std::vector<uint8_t> byteVec {};
@@ -447,7 +447,7 @@ std::vector<uint8_t> assembler::build8ByteVecFromSingleLiteralInstruction(const 
 }
 
 //helpers
-assembler::TokenType assembler::Token::deduceTokenType(const std::string &text) {
+assembly::TokenType assembly::Token::deduceTokenType(const std::string &text) {
     TokenType type = TokenType::MISTAKE;
     if (opcodeToBinMap.contains(text)) {
         type = TokenType::OPERATION;
@@ -473,7 +473,7 @@ assembler::TokenType assembler::Token::deduceTokenType(const std::string &text) 
     else if (std::ranges::all_of(text, [](char c) { return (std::isalnum(c) || c == '_'); })) type = TokenType::REF;
     return type;
 }
-std::pair<std::string, std::string> assembler::splitOpcodeStr(std::string opcodeStr) {
+std::pair<std::string, std::string> assembly::splitOpcodeStr(std::string opcodeStr) {
     char lastChar = opcodeStr.back();
     if (lastChar == 'i') {
         return {opcodeStr.substr(0, opcodeStr.length() - 1), "i"};
@@ -486,7 +486,7 @@ std::pair<std::string, std::string> assembler::splitOpcodeStr(std::string opcode
     }
     return {opcodeStr, ""};
 }
-void assembler::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const bool& doNotAutoCorrectImmediates, std::vector<Operand> operands) {
+void assembly::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const bool& doNotAutoCorrectImmediates, std::vector<Operand> operands) {
     const isa::Opcode_E &opE = opcode.opcode_e;
     bool opHasNoWritImm = opcode.immType == ImmType::NO_IM;
     if (operands.size() < opcodeToOperandMinimumCountMap.at(opE)) {
@@ -540,7 +540,7 @@ void assembler::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const 
 } //WIP
 
 //constructors
-assembler::OpCode::OpCode(Token token): token(std::move(token)) {
+assembly::OpCode::OpCode(Token token): token(std::move(token)) {
     resolution = Resolution::UNRESOLVED;
     auto opCodeStrSplit = splitOpcodeStr(this->token.body);
     if (!stringToOpcodeMap.contains(opCodeStrSplit.first)) {
@@ -558,7 +558,7 @@ assembler::OpCode::OpCode(Token token): token(std::move(token)) {
         immType = ImmType::NO_IM;
     }
 }
-assembler::Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens)), significantToken('\0') {
+assembly::Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens)), significantToken('\0') {
     significantToken = this->tokens.at(0);
     //also symbolic support in the future
     resolution = Resolution::RESOLVED;
@@ -598,7 +598,7 @@ assembler::Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens
     LOG("full body:" + fullBody + ", significant body: " + significantBody + ", significant type: " + toString(significantToken.type));
 }
 
-uint16_t assembler::Operand::resolveInto16BitLiteral() const {
+uint16_t assembly::Operand::resolveInto16BitLiteral() const {
     if (namedOperandToBinMap.contains(significantBody)) {
         return namedOperandToBinMap.at(significantBody);
     }
@@ -620,12 +620,12 @@ uint16_t assembler::Operand::resolveInto16BitLiteral() const {
     return {};
 }
 
-//resolution (largely WIP)
-void assembler::TokenizedInstruction::resolve() {
-    opcode.resolution = Resolution::RESOLVED;
-}
 
-parts::Instruction assembler::TokenizedInstruction::getLiteralInstruction() const {
+void assembly::TokenizedInstruction::resolve() {
+    opcode.resolution = Resolution::RESOLVED;
+} // (largely WIP)
+
+parts::Instruction assembly::TokenizedInstruction::getLiteralInstruction() const {
     parts::Instruction thisInstr{};
     thisInstr.opCode14 = static_cast<uint16_t>(opcode.opcode_e);
     uint8_t i1 = this->i1 ? 1 : 0;
