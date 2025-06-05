@@ -17,7 +17,7 @@
 #define LOG(x) std::cout << x << std::endl
 #define LOG_ERR(x) std::cerr << x << std::endl
 
-//tools
+//tools ---------------------------------------------------------------------------------------------------------
 void asmToBinMapGenerator() {
     struct Instr {
         std::string base;
@@ -123,7 +123,7 @@ std::vector<uint8_t> assembly::Assembler::assembleFromFile(const std::string &pa
     return buildByteVecFromLiteralInstructions(literalInstructions); //completely broken apparently
 }
 
-//main passes
+//main passes ---------------------------------------------------------------------------------------------------------
 std::vector<assembly::Token> assembly::Assembler::tokenizeAsmFirstPass(const std::string &path) {
     std::vector<Token> firstPassTokens {};
 
@@ -446,7 +446,7 @@ std::vector<uint8_t> assembly::Assembler::build8ByteVecFromSingleLiteralInstruct
     return byteVec;
 }
 
-//helpers
+//helpers----------------------------------------------------------------------------------------------------------------
 assembly::TokenType assembly::Token::deduceTokenType(const std::string &text) {
     TokenType type = TokenType::MISTAKE;
     if (opcodeToBinMap.contains(text)) {
@@ -539,7 +539,7 @@ void assembly::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const b
 
 } //WIP
 
-//constructors
+//constructors for tokenized instruction components ----------------------------------------------------------------------
 assembly::OpCode::OpCode(Token token): token(std::move(token)) {
     resolution = Resolution::UNRESOLVED;
     auto opCodeStrSplit = splitOpcodeStr(this->token.body);
@@ -598,6 +598,7 @@ assembly::Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens)
     LOG("full body:" + fullBody + ", significant body: " + significantBody + ", significant type: " + toString(significantToken.type));
 }
 
+//methods for resolving tokenized instr into literals----------------------------------------------------------------------
 uint16_t assembly::Operand::resolveInto16BitLiteral() const {
     if (namedOperandToBinMap.contains(significantBody)) {
         return namedOperandToBinMap.at(significantBody);
@@ -619,11 +620,6 @@ uint16_t assembly::Operand::resolveInto16BitLiteral() const {
     }
     return {};
 }
-
-
-void assembly::TokenizedInstruction::resolve() {
-    opcode.resolution = Resolution::RESOLVED;
-} // (largely WIP)
 
 parts::Instruction assembly::TokenizedInstruction::getLiteralInstruction() const {
     parts::Instruction thisInstr{};
@@ -650,6 +646,11 @@ parts::Instruction assembly::TokenizedInstruction::getLiteralInstruction() const
     return thisInstr;
 
 }
+
+void assembly::TokenizedInstruction::resolve() {
+    opcode.resolution = Resolution::RESOLVED;
+} // (largely WIP)
+
 
 
 

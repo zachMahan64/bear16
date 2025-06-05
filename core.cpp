@@ -30,7 +30,7 @@ int Board::run() {
     if (cpu.pc >= ROM_SIZE) std::cerr << "ERROR: PC overflowed" << std::endl;
     return 0;
 }
-void Board::printDiagnostics() const {
+void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << std::dec;
     std::cout << "RESULTS\n========" << std::endl;
     std::cout << "pc: " << cpu.getPc() << std::endl;
@@ -47,7 +47,7 @@ void Board::printDiagnostics() const {
     std::cout << "s6: " << cpu.getValInReg(10) << std::endl;
     uint16_t startingAddr = 4096;
     uint16_t numBytes = 20;
-    cpu.printSectionOfMem(startingAddr, numBytes, false);
+    cpu.printSectionOfMem(startingAddr, numBytes, printMemAsChars);
     std::cout << "Total cycles: " << clock.getCycles() << std::endl;
     std::cout << "=====================" << std::endl;
 }

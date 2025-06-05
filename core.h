@@ -77,7 +77,7 @@ public:
     parts::Clock clock = parts::Clock();
     explicit Board(bool enableDebug);
     int run();
-    void printDiagnostics() const;
+    void printDiagnostics(bool printMemAsChars) const;
     void loadRomFromBinInTxtFile(const std::string &path);
     void loadRomFromHexInTxtFile(const std::string &path);
     void loadRomFromByteVector(std::vector<uint8_t>& rom);
