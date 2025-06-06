@@ -27,7 +27,7 @@ int Board::run() {
         clock.tick(DELAY);
         if (clock.bit) cpu.step();
     } while (cpu.cpuIsHalted == false && cpu.pc <= ROM_SIZE);
-    if (cpu.pc >= ROM_SIZE) std::cerr << "ERROR: PC overflowed" << std::endl;
+    if (cpu.pc >= ROM_SIZE) std::cerr << "ERROR: PC overflowed: " << cpu.pc << std::endl;
     return 0;
 }
 void Board::printDiagnostics(bool printMemAsChars) const {
@@ -156,13 +156,12 @@ void CPU16::setRom(std::vector<uint8_t>& rom) {
 
 //CPU16 flow of execution
 void CPU16::step() {
-    pcIsStoppedThisCycle = false;
     //fetch & prelim. decoding
     if (isEnableDebug) std::cout << "DEBUG: PC = " << std::to_string(pc) << std::endl;
     auto instr = parts::Instruction(fetchInstruction());
     //execute & writeback
     execute(instr);
-    if (!(pcIsFrozen || pcIsStoppedThisCycle)) {
+    if (!pcIsFrozen) {
         pc += 8;
     }
 }
@@ -385,7 +384,7 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
             }
         }
         if (cond) {
-            setPc(dest); //sets program counter to the value in dest (for single op jumps)
+            jumpTo(dest);
             if (isEnableDebug) std::cout << "DEBUG: cond true, jumping to " << dest << std::endl;
         }
     } else {
@@ -498,7 +497,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
                 }
             }
             break;
-        }
+        } //broken
         case(isa::Opcode_E::SW): {
             writeWordToRam(src1Val + getValInReg(dest), src2Val);
             break;
@@ -543,7 +542,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             // jump to function
             jumpTo(dest);
             break;
-        }
+        } //broken
         case(isa::Opcode_E::RET): {
             //free local frame
             stackPtr.set(stackPtr.val + isa::STACK_FRAME_SIZE); //=32
@@ -558,35 +557,35 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             framePtr.set(oldFP);
 
             //return to caller
-            pc = retAddr;
+            jumpTo(retAddr);
             break;
-        }
+        } //broken
         case(isa::Opcode_E::JMP): {
-            pc = dest;
+            jumpTo(dest);
             break;
         }
         case(isa::Opcode_E::JCOND_Z): {
-            if (flagReg.zero) pc = dest;
+            if (flagReg.zero) jumpTo(dest);
             break;
         }
         case (isa::Opcode_E::JCOND_NZ): {
-            if (!flagReg.zero) pc = dest;
+            if (!flagReg.zero) jumpTo(dest);
             break;
         }
         case (isa::Opcode_E::JCOND_NEG): {
-            if (flagReg.negative) pc = dest;
+            if (flagReg.negative) jumpTo(dest);
             break;
         }
         case (isa::Opcode_E::JCOND_NNEG): {
-            if (!flagReg.negative) pc = dest;
+            if (!flagReg.negative) jumpTo(dest);
             break;
         }
         case (isa::Opcode_E::JCOND_POS): {
-            if (!flagReg.negative && !flagReg.zero) pc = dest;
+            if (!flagReg.negative && !flagReg.zero) jumpTo(dest);
             break;
         }
         case (isa::Opcode_E::JCOND_NPOS): {
-            if (flagReg.negative || flagReg.zero) pc = dest;
+            if (flagReg.negative || flagReg.zero) jumpTo(dest);
             break;
         }
         case (isa::Opcode_E::NOP): {
@@ -615,9 +614,6 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
 }
 
 //gen purpose
-void CPU16::setPc(const uint16_t newPc) {
-    pc = newPc;
-}
 void CPU16::writeback(uint16_t dest, uint16_t val) {
     if (isEnableDebug) std::cout << "DEBUG: writeback: " << std::hex << std::setw(4) << std::setfill('0') << dest << " " << val << std::endl;
     if (dest < NUM_GEN_REGS) {
@@ -694,5 +690,4 @@ inline uint16_t CPU16::fetchWordFromRom(uint16_t addr) const {
 }
 void CPU16::jumpTo(const uint16_t& destAddrInRom) {
     pc = destAddrInRom;
-    pcIsStoppedThisCycle = true;
 }

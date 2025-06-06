@@ -50,7 +50,6 @@ public: //only all public for debugging ease
     void performOp(const parts::Instruction &instr, uint16_t src1Val, uint16_t src2Val);
     void doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest);
     void doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest);
-    void setPc(uint16_t newPc);
     void doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val);
     void doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val);
     void doVid(uint16_t op14, uint16_t src1Val, uint16_t src2Val);
