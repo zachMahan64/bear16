@@ -161,10 +161,10 @@ void CPU16::step() {
     auto instr = parts::Instruction(fetchInstruction());
     //execute & writeback
     execute(instr);
-    if (!pcIsFrozen && !pcIsStoppedThisCycle) {
+    if (!pcIsFrozen) {
         pc += 8;
     }
-    pcIsStoppedThisCycle = false;
+    pcIsFrozen = false;
 }
 //fetch
 uint64_t CPU16::fetchInstruction() {
@@ -476,11 +476,10 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             if (isEnableDebug) std::cout << "DEBUG: MEMCPY" << std::endl;
             if (tickWaitCnt == 0 && tickWaitStopPt == 0) {
                 tickWaitStopPt = src2Val;
-                pcIsFrozen = true;
-                pc -= 8; //repeat this instr
+                isInMemcpyLoop = true;
             }
             //instr loops to copy bytes in order
-            if (pcIsFrozen) {
+            if (isInMemcpyLoop) {
                 if (isEnableDebug) {
                     std::cout << "DEBUG: MEMCPY LOOP" << std::endl;
                     std::cout << "tickWaitStopPt: " << tickWaitCnt << std::endl;
@@ -495,6 +494,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
                     pc += 8; //restore proper pc
                 } else {
                     tickWaitCnt++;
+                    pcIsFrozen = true; //freeze pc
                 }
             }
             break;
@@ -600,8 +600,8 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             break;
         }
         case(isa::Opcode_E::JAL): {
-            writeback(isa::RA_INDEX, pc); //set ra to next instruction
-            jumpTo(dest - 8);
+            writeback(isa::RA_INDEX, pc + 8); //set ra to next instruction
+            jumpTo(dest);
             break;
             }
         case(isa::Opcode_E::RETL): {
@@ -691,5 +691,5 @@ inline uint16_t CPU16::fetchWordFromRom(uint16_t addr) const {
 }
 void CPU16::jumpTo(const uint16_t& destAddrInRom) {
     pc = destAddrInRom;
-    pcIsStoppedThisCycle = true;
+    pcIsFrozen = true;
 }
