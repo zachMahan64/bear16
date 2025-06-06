@@ -1,3 +1,4 @@
+
 #HELLO WORLD IN ASM, 6/2/2025
 .const dos = 2
 .const MAGIC_WORD = 69
@@ -8,8 +9,8 @@ start:
    mov t1, dos
    ne end, t0, MAGIC_WORD
    mov s0, MAGIC_WORD # shows that magic word was guessed
-   jal hello_world # think uses the stack (stack pointer and frame pointer)
-   jal respond
+   call hello_world # think uses the stack (stack pointer and frame pointer)
+   call respond
 end:
    hlt
 
@@ -26,7 +27,7 @@ hello_world:
    sb MY_PAGE, 8, 'R'
    sb MY_PAGE, 9, 'L'
    sb MY_PAGE, 10, 'D'
-   retl
+   ret
 
 
 respond:
@@ -34,4 +35,4 @@ respond:
    push '!'
    pop t2
    sb RESPONSE_START, 5, t2
-   retl
+   ret

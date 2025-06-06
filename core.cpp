@@ -161,9 +161,10 @@ void CPU16::step() {
     auto instr = parts::Instruction(fetchInstruction());
     //execute & writeback
     execute(instr);
-    if (!pcIsFrozen) {
+    if (!pcIsFrozen && !pcIsStoppedThisCycle) {
         pc += 8;
     }
+    pcIsStoppedThisCycle = false;
 }
 //fetch
 uint64_t CPU16::fetchInstruction() {
@@ -448,7 +449,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         case(isa::Opcode_E::PUSH): {
             stackPtr.set(stackPtr.val - 2);
             writeWordToRam(stackPtr.val, src1Val);
-            if (isEnableDebug) std::cout << "DEBUG: pushing " << src1Val << " to " << stackPtr.val << std::endl;
+            if (isEnableDebug) std::cout << "DEBUG: pushing " << static_cast<int>(src1Val) << " to " << stackPtr.val << std::endl;
             break;
         }
         case(isa::Opcode_E::POP): {
@@ -557,7 +558,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             framePtr.set(oldFP);
 
             //return to caller
-            jumpTo(retAddr);
+            jumpTo(retAddr + 8);
             break;
         } //broken
         case(isa::Opcode_E::JMP): {
@@ -600,7 +601,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
         }
         case(isa::Opcode_E::JAL): {
             writeback(isa::RA_INDEX, pc); //set ra to next instruction
-            jumpTo(dest);
+            jumpTo(dest - 8);
             break;
             }
         case(isa::Opcode_E::RETL): {
@@ -690,4 +691,5 @@ inline uint16_t CPU16::fetchWordFromRom(uint16_t addr) const {
 }
 void CPU16::jumpTo(const uint16_t& destAddrInRom) {
     pc = destAddrInRom;
+    pcIsStoppedThisCycle = true;
 }

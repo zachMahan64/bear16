@@ -29,7 +29,7 @@ public: //only all public for debugging ease
     uint16_t tickWaitCnt = 0; //for multicycle operations
     uint16_t tickWaitStopPt = 0;
     bool pcIsFrozen = false;
-    bool pcIsStoppedThisCycle = false;
+    bool pcIsStoppedThisCycle;
     bool cpuIsHalted = false;
     //IO
     std::array<uint16_t, isa::IO_COUNT> inps {};
@@ -40,7 +40,7 @@ public: //only all public for debugging ease
     parts::GenRegister  stackPtr = parts::GenRegister(static_cast<uint16_t>(isa::SRAM_SIZE)); //sp stacks at end of RAM for downward growth
     parts::GenRegister  framePtr = parts::GenRegister(static_cast<uint16_t>(isa::SRAM_SIZE));
     //Constr
-    explicit CPU16(bool enableDebug) : isEnableDebug(enableDebug) {};
+    explicit CPU16(bool enableDebug) : isEnableDebug(enableDebug), pcIsStoppedThisCycle(false) {};
     //doStuff
     [[nodiscard]] uint16_t getPc() const;
     void setRom(std::vector<uint8_t>& rom);
