@@ -1,38 +1,28 @@
-
-#HELLO WORLD IN ASM, 6/2/2025
-.const dos = 2
-.const MAGIC_WORD = 69
-.const MY_PAGE = 4096 #our reference point in memory, this idea can be expanded to support virtual memory
-.const RESPONSE_START = 4108
+#RECURSIVE FIBONACCI IN ASM, 6/3/2025
+.const FIB_END = 20
+.const RESULT_LOC = 4096
 start:
-   mov t0, 69
-   mov t1, dos
-   ne end, t0, MAGIC_WORD
-   mov s0, MAGIC_WORD # shows that magic word was guessed
-   jal hello_world # think uses the stack (stack pointer and frame pointer)
-   jal respond
+   mov a0, FIB_END #pass desired fib num to calculate
+   call fibonacci
 end:
+   lea t0, RESULT_LOC
+   sw t0, s2 # storing result little-endian @ RESULT_LOC
    hlt
 
 
-hello_world:
-   sb MY_PAGE, 0, 'H' # this does -> dest, offset (in mem), value_to_store
-   sb MY_PAGE, 1, 'E'
-   sb MY_PAGE, 2, 'L'
-   sb MY_PAGE, 3, 'L'
-   sb MY_PAGE, 4, 'O'
-   sb MY_PAGE, 5, ' '
-   sb MY_PAGE, 6, 'W'
-   sb MY_PAGE, 7, 'O'
-   sb MY_PAGE, 8, 'R'
-   sb MY_PAGE, 9, 'L'
-   sb MY_PAGE, 10, 'D'
-   retl
-
-
-respond:
-   memcpy RESPONSE_START, MY_PAGE, 5
-   push '!'
-   pop t2
-   sb RESPONSE_START, 5, t2
-   retl
+fibonacci:
+   ge f_ret, s0, a0
+   gt main_loop, s0, 2
+   call set_1
+main_loop:
+   mov t0, s2
+   add s2, s1, s2
+   mov s1, t0
+   add s0, s0, 1
+   call fibonacci
+f_ret:
+   mov t2, 0
+   ret
+set_1:
+   mov s2, 1
+   ret
