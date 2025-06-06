@@ -32,6 +32,7 @@ void assembly::asmMnemonicSetGenerator() {
         {"n", 0x001E}, {"nn", 0x001F}, {"mov", 0x0020}, {"lw", 0x0021}, {"lb", 0x0022},
         {"comp", 0x0023}, {"lea", 0x0024}, {"push", 0x0025}, {"pop", 0x0026}, {"clr", 0x0027},
         {"inc", 0x0028}, {"dec", 0x0029}, {"memcpy", 0x002A}, {"sw", 0x002B}, {"sb", 0x002C},
+        {"lbrom", 0x002D}, {"lwrom", 0x002E},
         {"call", 0x0040}, {"ret", 0x0041}, {"jmp", 0x0042}, {"jcond_z", 0x0043},
         {"jcond_nz", 0x0044}, {"jcond_neg", 0x0045}, {"jcond_nneg", 0x0046}, {"jcond_pos", 0x0047},
         {"jcond_npos", 0x0048}, {"nop", 0x0049}, {"hlt", 0x004A}, {"jal", 0x004B}, {"retl", 0x004C},
@@ -47,6 +48,7 @@ void assembly::asmMnemonicSetGenerator() {
         }
     }
     std::cout << "};\n";
+    std::cin.get();
 }
 //updated 5/28/2025
 std::vector<uint8_t> assembly::Assembler::assembleFromFile(const std::string &path) const {
@@ -421,8 +423,13 @@ std::pair<std::string, std::string> assembly::splitOpcodeStr(std::string opcodeS
 void assembly::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const bool& doNotAutoCorrectImmediates, std::vector<Operand> operands) {
     const isa::Opcode_E &opE = opcode.opcode_e;
     bool opHasNoWritImm = opcode.immType == ImmType::NO_IM;
-    if (operands.size() < opcodeToOperandMinimumCountMap.at(opE)) {
-        LOG_ERR("ERROR: too few of operands for opcode: " + opcode.token.body);
+    try {
+        if (operands.size() < opcodeToOperandMinimumCountMap.at(opE)) {
+            LOG_ERR("ERROR: too few of operands for opcode: " + opcode.token.body);
+            return;
+        }
+    } catch (std::out_of_range &e) {
+        LOG_ERR("ERROR: opcode undefined in \"opcodeToOperandMinimumCountMap\" - " + opcode.token.body);
         return;
     }
     if (operands.size() > opcodeToOperandMinimumCountMap.at(opE)

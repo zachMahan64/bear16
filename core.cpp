@@ -47,7 +47,7 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << "s6: " << cpu.getValInReg(10) << std::endl;
     uint16_t startingAddr = 4096;
     uint16_t numBytes = 20;
-    cpu.printSectionOfMem(startingAddr, numBytes, printMemAsChars);
+    cpu.printSectionOfRam(startingAddr, numBytes, printMemAsChars);
     std::cout << "Total cycles: " << clock.getCycles() << std::endl;
     std::cout << "=====================" << std::endl;
 }
@@ -156,12 +156,15 @@ void CPU16::setRom(std::vector<uint8_t>& rom) {
 
 //CPU16 flow of execution
 void CPU16::step() {
+    pcIsStoppedThisCycle = false;
     //fetch & prelim. decoding
     if (isEnableDebug) std::cout << "DEBUG: PC = " << std::to_string(pc) << std::endl;
     auto instr = parts::Instruction(fetchInstruction());
-    if (!pcIsStopped) pc += 8;
     //execute & writeback
     execute(instr);
+    if (!(pcIsFrozen || pcIsStoppedThisCycle)) {
+        pc += 8;
+    }
 }
 //fetch
 uint64_t CPU16::fetchInstruction() {
@@ -420,11 +423,11 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             break;
         }
         case(isa::Opcode_E::LW): {
-            writeback(dest, fetchWordFromMem(src1Val + src2Val));
+            writeback(dest, fetchWordFromRam(src1Val + src2Val));
             break;
         }
         case(isa::Opcode_E::LB): {
-            writeback(dest, fetchByteAsWordFromMem(src1Val + src2Val));
+            writeback(dest, fetchByteAsWordFromRam(src1Val + src2Val));
             break;
         }
         case(isa::Opcode_E::COMP): {
@@ -445,19 +448,19 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         }
         case(isa::Opcode_E::PUSH): {
             stackPtr.set(stackPtr.val - 2);
-            writeWordToMem(stackPtr.val, src1Val);
+            writeWordToRam(stackPtr.val, src1Val);
             if (isEnableDebug) std::cout << "DEBUG: pushing " << src1Val << " to " << stackPtr.val << std::endl;
             break;
         }
         case(isa::Opcode_E::POP): {
-            src1Val = fetchWordFromMem(stackPtr.val);
+            src1Val = fetchWordFromRam(stackPtr.val);
             if (isEnableDebug) std::cout << "DEBUG: popping " << src1Val << " from " << stackPtr.val << std::endl;
             stackPtr.set(stackPtr.val + 2);
             writeback(dest, src1Val);
             break;
         }
         case (isa::Opcode_E::CLR): {
-            writeback(src1Val, 0); //use first arg as register to clear
+            writeback(dest, 0);
             break;
         }
         case (isa::Opcode_E::INC): {
@@ -473,20 +476,22 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             if (isEnableDebug) std::cout << "DEBUG: MEMCPY" << std::endl;
             if (tickWaitCnt == 0 && tickWaitStopPt == 0) {
                 tickWaitStopPt = src2Val;
-                pcIsStopped = true;
+                pcIsFrozen = true;
                 pc -= 8; //repeat this instr
             }
             //instr loops to copy bytes in order
-            if (pcIsStopped) {
-                if (isEnableDebug) std::cout << "DEBUG: MEMCPY LOOP" << std::endl;
-                std::cout << "tickWaitStopPt: " << tickWaitCnt << std::endl;
+            if (pcIsFrozen) {
+                if (isEnableDebug) {
+                    std::cout << "DEBUG: MEMCPY LOOP" << std::endl;
+                    std::cout << "tickWaitStopPt: " << tickWaitCnt << std::endl;
+                }
                 uint16_t startingSrcAddr = src1Val;
                 uint16_t startingDestAddr = dest;
-                writeByteToMem(startingDestAddr + tickWaitCnt, fetchByteFromMem(startingSrcAddr + tickWaitCnt));
+                writeByteToRam(startingDestAddr + tickWaitCnt, fetchByteFromRam(startingSrcAddr + tickWaitCnt));
                 if (tickWaitCnt == tickWaitStopPt - 1) {
                     tickWaitCnt = 0; //reset
                     tickWaitStopPt = 0; //reset
-                    pcIsStopped = false;
+                    pcIsFrozen = false;
                     pc += 8; //restore proper pc
                 } else {
                     tickWaitCnt++;
@@ -495,11 +500,19 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             break;
         }
         case(isa::Opcode_E::SW): {
-            writeWordToMem(src1Val + getValInReg(dest), src2Val);
+            writeWordToRam(src1Val + getValInReg(dest), src2Val);
             break;
         }
         case (isa::Opcode_E::SB): {
-            writeByteToMem(src1Val + dest, static_cast<uint8_t>(src2Val));
+            writeByteToRam(src1Val + dest, static_cast<uint8_t>(src2Val));
+            break;
+        }
+        case(isa::Opcode_E::LWROM): {
+            writeback(dest, fetchWordFromRom(src1Val + src2Val));
+            break;
+        }
+        case(isa::Opcode_E::LBROM): {
+            writeback(dest, fetchByteAsWordFromRom(src1Val + src2Val));
             break;
         }
         default: {
@@ -513,22 +526,22 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
     auto thisOp = static_cast<isa::Opcode_E>(op14);
     switch (thisOp) {
         case(isa::Opcode_E::CALL): {
-            //push old frame pointer
+            // push return address
             stackPtr.set(stackPtr.val - 2);
-            writeWordToMem(stackPtr.val, framePtr.val);
+            writeWordToRam(stackPtr.val, pc);
 
-            //push return address
+            // push old frame pointer
             stackPtr.set(stackPtr.val - 2);
-            writeWordToMem(stackPtr.val, pc);
+            writeWordToRam(stackPtr.val, framePtr.val);
 
-            //set new frame pointer --> points to return addr
+            // set new frame pointer → points to old FP (stack grows down)
             framePtr.set(stackPtr.val);
 
-            //reserve 32 bytes for frame
-            stackPtr.set(stackPtr.val - isa::STACK_FRAME_SIZE); //=32
+            // reserve 32 bytes for local frame
+            stackPtr.set(stackPtr.val - isa::STACK_FRAME_SIZE); // = 32
 
-            //jump
-            pc = dest;
+            // jump to function
+            jumpTo(dest);
             break;
         }
         case(isa::Opcode_E::RET): {
@@ -536,11 +549,11 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             stackPtr.set(stackPtr.val + isa::STACK_FRAME_SIZE); //=32
 
             //restore return address
-            uint16_t retAddr = fetchWordFromMem(stackPtr.val);
+            uint16_t retAddr = fetchWordFromRam(stackPtr.val);
             stackPtr.set(stackPtr.val + 2);
 
             //restore old frame pointer
-            uint16_t oldFP = fetchWordFromMem(stackPtr.val);
+            uint16_t oldFP = fetchWordFromRam(stackPtr.val);
             stackPtr.set(stackPtr.val + 2);
             framePtr.set(oldFP);
 
@@ -582,17 +595,17 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
         }
         case(isa::Opcode_E::HLT): {
             if (isEnableDebug) std::cout << "debug: HALTED" << std::endl;
-            pcIsStopped = true;
+            pcIsFrozen = true;
             cpuIsHalted = true;
             break;
         }
         case(isa::Opcode_E::JAL): {
             writeback(isa::RA_INDEX, pc); //set ra to next instruction
-            pc = dest;
+            jumpTo(dest);
             break;
             }
         case(isa::Opcode_E::RETL): {
-            pc = genRegs[isa::RA_INDEX].val; //ra = r15
+            jumpTo(genRegs[isa::RA_INDEX].val); //ra = r15
             break;
         }
         default: {
@@ -634,13 +647,14 @@ uint16_t CPU16::getValInReg(uint16_t reg) const {
     }
     return regVal;
 }
-inline uint16_t CPU16::fetchByteAsWordFromMem(uint16_t addr) const {
+//RAM
+inline uint16_t CPU16::fetchByteAsWordFromRam(uint16_t addr) const {
     return static_cast<uint16_t>(sram[addr]);
 }
-inline uint8_t CPU16::fetchByteFromMem(uint16_t addr) const {
+inline uint8_t CPU16::fetchByteFromRam(uint16_t addr) const {
     return sram[addr];
 }
-inline uint16_t CPU16::fetchWordFromMem(uint16_t addr) const {
+inline uint16_t CPU16::fetchWordFromRam(uint16_t addr) const {
     uint16_t word = static_cast<uint16_t>(sram[addr]) | static_cast<uint16_t>(sram[addr + 1] << 8);
     return word;
 }
@@ -650,23 +664,35 @@ inline std::array<uint8_t, 2> CPU16::convertWordToBytePair(uint16_t val) {
     bytePair[1] = static_cast<uint8_t>((val >> 8) & 0xFF);
     return bytePair;
 }
-inline void CPU16::writeWordToMem(uint16_t addr, uint16_t val) {
+inline void CPU16::writeWordToRam(uint16_t addr, uint16_t val) {
     sram[addr] = static_cast<uint8_t>(val & 0xFF);
     sram[addr + 1] = static_cast<uint8_t>((val >> 8) & 0xFF);
     if (isEnableDebug) std::cout << std::dec << "DEBUG: wrote word to addr " << addr << ", val:" << val << std::endl << std::hex;
 }
-void CPU16::writeByteToMem(uint16_t addr, uint8_t val) {
+void CPU16::writeByteToRam(uint16_t addr, uint8_t val) {
     sram[addr] = val;
     if (isEnableDebug) std::cout << std::dec << "DEBUG: wrote byte to addr " << addr << ", val:" << val << std::endl << std::hex;
 }
-
-void CPU16::printSectionOfMem(uint16_t& startingAddr, uint16_t& numBytes, bool asChar) const {
+void CPU16::printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool asChar) const {
     std::cout << "Starting Address: " << startingAddr << " | # bytes read: " << numBytes << std::endl;
-    std::cout << "Leading word @ starting addr: " << fetchWordFromMem(startingAddr) << "\n";
+    std::cout << "Leading word @ starting addr: " << fetchWordFromRam(startingAddr) << "\n";
     for (uint16_t i = 0; i < numBytes; i++) {
         if (asChar) std::cout << "Index: " << i << " = " << sram.at(startingAddr + i) << "\n";
         else std::cout << "Index: " << i << " = " << static_cast<int>(sram.at(startingAddr + i)) << "\n";
        }
 }
-
-
+//ROM
+inline uint16_t CPU16::fetchByteAsWordFromRom(uint16_t addr) const {
+    return static_cast<uint16_t>(rom[addr]);
+}
+inline uint8_t CPU16::fetchByteFromRom(uint16_t addr) const {
+    return rom[addr];
+}
+inline uint16_t CPU16::fetchWordFromRom(uint16_t addr) const {
+    uint16_t word = static_cast<uint16_t>(rom[addr]) | static_cast<uint16_t>(sram[addr + 1] << 8);
+    return word;
+}
+void CPU16::jumpTo(const uint16_t& destAddrInRom) {
+    pc = destAddrInRom;
+    pcIsStoppedThisCycle = true;
+}

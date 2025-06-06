@@ -1,23 +1,21 @@
 // Created by Zachary Mahan on 5/23/25.
-#pragma once
+#ifndef ASSEMBLER_H
+#define ASSEMBLER_H
 #include <unordered_map>
 #include <string>
 #include <cstdint>
 #include <unordered_set>
 
-#include "assembly.h"
 #include "isa.h"
 #include "parts.h"
 
-#ifndef ASSEMBLER_H
-#define ASSEMBLER_H
 namespace assembly {
     class Token;
     class TokenizedInstruction;
 
     void asmMnemonicSetGenerator();
     //valid set & map for opcode & named operands respectively ------------------------------------------------------
-    inline const std::unordered_set<std::string> validOpcodeMnemonics = {
+    const std::unordered_set<std::string> validOpcodeMnemonics = {
     "add",
     "addi",
     "addi1",
@@ -198,6 +196,14 @@ namespace assembly {
     "sbi",
     "sbi1",
     "sbi2",
+    "lbrom",
+    "lbromi",
+    "lbromi1",
+    "lbromi2",
+    "lwrom",
+    "lwromi",
+    "lwromi1",
+    "lwromi2",
     "call",
     "calli",
     "calli1",
@@ -312,7 +318,7 @@ namespace assembly {
     {"comp", isa::Opcode_E::COMP}, {"lea", isa::Opcode_E::LEA}, {"push", isa::Opcode_E::PUSH},
     {"pop", isa::Opcode_E::POP}, {"clr", isa::Opcode_E::CLR}, {"inc", isa::Opcode_E::INC},
     {"dec", isa::Opcode_E::DEC}, {"memcpy", isa::Opcode_E::MEMCPY}, {"sw", isa::Opcode_E::SW},
-    {"sb", isa::Opcode_E::SB},
+    {"sb", isa::Opcode_E::SB}, {"lbrom", isa::Opcode_E::LBROM}, {"lwrom", isa::Opcode_E::LWROM},
 
     // Ctrl Flow
     {"call", isa::Opcode_E::CALL}, {"ret", isa::Opcode_E::RET}, {"jmp", isa::Opcode_E::JMP},
@@ -350,6 +356,7 @@ namespace assembly {
         {isa::Opcode_E::CLR, 1}, {isa::Opcode_E::INC, 1}, {isa::Opcode_E::DEC, 1}, //dest only
         {isa::Opcode_E::MEMCPY, 3},
         {isa::Opcode_E::SW, 2}, {isa::Opcode_E::SB, 2}, //(3) but offset (in src1!)
+        {isa::Opcode_E::LWROM, 2}, {isa::Opcode_E::LWROM, 2}, //(3) but offset
 
         // Ctrl Flow
         {isa::Opcode_E::CALL, 1}, {isa::Opcode_E::RET, 0}, {isa::Opcode_E::JMP, 1},
