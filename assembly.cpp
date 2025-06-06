@@ -3,7 +3,6 @@
 //
 #include <unordered_map>
 #include <string>
-#include <cstdint>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -18,109 +17,43 @@
 #define LOG_ERR(x) std::cerr << x << std::endl
 
 //tools ---------------------------------------------------------------------------------------------------------
-void asmToBinMapGenerator() {
+void assembly::asmMnemonicSetGenerator() {
     struct Instr {
         std::string base;
-        uint16_t baseOpcode; // 14 bits used here, lower bits of opcode
+        uint16_t baseOpcode; // Ignored in this version
     };
     const std::vector<Instr> instructions = {
-        // Arithmetic & Bitwise
-        {"add", 0x0000},
-        {"sub", 0x0001},
-        {"mult", 0x0002},
-        {"div", 0x0003},
-        {"mod", 0x0004},
-        {"and", 0x0005},
-        {"or", 0x0006},
-        {"xor", 0x0007},
-        {"not", 0x0008},
-        {"nand", 0x0009},
-        {"nor", 0x000A},
-        {"neg", 0x000B},
-        {"lsh", 0x000C},
-        {"rsh", 0x000D},
-        {"rol", 0x000E},
-        {"ror", 0x000F},
-        // Conditional
-        {"eq", 0x0010},
-        {"ne", 0x0011},
-        {"lt", 0x0012},
-        {"le", 0x0013},
-        {"gt", 0x0014},
-        {"ge", 0x0015},
-        {"ult", 0x0016},
-        {"ule", 0x0017},
-        {"ugt", 0x0018},
-        {"uge", 0x0019},
-        {"z", 0x001A},
-        {"nz", 0x001B},
-        {"c", 0x001C},
-        {"nc", 0x001D},
-        {"n", 0x001E},
-        {"nn", 0x001F},
-        // Data Transfer
-        {"mov", 0x0020},
-        {"lw", 0x0021},
-        {"lb", 0x0022},
-        {"comp", 0x0023},
-        {"lea", 0x0024},
-        {"push", 0x0025},
-        {"pop", 0x0026},
-        {"clr", 0x0027},
-        {"inc", 0x0028},
-        {"dec", 0x0029},
-        {"memcpy", 0x002A},
-        {"sw", 0x002B},
-        {"sb", 0x002C},
-        // Control Flow
-        {"call", 0x0040},
-        {"ret", 0x0041},
-        {"jmp", 0x0042},
-        {"jcond_z", 0x0043},
-        {"jcond_nz", 0x0044},
-        {"jcond_neg", 0x0045},
-        {"jcond_nneg", 0x0046},
-        {"jcond_pos", 0x0047},
-        {"jcond_npos", 0x0048},
-        {"nop", 0x0049},
-        {"hlt", 0x004A},
-        {"jal", 0x004B},
-        {"retl", 0x004C},
-        // Video
-        {"clrfb", 0x0080},
-        {"setpx", 0x0081},
-        {"blit", 0x0082},
+        {"add", 0x0000}, {"sub", 0x0001}, {"mult", 0x0002}, {"div", 0x0003}, {"mod", 0x0004},
+        {"and", 0x0005}, {"or", 0x0006}, {"xor", 0x0007}, {"not", 0x0008}, {"nand", 0x0009},
+        {"nor", 0x000A}, {"neg", 0x000B}, {"lsh", 0x000C}, {"rsh", 0x000D}, {"rol", 0x000E},
+        {"ror", 0x000F}, {"eq", 0x0010}, {"ne", 0x0011}, {"lt", 0x0012}, {"le", 0x0013},
+        {"gt", 0x0014}, {"ge", 0x0015}, {"ult", 0x0016}, {"ule", 0x0017}, {"ugt", 0x0018},
+        {"uge", 0x0019}, {"z", 0x001A}, {"nz", 0x001B}, {"c", 0x001C}, {"nc", 0x001D},
+        {"n", 0x001E}, {"nn", 0x001F}, {"mov", 0x0020}, {"lw", 0x0021}, {"lb", 0x0022},
+        {"comp", 0x0023}, {"lea", 0x0024}, {"push", 0x0025}, {"pop", 0x0026}, {"clr", 0x0027},
+        {"inc", 0x0028}, {"dec", 0x0029}, {"memcpy", 0x002A}, {"sw", 0x002B}, {"sb", 0x002C},
+        {"call", 0x0040}, {"ret", 0x0041}, {"jmp", 0x0042}, {"jcond_z", 0x0043},
+        {"jcond_nz", 0x0044}, {"jcond_neg", 0x0045}, {"jcond_nneg", 0x0046}, {"jcond_pos", 0x0047},
+        {"jcond_npos", 0x0048}, {"nop", 0x0049}, {"hlt", 0x004A}, {"jal", 0x004B}, {"retl", 0x004C},
+        {"clrfb", 0x0080}, {"setpx", 0x0081}, {"blit", 0x0082},
     };
 
-    // imm mode prefix bits:
-    // normal:  0x0000
-    // i (11):  0xC000
-    // i1 (10): 0x8000
-    // i2 (01): 0x4000
-    std::vector<std::pair<std::string,uint16_t>> immModes = {
-        {"",    0x0000},  // normal
-        {"i",   0xC000},  // imm mode 11
-        {"i1",  0x8000},  // imm mode 10
-        {"i2",  0x4000},  // imm mode 01
-    };
+    std::vector<std::string> immSuffixes = {"", "i", "i1", "i2"};
 
-    std::cout << "const std::unordered_map<std::string, uint16_t> asmToBinMap = {\n";
-    for (auto& instr : instructions) {
-        for (auto& imm : immModes) {
-            std::string mnemonic = instr.base + imm.first;
-            uint16_t opcode = imm.second | instr.baseOpcode;
-            std::cout << "    {\"" << mnemonic << "\", 0x"
-                      << std::hex << std::uppercase << std::setw(4) << std::setfill('0')
-                      << opcode << "},\n";
+    std::cout << "const std::unordered_set<std::string> validOpcodeMnemonics = {\n";
+    for (const auto& instr : instructions) {
+        for (const auto& suffix : immSuffixes) {
+            std::cout << "    \"" << instr.base + suffix << "\",\n";
         }
     }
     std::cout << "};\n";
-} //updated 5/28/2025
-std::vector<uint8_t> assembly::Assembler::assembleFromFile(const std::string &path) {
-    auto allTokens = tokenizeAsmFirstPass(path);
-    auto allTokenizedInstructions = parseFirstPassIntoSecondPass(allTokens);
+}
+//updated 5/28/2025
+std::vector<uint8_t> assembly::Assembler::assembleFromFile(const std::string &path) const {
+    std::vector<Token> allTokens = tokenizeAsmFirstPass(path);
+    const auto allTokenizedInstructions = parseFirstPassIntoSecondPass(allTokens);
     auto literalInstructions = getLiteralInstructions(allTokenizedInstructions);
-    return buildByteVecFromLiteralInstructions(literalInstructions); //completely broken apparently
+    return buildByteVecFromLiteralInstructions(literalInstructions);
 }
 
 //main passes ---------------------------------------------------------------------------------------------------------
@@ -204,7 +137,7 @@ std::vector<assembly::Token> assembly::Assembler::tokenizeAsmFirstPass(const std
 
     return firstPassTokens;
 }
-std::vector<assembly::TokenizedInstruction> assembly::Assembler::parseFirstPassIntoSecondPass(std::vector<Token> &tokens) {
+std::vector<assembly::TokenizedInstruction> assembly::Assembler::parseFirstPassIntoSecondPass(const std::vector<Token> &tokens) const {
     //look-up tables
     std::unordered_map<std::string, uint16_t> labelMap = {};
     std::unordered_map<std::string, uint16_t> constMap = {};
@@ -323,10 +256,10 @@ std::vector<assembly::TokenizedInstruction> assembly::Assembler::parseFirstPassI
 }
 //sub section of pass two
 assembly::TokenizedInstruction assembly::Assembler::parseLineOfTokens(const std::vector<Token> &line,
-        std::unordered_map<std::string, uint16_t> &labelMap,
-        std::unordered_map<std::string, uint16_t> &constMap,
-        int &instructionIndex
-        ) {
+        const std::unordered_map<std::string, uint16_t> &labelMap,
+        const std::unordered_map<std::string, uint16_t> &constMap,
+        const int &instructionIndex
+        ) const {
     //first token is the OPCODE!
     OpCode opCode(line.at(0));
     TokenizedInstruction instrForThisLine(opCode);
@@ -394,8 +327,7 @@ assembly::TokenizedInstruction assembly::Assembler::parseLineOfTokens(const std:
             tokensForOperand.clear();
         }
     }
-    bool doNotAutocorrectImmediates = false; //WIP, make this pass properly, trace back
-    instrForThisLine.setOperandsAndAutocorrectImmediates(doNotAutocorrectImmediates, operands);
+    instrForThisLine.setOperandsAndAutocorrectImmediates(doNotAutoCorrectImmediates, operands);
     return instrForThisLine;
 }
 
@@ -449,7 +381,7 @@ std::vector<uint8_t> assembly::Assembler::build8ByteVecFromSingleLiteralInstruct
 //helpers----------------------------------------------------------------------------------------------------------------
 assembly::TokenType assembly::Token::deduceTokenType(const std::string &text) {
     TokenType type = TokenType::MISTAKE;
-    if (opcodeToBinMap.contains(text)) {
+    if (validOpcodeMnemonics.contains(text)) {
         type = TokenType::OPERATION;
     } else if (namedOperandToBinMap.contains(text)) {
         if (text == "pc" || text == "sp" || text == "fp") {
@@ -514,6 +446,7 @@ void assembly::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const b
         dest = operands.at(0);
     }
     //set imm
+    if (doNotAutoCorrectImmediates) return;
     if (src1 && opHasNoWritImm && src1->valueType == ValueType::IMM) {
         LOG("Corrected imm to i1 for " + opcode.token.body);
         i1 = true;

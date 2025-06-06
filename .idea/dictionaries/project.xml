@@ -2,6 +2,8 @@
   <dictionary name="project">
     <words>
       <w>immediates</w>
+      <w>lbrom</w>
+      <w>lwrom</w>
       <w>memcpy</w>
       <w>operandsandautocorrectimmediates</w>
     </words>

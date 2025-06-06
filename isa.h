@@ -64,6 +64,8 @@ enum class Opcode_E : uint16_t {
         MEMCPY = 0x002A, //multicycle, simulate with a simCycDelayCnt that is set and decrements until zero when needed and prevents the PC from stepping
         SW     = 0x002B, //store word (16 bit)
         SB     = 0x002C, //store byte (8 bit)
+        LBROM  = 0x002D, //load byte from ROM -> not implemented/ WIP
+        LWROM  = 0x002E, //load word from ROM -> not implemented/ WIP
         //CTRL Flow
         CALL      = 0x0040,   // call sub-routine  (dest = target PC)
         RET       = 0x0041,   // return from CALL
