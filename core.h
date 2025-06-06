@@ -29,7 +29,7 @@ public: //only all public for debugging ease
     uint16_t tickWaitCnt = 0; //for multicycle operations
     uint16_t tickWaitStopPt = 0;
     bool pcIsFrozen = false;
-    bool isInMemcpyLoop;
+    bool isInMemcpyLoop = false;
     bool cpuIsHalted = false;
     //IO
     std::array<uint16_t, isa::IO_COUNT> inps {};
