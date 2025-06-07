@@ -52,4 +52,13 @@ void FlagRegister::setOverflow(const bool v) { overflow = v; }
 
 //genRegister definitions
 void GenRegister::set(uint16_t v) { val = v; }
+
+void GenRegister::operator-=(uint16_t decAmount) {
+    val -= decAmount;
+}
+
+void GenRegister::operator+=(uint16_t incAmount) {
+    val += incAmount;
+}
+
 void GenRegister::reset()         { val = 0; }

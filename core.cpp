@@ -454,7 +454,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         }
         case(isa::Opcode_E::POP): {
             src1Val = fetchWordFromRam(stackPtr.val);
-            if (isEnableDebug) std::cout << "DEBUG: popping " << src1Val << " from " << stackPtr.val << std::endl;
+            if (isEnableDebug) std::cout << "DEBUG: popping " << src1Val << " from " << stackPtr.val << " to " << dest << std::endl;
             stackPtr.set(stackPtr.val + 2);
             writeback(dest, src1Val);
             break;
@@ -491,14 +491,13 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
                     tickWaitCnt = 0; //reset
                     tickWaitStopPt = 0; //reset
                     pcIsFrozenThisCycle = false;
-                    pc += 8; //restore proper pc
                 } else {
                     tickWaitCnt++;
                     pcIsFrozenThisCycle = true; //freeze pc
                 }
             }
             break;
-        } //broken
+        }
         case(isa::Opcode_E::SW): {
             writeWordToRam(src1Val + getValInReg(dest), src2Val);
             break;
@@ -523,44 +522,37 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
 void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val) {
     uint16_t op14 = instr.opCode14;
     uint16_t dest = instr.dest;
-    auto thisOp = static_cast<isa::Opcode_E>(op14);
+    const auto thisOp = static_cast<isa::Opcode_E>(op14);
     switch (thisOp) {
         case(isa::Opcode_E::CALL): {
-            // push old frame pointer
-            stackPtr.set(stackPtr.val - 2);
-            writeWordToRam(stackPtr.val, framePtr.val);
-
             // push return address
-            stackPtr.set(stackPtr.val - 2);
+            stackPtr -= 2;
             writeWordToRam(stackPtr.val, pc);
 
-            // set new frame pointer → points to old FP (stack grows down)
-            framePtr.set(stackPtr.val);
+            // push old frame pointer
+            stackPtr -= 2;
+            writeWordToRam(stackPtr.val, framePtr.val);
 
-            // reserve 32 bytes for local frame
-            stackPtr.set(stackPtr.val - isa::STACK_FRAME_SIZE); // = 32
+            // set new frame pointer → points to old FP (stack grows down)
+            framePtr = stackPtr;
 
             // jump to function
             jumpTo(dest);
             break;
-        } //broken
+        }
         case(isa::Opcode_E::RET): {
-            //free local frame
-            stackPtr.set(stackPtr.val + isa::STACK_FRAME_SIZE); //=32
+            //load old FP and return address relative to current fp
+            uint16_t oldFP   = fetchWordFromRam(framePtr.val);
+            uint16_t retAddr = fetchWordFromRam(framePtr.val + 2);
 
-            //restore return address
-            uint16_t retAddr = fetchWordFromRam(stackPtr.val);
-            stackPtr.set(stackPtr.val + 2);
-
-            //restore old frame pointer
-            uint16_t oldFP = fetchWordFromRam(stackPtr.val);
-            stackPtr.set(stackPtr.val + 2);
+            // Restore FP and SP
             framePtr.set(oldFP);
+            stackPtr.set(framePtr.val + 4); //restore sp back below the 4 used bytes
 
-            //return to caller
+            // Jump back to caller
             jumpTo(retAddr + 8);
             break;
-        } //broken
+        }
         case(isa::Opcode_E::JMP): {
             jumpTo(dest);
             break;

@@ -58,6 +58,8 @@ namespace parts {
     public:
         uint16_t val = 0;
         void set(uint16_t val);
+        void operator-=(uint16_t decAmount);
+        void operator+=(uint16_t incAmount);
         void reset();
         explicit GenRegister(uint16_t startingVal) {
             val = startingVal;
