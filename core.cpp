@@ -161,10 +161,10 @@ void CPU16::step() {
     auto instr = parts::Instruction(fetchInstruction());
     //execute & writeback
     execute(instr);
-    if (!pcIsFrozen) {
+    if (!pcIsFrozenThisCycle) {
         pc += 8;
     }
-    pcIsFrozen = false;
+    pcIsFrozenThisCycle = false;
 }
 //fetch
 uint64_t CPU16::fetchInstruction() {
@@ -490,11 +490,11 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
                 if (tickWaitCnt == tickWaitStopPt - 1) {
                     tickWaitCnt = 0; //reset
                     tickWaitStopPt = 0; //reset
-                    pcIsFrozen = false;
+                    pcIsFrozenThisCycle = false;
                     pc += 8; //restore proper pc
                 } else {
                     tickWaitCnt++;
-                    pcIsFrozen = true; //freeze pc
+                    pcIsFrozenThisCycle = true; //freeze pc
                 }
             }
             break;
@@ -526,13 +526,13 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
     auto thisOp = static_cast<isa::Opcode_E>(op14);
     switch (thisOp) {
         case(isa::Opcode_E::CALL): {
-            // push return address
-            stackPtr.set(stackPtr.val - 2);
-            writeWordToRam(stackPtr.val, pc);
-
             // push old frame pointer
             stackPtr.set(stackPtr.val - 2);
             writeWordToRam(stackPtr.val, framePtr.val);
+
+            // push return address
+            stackPtr.set(stackPtr.val - 2);
+            writeWordToRam(stackPtr.val, pc);
 
             // set new frame pointer → points to old FP (stack grows down)
             framePtr.set(stackPtr.val);
@@ -595,7 +595,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
         }
         case(isa::Opcode_E::HLT): {
             if (isEnableDebug) std::cout << "debug: HALTED" << std::endl;
-            pcIsFrozen = true;
+            pcIsFrozenThisCycle = true;
             cpuIsHalted = true;
             break;
         }
@@ -691,5 +691,5 @@ inline uint16_t CPU16::fetchWordFromRom(uint16_t addr) const {
 }
 void CPU16::jumpTo(const uint16_t& destAddrInRom) {
     pc = destAddrInRom;
-    pcIsFrozen = true;
+    pcIsFrozenThisCycle = true;
 }

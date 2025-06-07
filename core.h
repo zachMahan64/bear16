@@ -28,7 +28,7 @@ public: //only all public for debugging ease
     uint16_t pc = 0;
     uint16_t tickWaitCnt = 0; //for multicycle operations
     uint16_t tickWaitStopPt = 0;
-    bool pcIsFrozen = false;
+    bool pcIsFrozenThisCycle = false;
     bool isInMemcpyLoop = false; //rework at some point
     bool cpuIsHalted = false;
     //IO
