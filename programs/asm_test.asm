@@ -1,3 +1,4 @@
+
 #HELLO WORLD IN ASM, 6/2/2025
 .const dos = 2
 .const MAGIC_WORD = 69
@@ -9,10 +10,9 @@ start:
    ne end, t0, MAGIC_WORD
    mov s0, MAGIC_WORD # shows that magic word was guessed
    call hello_world # think uses the stack (stack pointer and frame pointer)
-   call respond
+
 end:
    hlt
-
 
 hello_world:
    sb MY_PAGE, 0, 'H' # this does -> dest, offset (in mem), value_to_store
@@ -26,6 +26,7 @@ hello_world:
    sb MY_PAGE, 8, 'R'
    sb MY_PAGE, 9, 'L'
    sb MY_PAGE, 10, 'D'
+   call respond
    ret
 
 

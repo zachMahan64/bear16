@@ -397,7 +397,7 @@ assembly::TokenType assembly::Token::deduceTokenType(const std::string &text) {
     else if (symbolToTokenMap.contains(text)) type = symbolToTokenMap.at(text); //for '[', ']', ',', "+", "=", and ':'
     else if (std::regex_match(text, std::regex("^0x[0-9A-Fa-f]+$"))) type = TokenType::HEX;
     else if (std::regex_match(text, std::regex("^0b[01]+$"))) type = TokenType::BIN;
-    else if (std::regex_match(text, std::regex("^[0-9]+$"))) type = TokenType::DECIMAL;
+    else if (std::regex_match(text, std::regex("^[-+]?[0-9]+$"))) type = TokenType::DECIMAL;
     else if (text[0] == '#') type = TokenType::COMMENT;
     else if (text[0] == '\n') type = TokenType::EOL;
     else if (text.length() == 1 && (std::isalpha(text[0]) || validSymbols.contains(text[0]))) type = TokenType::CHAR;

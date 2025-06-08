@@ -378,7 +378,7 @@ namespace assembly {
         isa::Opcode_E::SW, isa::Opcode_E::SB
     };
     inline const std::unordered_set<char> validSymbols = {
-        '!', '@', '/', '\\', '$', '%', '&', '^', '*', '(', ')', '\'', '~'
+        '!', '@', '/', '\\', '$', '%', '&', '^', '*', '(', ')', '\'', '~', '-'
     };
 
     //main class

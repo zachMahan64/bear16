@@ -21,7 +21,7 @@ Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(enableDebug) {}
 
 //Board and loading ROM stuff -------------------------------------------------------
 int Board::run() {
-    constexpr int DELAY = 0;
+    constexpr int DELAY = 5;
     clock.resetCycles(); //set clock cycles to zero @ the start of a new process
     do {
         clock.tick(DELAY);
@@ -538,6 +538,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
 
             // jump to function
             jumpTo(dest);
+            std::cout << "DEBUG: CALL" << std::endl;
             break;
         }
         case(isa::Opcode_E::RET): {
@@ -551,6 +552,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
 
             // Jump back to caller
             jumpTo(retAddr + 8);
+            std::cout << "DEBUG: RET to " << retAddr + 8 << std::endl;
             break;
         }
         case(isa::Opcode_E::JMP): {
