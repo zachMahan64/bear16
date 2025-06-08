@@ -45,6 +45,13 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << "s4: " << cpu.getValInReg(8) << std::endl;
     std::cout << "s5: " << cpu.getValInReg(9) << std::endl;
     std::cout << "s6: " << cpu.getValInReg(10) << std::endl;
+    std::cout << "s7: " << cpu.getValInReg(11) << std::endl;
+    std::cout << "rv: " << cpu.getValInReg(12) << std::endl;
+    std::cout << "a0: " << cpu.getValInReg(13) << std::endl;
+    std::cout << "a1: " << cpu.getValInReg(14) << std::endl;
+    std::cout << "sp: " << cpu.getValInReg(18) << std::endl;
+    std::cout << "fp: " << cpu.getValInReg(19) << std::endl;
+    std::cout << "pc: " << cpu.getValInReg(20) << std::endl;
     uint16_t startingAddr = 4096;
     uint16_t numBytes = 20;
     cpu.printSectionOfRam(startingAddr, numBytes, printMemAsChars);
@@ -499,7 +506,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             break;
         }
         case(isa::Opcode_E::SW): {
-            writeWordToRam(src1Val + getValInReg(dest), src2Val);
+            writeWordToRam(dest + src1Val, src2Val);
             break;
         }
         case (isa::Opcode_E::SB): {
@@ -525,20 +532,18 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
     const auto thisOp = static_cast<isa::Opcode_E>(op14);
     switch (thisOp) {
         case(isa::Opcode_E::CALL): {
-            // push return address
             stackPtr -= 2;
-            writeWordToRam(stackPtr.val, pc);
+            writeWordToRam(stackPtr.val, framePtr.val);  // push old FP
 
-            // push old frame pointer
             stackPtr -= 2;
-            writeWordToRam(stackPtr.val, framePtr.val);
+            writeWordToRam(stackPtr.val, pc);            // push return addr
 
-            // set new frame pointer → points to old FP (stack grows down)
             framePtr = stackPtr;
 
             // jump to function
             jumpTo(dest);
             std::cout << "DEBUG: CALL" << std::endl;
+            std::cout << "DEBUG: storing return address " << pc << " at SP = " << stackPtr.val << "\n";
             break;
         }
         case(isa::Opcode_E::RET): {
@@ -553,6 +558,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             // Jump back to caller
             jumpTo(retAddr + 8);
             std::cout << "DEBUG: RET to " << retAddr + 8 << std::endl;
+            std::cout << "DEBUG: fetched return address = " << retAddr << " from FP+2 = " << static_cast<int>(framePtr.val) + 2 << "\n";
             break;
         }
         case(isa::Opcode_E::JMP): {
@@ -633,8 +639,10 @@ uint16_t CPU16::getValInReg(uint16_t reg) const {
         regVal = stackPtr.val;
     } else if (reg == 0x0013) {
         regVal = framePtr.val;
-    }else {
-        std::cout << "ERROR: Unknown dest when getValInReg" << std::endl;
+    } else if (reg == 0x0014) {
+        regVal = pc;
+    } else {
+        std::cout << "ERROR: Unknown dest when getValInReg:" << reg << std::endl;
     }
     return regVal;
 }

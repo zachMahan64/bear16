@@ -7,11 +7,11 @@
 #include <cstddef>
 
 namespace isa {
-    static constexpr size_t SRAM_SIZE = 64 * 1024; //bytes
-    static constexpr size_t ROM_SIZE = 16 * 1024; //bytes
+    static constexpr size_t SRAM_SIZE = 64 * 1024 - 1; //bytes
+    static constexpr size_t ROM_SIZE = 64 * 1024 - 1; //bytes
     static constexpr size_t GEN_REG_COUNT = 16;
     static constexpr size_t IO_COUNT = 2;
-    static constexpr size_t MAX_UINT_16BIT = 65536;
+    static constexpr size_t MAX_UINT_16BIT = 65535;
     static constexpr size_t STACK_FRAME_SIZE = 32; //bytes
     static constexpr size_t RA_INDEX = 0x000F;
 

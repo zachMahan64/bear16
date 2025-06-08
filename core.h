@@ -37,10 +37,10 @@ public: //only all public for debugging ease
     //REG
     std::array<parts::GenRegister, isa::GEN_REG_COUNT> genRegs{};
     parts::FlagRegister flagReg = parts::FlagRegister();
-    parts::GenRegister  stackPtr = parts::GenRegister(static_cast<uint16_t>(isa::SRAM_SIZE)); //sp stacks at end of RAM for downward growth
-    parts::GenRegister  framePtr = parts::GenRegister(static_cast<uint16_t>(isa::SRAM_SIZE));
+    parts::GenRegister  stackPtr = parts::GenRegister(static_cast<uint16_t>(isa::MAX_UINT_16BIT)); //sp stacks at end of RAM for downward growth
+    parts::GenRegister  framePtr = parts::GenRegister(static_cast<uint16_t>(isa::MAX_UINT_16BIT));
     //Constr
-    explicit CPU16(bool enableDebug) : isEnableDebug(enableDebug), isInMemcpyLoop(false) {};
+    explicit CPU16(bool enableDebug) : isEnableDebug(enableDebug) {};
     //doStuff
     [[nodiscard]] uint16_t getPc() const;
     void setRom(std::vector<uint8_t>& rom);

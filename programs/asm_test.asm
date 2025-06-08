@@ -1,38 +1,26 @@
-
-#HELLO WORLD IN ASM, 6/2/2025
-.const dos = 2
-.const MAGIC_WORD = 69
-.const MY_PAGE = 4096 #our reference point in memory, this idea can be expanded to support virtual memory
-.const RESPONSE_START = 4108
+.const FIB_N = 5
+.const STO_LOC = 4096
 start:
-   mov t0, 69
-   mov t1, dos
-   ne end, t0, MAGIC_WORD
-   mov s0, MAGIC_WORD # shows that magic word was guessed
-   call hello_world # think uses the stack (stack pointer and frame pointer)
+    mov t0, FIB_N
+    call fibonacci
+    sw STO_LOC, rv
+    hlt
+fibonacci:
+    le base_case, a0, 1 # go to base case if fib num <= 1
 
-end:
-   hlt
+    mov t0, a0 # save OG arg into t0
 
-hello_world:
-   sb MY_PAGE, 0, 'H' # this does -> dest, offset (in mem), value_to_store
-   sb MY_PAGE, 1, 'E'
-   sb MY_PAGE, 2, 'L'
-   sb MY_PAGE, 3, 'L'
-   sb MY_PAGE, 4, 'O'
-   sb MY_PAGE, 5, ' '
-   sb MY_PAGE, 6, 'W'
-   sb MY_PAGE, 7, 'O'
-   sb MY_PAGE, 8, 'R'
-   sb MY_PAGE, 9, 'L'
-   sb MY_PAGE, 10, 'D'
-   call respond
-   ret
+    sub a0, a0, 1 # a0 = a0 - 1
+    call fibonacci # fib(n-1)
+    mov t1, rv # save result into t1
 
+    sub a0, a0, 2 # a0 = a0 - 2
+    call fibonacci # fib(n-2)
+    mov t2, rv # save result into t2
 
-respond:
-   memcpy RESPONSE_START, MY_PAGE, 5
-   push '!'
-   pop t2
-   sb RESPONSE_START, 5, t2
-   ret
+    add rv, t1, t2
+    ret
+
+base_case:
+    mov rv, 1
+    ret

@@ -5,6 +5,7 @@
 #ifndef PARTS_H
 #define PARTS_H
 #include <cstdint>
+#include <iostream>
 #include <thread>
 
 namespace parts {
