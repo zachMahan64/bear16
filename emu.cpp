@@ -38,8 +38,6 @@ int emu::Emulator::run() {
 
     //display diagnostics
     board.printDiagnostics(true);
-    std::cout << board.cpu.genRegs[19].val << std::endl;
-
     std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode << std::endl;
     return exitCode;
 }

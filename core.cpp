@@ -532,33 +532,44 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
     const auto thisOp = static_cast<isa::Opcode_E>(op14);
     switch (thisOp) {
         case(isa::Opcode_E::CALL): {
-            stackPtr -= 2;
-            writeWordToRam(stackPtr.val, framePtr.val);  // push old FP
+            std::cout << "DEBUG: CALL" << std::endl;
 
+            // Push return address
             stackPtr -= 2;
-            writeWordToRam(stackPtr.val, pc);            // push return addr
+            uint16_t returnAddr = pc + 8;
+            writeWordToRam(stackPtr.val, returnAddr);            // [SP] = return addr
+            std::cout << std::dec << "DEBUG: storing return address " <<" at SP = " << stackPtr.val << "\n";
 
+            // Push old FP
+            stackPtr -= 2;
+            writeWordToRam(stackPtr.val, framePtr.val);  // [SP] = old FP
+
+            // New FP points to old FP
             framePtr = stackPtr;
-
             // jump to function
             jumpTo(dest);
-            std::cout << "DEBUG: CALL" << std::endl;
-            std::cout << "DEBUG: storing return address " << pc << " at SP = " << stackPtr.val << "\n";
             break;
         }
         case(isa::Opcode_E::RET): {
-            //load old FP and return address relative to current fp
-            uint16_t oldFP   = fetchWordFromRam(framePtr.val);
-            uint16_t retAddr = fetchWordFromRam(framePtr.val + 2);
+            // store the current frame pointer's value (where the old FP and return address are located)
+            uint16_t currentFrameBaseAddr = framePtr.val;
 
-            // Restore FP and SP
+            // load the old FP and return address using the current frame's base address
+            uint16_t oldFP   = fetchWordFromRam(currentFrameBaseAddr);       // [Current FP] = old FP
+            uint16_t retAddr = fetchWordFromRam(currentFrameBaseAddr + 2);   // [Current FP + 2] = return addr
+
+            // restore the frame Pointer to the caller's FP
             framePtr.set(oldFP);
-            stackPtr.set(framePtr.val + 4); //restore sp back below the 4 used bytes
 
-            // Jump back to caller
-            jumpTo(retAddr + 8);
-            std::cout << "DEBUG: RET to " << retAddr + 8 << std::endl;
-            std::cout << "DEBUG: fetched return address = " << retAddr << " from FP+2 = " << static_cast<int>(framePtr.val) + 2 << "\n";
+            // restore the Stack Pointer to where it was *before* the CALL instruction.
+            stackPtr.set(currentFrameBaseAddr + 4);
+
+            // debug
+            std::cout << std::dec << "DEBUG: fetched return address = " << retAddr << " from FP+2 = " << static_cast<int>(currentFrameBaseAddr) + 2 << "\n";
+
+            // jump back to the caller
+            jumpTo(retAddr);
+            std::cout << std::dec<< "DEBUG: RET to " << retAddr << std::endl;
             break;
         }
         case(isa::Opcode_E::JMP): {

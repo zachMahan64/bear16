@@ -62,7 +62,7 @@ namespace parts {
         void operator-=(uint16_t decAmount);
         void operator+=(uint16_t incAmount);
         void reset();
-        explicit GenRegister(uint16_t startingVal) {
+        explicit GenRegister(int startingVal) {
             val = startingVal;
         }
         GenRegister() = default;

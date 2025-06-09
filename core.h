@@ -37,8 +37,8 @@ public: //only all public for debugging ease
     //REG
     std::array<parts::GenRegister, isa::GEN_REG_COUNT> genRegs{};
     parts::FlagRegister flagReg = parts::FlagRegister();
-    parts::GenRegister  stackPtr = parts::GenRegister(static_cast<uint16_t>(isa::MAX_UINT_16BIT)); //sp stacks at end of RAM for downward growth
-    parts::GenRegister  framePtr = parts::GenRegister(static_cast<uint16_t>(isa::MAX_UINT_16BIT));
+    parts::GenRegister  stackPtr = parts::GenRegister(isa::MAX_UINT_16BIT); //sp stacks at end of RAM for downward growth
+    parts::GenRegister  framePtr = parts::GenRegister(isa::MAX_UINT_16BIT);
     //Constr
     explicit CPU16(bool enableDebug) : isEnableDebug(enableDebug) {};
     //doStuff
