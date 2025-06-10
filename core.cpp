@@ -21,7 +21,7 @@ Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(enableDebug) {}
 
 //Board and loading ROM stuff -------------------------------------------------------
 int Board::run() {
-    constexpr int DELAY = 1;
+    constexpr int DELAY = 0;
     clock.resetCycles(); //set clock cycles to zero @ the start of a new process
     do {
         clock.tick(DELAY);
@@ -214,10 +214,10 @@ void CPU16::execute(parts::Instruction instr) {
         src2Val = inps[instr.src2 - NUM_GEN_REGS];
     } else if (instr.src2 == 0x0012) {
         src2Val = stackPtr.val;
-    } else if (instr.src1 == 0x0013) {
-        src1Val = framePtr.val;
-    } else if (instr.src1 == 0x0014) {
-        src1Val = pc;
+    } else if (instr.src2 == 0x0013) {
+        src2Val = framePtr.val;
+    } else if (instr.src2 == 0x0014) {
+        src2Val = pc;
     } else {
         std::cout << "ERROR: unknown operand (src2): "  << std::hex << std::setw(4) << std::setfill('0') << instr.src2 << std::endl;
     }
@@ -406,8 +406,9 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
             case (isa::Opcode_E::C):
                 flagReg.setCarry(true);
                 break;
-                case (isa::Opcode_E::NC):
+            case (isa::Opcode_E::NC):
                 flagReg.setCarry(false);
+                break;
             case(isa::Opcode_E::N):
                 flagReg.setNegative(true);
                 break;
@@ -446,6 +447,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             bool overflow = (src1Neg != src2Neg) && (src1Neg != resultNeg);
             flagReg.setOverflow(overflow);
             flagReg.setZero(testVal == 0);
+            if (testVal == 0) std::cout << "DEBUG: COMP: zero" << std::endl;
             flagReg.setNegative(resultNeg);
             break;
         }

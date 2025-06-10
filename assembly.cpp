@@ -452,6 +452,9 @@ assembly::TokenType assembly::Token::deduceTokenType(const std::string &text) {
     else if (text[0] == '#') type = TokenType::COMMENT;
     else if (text[0] == '\n') type = TokenType::EOL;
     else if (text.length() == 1 && (std::isalpha(text[0]) || validSymbols.contains(text[0]))) type = TokenType::CHAR;
+    else if (text == "\\0"){
+        type = TokenType::CHAR;
+    }
     else if (text == "\\s") type = TokenType::CHAR_SPACE;
     else if (text.length() > 1 && text.back() == ':') type = TokenType::LABEL; //needs trimming?
     else if (text == ".const") type = TokenType::CONST;
@@ -460,6 +463,15 @@ assembly::TokenType assembly::Token::deduceTokenType(const std::string &text) {
     else if (std::ranges::all_of(text, [](char c) { return (std::isalnum(c) || c == '_'); })) type = TokenType::REF;
     return type;
 }
+
+void assembly::Token::correctNullChar() {
+    if (type != TokenType::CHAR) return;
+    if (body == "\\0") {
+        body = "";
+        body += '\0';
+    }
+}
+
 std::pair<std::string, std::string> assembly::splitOpcodeStr(std::string opcodeStr) {
     char lastChar = opcodeStr.back();
     if (lastChar == 'i') {
@@ -494,6 +506,9 @@ void assembly::TokenizedInstruction::setOperandsAndAutocorrectImmediates(const b
         dest = operands.at(0);
         src1 = operands.at(1);
         src2 = operands.at(2);
+    } else if (operands.size() == 2 && opE == isa::Opcode_E::COMP) {
+        src1 = operands.at(0);
+        src2 = operands.at(1);
     } else if (operands.size() == 2 && opCodesWithOptionalSrc1OffsetArgument.contains(opE)) {
         dest = operands.at(0);
         src2 = operands.at(1);

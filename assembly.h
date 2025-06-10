@@ -378,7 +378,7 @@ namespace assembly {
         isa::Opcode_E::SW, isa::Opcode_E::SB
     };
     inline const std::unordered_set<char> validSymbols = {
-        '!', '@', '/', '\\', '$', '%', '&', '^', '*', '(', ')', '\'', '~', '-'
+        '!', '@', '/', '\\', '$', '%', '&', '^', '*', '(', ')', '\'', '~', '-', '\0'
     };
 
     //main class
@@ -500,12 +500,14 @@ namespace assembly {
         std::string body;
         explicit Token(const std::string & text): body(text) {
             type = deduceTokenType(text);
+            correctNullChar();
         }
         explicit Token(const char c) {
             body = std::string(1, c);
             type = deduceTokenType(body);
         }
         static TokenType deduceTokenType(const std::string &text);
+        void correctNullChar();
     };
     //string to TokenType Map
     inline const std::unordered_map<std::string, TokenType> symbolToTokenMap = {
