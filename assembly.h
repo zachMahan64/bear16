@@ -396,16 +396,17 @@ namespace assembly {
         [[nodiscard]] std::vector<uint8_t> assembleFromFile(const std::string &path) const;
     private:
         static std::vector<Token> tokenizeAsmFirstPass(const std::string &filename);
-        [[nodiscard]] std::vector<TokenizedInstruction> parseFirstPassIntoSecondPass(const std::vector<Token> &tokens) const;
+        [[nodiscard]] std::vector<TokenizedInstruction> parseListOfTokensIntoTokenizedInstructions(const std::vector<Token> &tokens) const;
         [[nodiscard]] TokenizedInstruction parseLineOfTokens(const std::vector<Token> &line,
-                                           const std::unordered_map<std::string, uint16_t> &labelMap,
-                                           const std::unordered_map<std::string, uint16_t> &constMap,
-                                           const int &instructionIndex
+                                            const std::unordered_map<std::string, uint16_t> &labelMap,
+                                            const std::unordered_map<std::string, uint16_t> &constMap,
+                                            const int &instructionIndex
         ) const;
         static std::vector<parts::Instruction> getLiteralInstructions(const std::vector<TokenizedInstruction>& tknInstructions);
         static void printLiteralInstruction(const parts::Instruction &litInstr); //debug
         static std::vector<uint8_t> buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction> &literalInstructions);
         static std::vector<uint8_t> build8ByteVecFromSingleLiteralInstruction(const parts::Instruction &literalInstruction);
+
         static void throwAFit(const int &lineNum) {
             std::cerr << "MISTAKE MADE ON WRITTEN LINE " << lineNum << std::endl;
         }
@@ -417,27 +418,42 @@ namespace assembly {
     //gen tokens
     enum class TokenType {
         MISTAKE, // obvious error
+
         GEN_REG, // s1, s2
         SPEC_REG, // sp, fp, pc
         IO_PSEUDO_REG, // io0, io1
+
         LBRACKET, // [
         RBRACKET, // ]
+
         SING_QUOTE, // '
         DOUB_QUOTE, // "
+
         EQUALS, // =
         PLUS, // +
+
         OPERATION, // mov, add, etc.
+
         COMMA, // ,
-        COLON, // (for labels)
+        COLON, //
         DECIMAL, // 10
         HEX, // 0x1000
         BIN, // 0b1000
         EOL, // end of line
         CHAR, //character
-        CHAR_SPACE,
+        CHAR_SPACE, //space, but as a char (is not ignored)
         COMMENT, // # comment
+
         LABEL, // label:
         CONST,  // .const
+
+        TEXT, //.text
+        DATA, //.data
+
+        WORD,    // .word
+        QWORD,   //.qword
+        OCTBYTE, // .octbyte
+
         REF,  // (to label or const, use look up table)
         STRING // "string" --> not supported currently
     };
@@ -465,6 +481,8 @@ namespace assembly {
             case TokenType::COMMENT:        return "COMMENT";
             case TokenType::LABEL:          return "LABEL";
             case TokenType::CONST:          return "CONST";
+            case TokenType::TEXT:          return "TEXT";
+            case TokenType::DATA:          return "DATA";
             case TokenType::REF:            return "REF";
             case TokenType::STRING:         return "STRING";
             default:                        return "*UNKNOWN";

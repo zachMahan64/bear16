@@ -21,7 +21,7 @@ Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(enableDebug) {}
 
 //Board and loading ROM stuff -------------------------------------------------------
 int Board::run() {
-    constexpr int DELAY = 5;
+    constexpr int DELAY = 1;
     clock.resetCycles(); //set clock cycles to zero @ the start of a new process
     do {
         clock.tick(DELAY);

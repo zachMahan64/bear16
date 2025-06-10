@@ -1,5 +1,6 @@
 #PROPER RECURSIVE FIBONACCI CALCULATOR, WORKING MON 20250609
-.const FIB_N = 10
+.text
+.const FIB_N = 5
 .const STO_LOC = 4096
 start:
     mov a0, FIB_N

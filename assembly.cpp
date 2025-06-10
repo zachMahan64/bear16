@@ -13,8 +13,8 @@
 #include <regex>
 #include "assembly.h"
 
-#define LOG(x) std::cout << x << std::endl
-#define LOG_ERR(x) std::cerr << x << std::endl
+#define LOG(x) std::cout << std::dec << x << std::endl
+#define LOG_ERR(x) std::cerr << std::dec << x << std::endl
 
 //tools ---------------------------------------------------------------------------------------------------------
 void assembly::asmMnemonicSetGenerator() {
@@ -50,15 +50,16 @@ void assembly::asmMnemonicSetGenerator() {
     std::cout << "};\n";
     std::cin.get();
 }
-//updated 5/28/2025
+
 std::vector<uint8_t> assembly::Assembler::assembleFromFile(const std::string &path) const {
     std::vector<Token> allTokens = tokenizeAsmFirstPass(path);
-    const auto allTokenizedInstructions = parseFirstPassIntoSecondPass(allTokens);
+    const auto allTokenizedInstructions = parseListOfTokensIntoTokenizedInstructions(allTokens);
     auto literalInstructions = getLiteralInstructions(allTokenizedInstructions);
     return buildByteVecFromLiteralInstructions(literalInstructions);
 }
 
 //main passes ---------------------------------------------------------------------------------------------------------
+    //1st
 std::vector<assembly::Token> assembly::Assembler::tokenizeAsmFirstPass(const std::string &path) {
     std::vector<Token> firstPassTokens {};
 
@@ -139,51 +140,104 @@ std::vector<assembly::Token> assembly::Assembler::tokenizeAsmFirstPass(const std
 
     return firstPassTokens;
 }
-std::vector<assembly::TokenizedInstruction> assembly::Assembler::parseFirstPassIntoSecondPass(const std::vector<Token> &tokens) const {
+    //2nd
+std::vector<assembly::TokenizedInstruction> assembly::Assembler::parseListOfTokensIntoTokenizedInstructions(
+        const std::vector<Token> &tokens) const {
     //look-up tables
     std::unordered_map<std::string, uint16_t> labelMap = {};
     std::unordered_map<std::string, uint16_t> constMap = {};
-
     //break down into lines --> count lines for labels, resolve declarations and usages of labels/const --> form tokenized instructions
-    std::vector<std::vector<Token>> tokenLines {};
-    std::vector<Token> currentLine {};
+    std::vector<std::vector<Token>> tokenLines_TEXT {};
+    std::vector<Token> currentLine_TEXT {};
+    std::vector<std::vector<Token>> tokenLines_DATA {};
+    std::vector<Token> currentLine_DATA {};
     int lineNumInOrigAsm = 1;        //num lines on the editor
-    int instructionIndex = 0;        //num instructions in the program
-    //form lines
+    //form lines of tokens to be made into instr
+    bool inText = false;
+    bool inData = false;
+    int instructionIndex = 0;
     for (const Token &tkn: tokens) {
-        if (tkn.type == TokenType::MISTAKE) {
-            currentLine.push_back(tkn);
+        if (tkn.type == TokenType::TEXT) {
+            inText = true;
+            inData = false;
+            continue;
+        }
+        if (tkn.type == TokenType::DATA) {
+            inData = true;
+            inText = false;
+            continue;
+        }
+        if (!inText && !inData && (tkn.type != TokenType::EOL && tkn.type != TokenType::COMMENT)) {
+            LOG_ERR("NOT IN TEXT OR DATA SECTION: " + toString(tkn.type) + "-" + tkn.body);
+        }
+        else if (tkn.type == TokenType::MISTAKE) {
+            if (inText) currentLine_TEXT.push_back(tkn);
+            if (inData) currentLine_DATA.push_back(tkn);
             throwAFit(lineNumInOrigAsm);
         }
         else if (tkn.type == TokenType::EOL) {
             lineNumInOrigAsm++;
-            if (!currentLine.empty()) {
-                tokenLines.push_back(currentLine);
-                currentLine.clear();
+            if (inText) {
+                if (!currentLine_TEXT.empty()) {
+                    tokenLines_TEXT.push_back(currentLine_TEXT);
+                    currentLine_TEXT.clear();
+                }
+            }
+            if (inData) {
+                if (!currentLine_DATA.empty()) {
+                    tokenLines_DATA.push_back(currentLine_DATA);
+                    currentLine_DATA.clear();
+                }
             }
         }
         else if (tkn.type == TokenType::OPERATION) {
-            currentLine.push_back(tkn);
-            instructionIndex++;
-        }
-        else if (tkn.type == TokenType::LABEL) {
-            currentLine.push_back(tkn);
-            labelMap.emplace(tkn.body.substr(0, tkn.body.length() - 1), instructionIndex * 8);
+            if (inData) LOG_ERR("WARNING: instruction in data section: " + tkn.body + " on written line " + std::to_string(lineNumInOrigAsm));
+            if (inText) currentLine_TEXT.push_back(tkn);
+            if (inData) currentLine_DATA.push_back(tkn);
         }
         else if (tkn.type != TokenType::COMMENT && tkn.type != TokenType::COMMA) {
-            currentLine.push_back(tkn);
+            if (inText) currentLine_TEXT.push_back(tkn);
+            if (inData) currentLine_DATA.push_back(tkn);
         } else {
             LOG("IGNORED A TOKEN TYPE (2nd pass):" + toString(tkn.type));
         }
     }
     //handle hanging lines
-    if (!currentLine.empty()) {
-        tokenLines.push_back(currentLine);
+    if (!currentLine_TEXT.empty()) {
+        tokenLines_TEXT.push_back(currentLine_TEXT);
     }
+    //handle hanging lines
+    if (!currentLine_DATA.empty()) {
+        tokenLines_DATA.push_back(currentLine_DATA);
+    }
+
+    std::vector<std::vector<Token>> tokenLinesCombined_TEXT_and_DATA {};
+    tokenLinesCombined_TEXT_and_DATA.reserve(tokenLines_TEXT.size() + tokenLines_DATA.size());
+    for (const std::vector<Token> &line : tokenLines_TEXT) {
+        tokenLinesCombined_TEXT_and_DATA.push_back(line);
+    }
+    for (const std::vector<Token> &line : tokenLines_DATA) {
+        tokenLinesCombined_TEXT_and_DATA.push_back(line);
+    }
+
+    int lineNum = 0;
+    for (const std::vector<Token> &line: tokenLinesCombined_TEXT_and_DATA) {
+        Token firstTkn = line.at(0);
+        if (firstTkn.type == TokenType::OPERATION) {
+            lineNum++;
+        }
+        else if (firstTkn.type == TokenType::LABEL) {
+            std::string labelName = firstTkn.body.substr(0, firstTkn.body.length() - 1);
+            int labelValue = lineNum * 8;
+            labelMap.emplace(labelName, labelValue);
+            LOG("placed label " << labelName << " at " << std::hex << labelValue);
+        }
+    }
+
     //debug
     int numLinesInSecondPass = 0;
     std::cout << "\nTokenized lines (second pass):\n";
-    for (const std::vector<Token> &line : tokenLines) {
+    for (const std::vector<Token> &line : tokenLinesCombined_TEXT_and_DATA) {
         numLinesInSecondPass++;
         std::cout << "Line " << numLinesInSecondPass << ":" ;
         for (const Token &tkn : line) {
@@ -197,9 +251,9 @@ std::vector<assembly::TokenizedInstruction> assembly::Assembler::parseFirstPassI
     std::vector<TokenizedInstruction> finalPassTokenizedInstructions {};
     //form instructions or some shit, resolve references
     int numLines = 0;
-    int instructionIndex_ = 0;
-    for (const std::vector<Token> &line : tokenLines) {
-         numLines++;
+    instructionIndex = 0;
+    for (const std::vector<Token> &line : tokenLinesCombined_TEXT_and_DATA) {
+        numLines++;
         if (line.empty()) {
             continue; //just ignore dat hoe
         }
@@ -246,8 +300,8 @@ std::vector<assembly::TokenizedInstruction> assembly::Assembler::parseFirstPassI
         }
         //lines that SHOULD get made into instructions
         else if (firstTknType == TokenType::OPERATION) {
-            instructionIndex_++;
-            TokenizedInstruction instrForThisLine = parseLineOfTokens(line, labelMap, constMap, instructionIndex_);
+            instructionIndex++;
+            TokenizedInstruction instrForThisLine = parseLineOfTokens(line, labelMap, constMap, instructionIndex);
             finalPassTokenizedInstructions.emplace_back(instrForThisLine);
         } else {
             throwAFit(numLines);
@@ -256,7 +310,7 @@ std::vector<assembly::TokenizedInstruction> assembly::Assembler::parseFirstPassI
     }
     return finalPassTokenizedInstructions;
 }
-//sub section of pass two
+    //Sub-methods
 assembly::TokenizedInstruction assembly::Assembler::parseLineOfTokens(const std::vector<Token> &line,
         const std::unordered_map<std::string, uint16_t> &labelMap,
         const std::unordered_map<std::string, uint16_t> &constMap,
@@ -332,7 +386,6 @@ assembly::TokenizedInstruction assembly::Assembler::parseLineOfTokens(const std:
     instrForThisLine.setOperandsAndAutocorrectImmediates(doNotAutoCorrectImmediates, operands);
     return instrForThisLine;
 }
-
 std::vector<parts::Instruction> assembly::Assembler::getLiteralInstructions(const std::vector<TokenizedInstruction>& tknInstructions) {
     std::vector<parts::Instruction> literalInstructions {};
     literalInstructions.reserve(tknInstructions.size());
@@ -344,7 +397,6 @@ std::vector<parts::Instruction> assembly::Assembler::getLiteralInstructions(cons
     }
     return literalInstructions;
 }
-
 void assembly::Assembler::printLiteralInstruction(const parts::Instruction &litInstr) {
     std::cout << "INSTR (DEBUG):\n";
     std::cout << "Opcode: " << std::hex << std::setw(4) << std::setfill('0') << litInstr.opcode << "\n";
@@ -355,7 +407,6 @@ void assembly::Assembler::printLiteralInstruction(const parts::Instruction &litI
     std::cout << "src2: " << std::hex << std::setw(4) << std::setfill('0') << litInstr.src2 << "\n";
     std::cout << "\n";
 } //debug
-
 std::vector<uint8_t> assembly::Assembler::buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction>& literalInstructions) {
     std::vector<uint8_t> byteVec;
     byteVec.reserve(literalInstructions.size() * 8);
@@ -404,6 +455,8 @@ assembly::TokenType assembly::Token::deduceTokenType(const std::string &text) {
     else if (text == "\\s") type = TokenType::CHAR_SPACE;
     else if (text.length() > 1 && text.back() == ':') type = TokenType::LABEL; //needs trimming?
     else if (text == ".const") type = TokenType::CONST;
+    else if (text == ".data") type = TokenType::DATA;
+    else if (text == ".text") type = TokenType::TEXT;
     else if (std::ranges::all_of(text, [](char c) { return (std::isalnum(c) || c == '_'); })) type = TokenType::REF;
     return type;
 }
