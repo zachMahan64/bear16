@@ -5,6 +5,8 @@
 #include <string>
 #include <cstdint>
 #include <unordered_set>
+#include <vector>
+#include <vector>
 
 #include "isa.h"
 #include "parts.h"
@@ -13,6 +15,8 @@ namespace assembly {
     enum class TokenType;
     class Token;
     class TokenizedInstruction;
+    class TokenizedData;
+    using TokenizedRomLine = std::variant<TokenizedInstruction, TokenizedData>;
 
     void asmMnemonicSetGenerator();
     //valid set & map for opcode & named operands respectively ------------------------------------------------------
@@ -35,13 +39,14 @@ namespace assembly {
         [[nodiscard]] std::vector<uint8_t> assembleFromFile(const std::string &path) const;
     private:
         static std::vector<Token> tokenizeAsmFirstPass(const std::string &filename);
-        [[nodiscard]] std::vector<TokenizedInstruction> parseListOfTokensIntoTokenizedInstructions(const std::vector<Token> &tokens) const;
+        [[nodiscard]] std::vector<TokenizedRomLine> parseListOfTokensIntoTokenizedInstructions(
+            const std::vector<Token> &tokens) const;
         [[nodiscard]] TokenizedInstruction parseLineOfTokens(const std::vector<Token> &line,
                                             const std::unordered_map<std::string, uint16_t> &labelMap,
                                             const std::unordered_map<std::string, uint16_t> &constMap,
                                             const int &instructionIndex
         ) const;
-        static std::vector<parts::Instruction> getLiteralInstructions(const std::vector<TokenizedInstruction>& tknInstructions);
+        static std::vector<parts::Instruction> getLiteralRom(const std::vector<TokenizedRomLine>& tknRomLines);
         static void printLiteralInstruction(const parts::Instruction &litInstr); //debug
         static std::vector<uint8_t> buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction> &literalInstructions);
         static std::vector<uint8_t> build8ByteVecFromSingleLiteralInstruction(const parts::Instruction &literalInstruction);
@@ -230,5 +235,11 @@ namespace assembly {
         oss << " }";
         return oss.str();
     }
+    class TokenizedData {
+    public:
+        Token directive;
+        std::vector<Token> dataTokens;
+        TokenizedData(std::vector<Token> tokens);
+    };
 }
 #endif //ASSEMBLER_H
