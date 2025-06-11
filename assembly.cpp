@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <iterator>
 #include <regex>
+#include "core.h"
 #include "assembly.h"
 #define LOG(x) std::cout << std::dec << x << std::endl
 #define LOG_ERR(x) std::cerr << std::dec << x << std::endl
@@ -359,7 +360,7 @@ namespace assembly {
         {isa::Opcode_E::CLR, 1}, {isa::Opcode_E::INC, 1}, {isa::Opcode_E::DEC, 1}, //dest only
         {isa::Opcode_E::MEMCPY, 3},
         {isa::Opcode_E::SW, 2}, {isa::Opcode_E::SB, 2}, //(3) but offset (in src1!)
-        {isa::Opcode_E::LWROM, 2}, {isa::Opcode_E::LWROM, 2}, //(3) but offset
+        {isa::Opcode_E::LWROM, 2}, {isa::Opcode_E::LBROM, 2}, //(3) but offset
 
         // Ctrl Flow
         {isa::Opcode_E::CALL, 1}, {isa::Opcode_E::RET, 0}, {isa::Opcode_E::JMP, 1},
@@ -383,12 +384,22 @@ namespace assembly {
     const std::unordered_set<char> validSymbols = {
         '!', '@', '/', '\\', '$', '%', '&', '^', '*', '(', ')', '\'', '~', '-', '\0'
     };
-    const std::unordered_map<std::string, TokenType> dataDirectivesMap = {
+    const std::unordered_map<std::string, TokenType> stringToDataDirectives = {
         {".string", TokenType::STRING_DIR},
         {".byte", TokenType::BYTE_DIR},
         {".octbyte", TokenType::OCTBYTE_DIR},
         {".word", TokenType::WORD_DIR},
-        {".word", TokenType::QWORD_DIR},};
+        {".qword", TokenType::QWORD_DIR}};
+    const std::unordered_map<TokenType, size_t> dataDirectivesToSizeMap {
+            {TokenType::STRING_DIR, 0}, //default, must be manually adjusted
+            {TokenType::BYTE_DIR, 1},
+            {TokenType::OCTBYTE_DIR, 8},
+            {TokenType::WORD_DIR, 2},
+            {TokenType::QWORD_DIR, 8}
+    };
+    const std::unordered_set<TokenType> validDataTokenTypes {
+        TokenType::HEX, TokenType::BIN, TokenType::DECIMAL, TokenType::CHAR, TokenType::CHAR_SPACE
+    };
     //tools ----------------------------------------------------------------------------------------------------------------
     void asmMnemonicSetGenerator() {
         struct Instr {
@@ -429,7 +440,7 @@ namespace assembly {
     std::vector<uint8_t> Assembler::assembleFromFile(const std::string &path) const {
         std::vector<Token> allTokens = tokenizeAsmFirstPass(path);
         const auto allTokenizedInstructions = parseListOfTokensIntoTokenizedRomLines(allTokens);
-        auto literalInstructions = getLiteralRom(allTokenizedInstructions);
+        std::vector<parts::Instruction> literalInstructions = getLiteralInstructions(allTokenizedInstructions);
         return buildByteVecFromLiteralInstructions(literalInstructions);
     }
 
@@ -586,17 +597,18 @@ namespace assembly {
             tokenLines_DATA.push_back(currentLine_DATA);
         }
 
-        std::vector<std::vector<Token>> tokenLinesCombined_TEXT_and_DATA {};
-        tokenLinesCombined_TEXT_and_DATA.reserve(tokenLines_TEXT.size() + tokenLines_DATA.size());
+        std::vector<std::vector<Token>> tokenLines_TEXT_and_DATA {};
+        tokenLines_TEXT_and_DATA.reserve(tokenLines_TEXT.size() + tokenLines_DATA.size());
         for (const std::vector<Token> &line : tokenLines_TEXT) {
-            tokenLinesCombined_TEXT_and_DATA.push_back(line);
+            tokenLines_TEXT_and_DATA.push_back(line);
         }
         for (const std::vector<Token> &line : tokenLines_DATA) {
-            tokenLinesCombined_TEXT_and_DATA.push_back(line);
+            tokenLines_TEXT_and_DATA.push_back(line);
         }
 
+        //IMP: MUST UPDATE HERE W/ LABEL RES FOR DATA DIR
         int byteNum  = 0;
-        for (const std::vector<Token> &line: tokenLinesCombined_TEXT_and_DATA) {
+        for (const std::vector<Token> &line: tokenLines_TEXT_and_DATA) {
             Token firstTkn = line.at(0);
             if (firstTkn.type == TokenType::OPERATION) {
                 byteNum += 8;
@@ -607,12 +619,39 @@ namespace assembly {
                 labelMap.emplace(labelName, labelValue);
                 LOG("placed label " << labelName << " at " << std::hex << labelValue);
             }
+            else if (containsValue(stringToDataDirectives, firstTkn.type)) {
+                if (firstTkn.type == TokenType::STRING_DIR) {
+                    try {
+                        if (line.at(2).type == TokenType::REF && line.size() == 4) {
+                            const Token& strTkn = line.at(2);
+                            byteNum += static_cast<int>(strTkn.body.length()) + 1; //+1 for null terminator
+                        }
+                        else {
+                            LOG_ERR("ERROR: invalid string declaration at byte index: ") << byteNum << " | " <<  std::endl;
+                            for (const Token &tkn : line) {
+                                std::cout << tkn.body << " | ";
+                            }
+                        }
+                    } catch (std::out_of_range &e) {
+                        LOG_ERR("ERROR: invalid string declaration at byte index: ") << byteNum << " | " <<  std::endl;
+                        for (const Token &tkn : line) {
+                            std::cout << tkn.body << " | ";
+                        }
+                    }
+                } else {
+                    for (const Token &tkn : line) {
+                        if (validDataTokenTypes.contains(tkn.type)) {
+                            byteNum += static_cast<int>(dataDirectivesToSizeMap.at(firstTkn.type));
+                        }
+                    }
+                }
+            }
         }
 
         //debug
         int numLinesInSecondPass = 0;
         std::cout << "\nTokenized lines (second pass):\n";
-        for (const std::vector<Token> &line : tokenLinesCombined_TEXT_and_DATA) {
+        for (const std::vector<Token> &line : tokenLines_TEXT_and_DATA) {
             numLinesInSecondPass++;
             std::cout << "Line " << numLinesInSecondPass << ":" ;
             for (const Token &tkn : line) {
@@ -622,12 +661,11 @@ namespace assembly {
             std::cout << std::endl;
         }
 
-        //za big dada of tokens
-        std::vector<TokenizedRomLine> finalPassTokenizedRomLines {};
+        std::vector<TokenizedRomLine> finalRomLines {};
         //form instructions or some shit, resolve references
         int numLines = 0;
         byteIndex  = 0;
-        for (const std::vector<Token> &line : tokenLinesCombined_TEXT_and_DATA) {
+        for (const std::vector<Token> &line : tokenLines_TEXT_and_DATA) {
             numLines++;
             if (line.empty()) {
                 continue; //just ignore dat hoe
@@ -638,7 +676,7 @@ namespace assembly {
                 continue; //blank line
             }
             if (firstTknType == TokenType::LABEL) {
-                continue;
+                continue; //becuz we already placed the label!
             }
             if (firstTknType == TokenType::CONST) {
                 if (line.size() > 3 && line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
@@ -678,20 +716,22 @@ namespace assembly {
                     LOG_ERR("ERROR: bad const declaration at line with tokens: " << line.size());
                 }
             }
-            //lines that SHOULD get made into instructions
+            //INSTR -> lines that SHOULD get made into instructions
             else if (firstTknType == TokenType::OPERATION) {
                 byteIndex += 8;
                 TokenizedInstruction instrForThisLine = parseLineOfTokensIntoTokenizedInstruction(line, labelMap, constMap, byteIndex);
-                finalPassTokenizedRomLines.emplace_back(instrForThisLine);
-            } else if (contains_value(dataDirectivesMap, firstTknType)) {
+                finalRomLines.emplace_back(instrForThisLine);
+            }
+            //DATA DIRECTIVES
+            else if (containsValue(stringToDataDirectives, firstTknType)) {
                 TokenizedData dataForThisLine = parseLineOfTokensIntoTokenizedData(line, labelMap, constMap, byteIndex);
-                finalPassTokenizedRomLines.emplace_back(dataForThisLine);
+                finalRomLines.emplace_back(dataForThisLine);
             } else {
                 throwAFit(numLines);
                 LOG_ERR(line.at(0).body + " (" + toString(line.at(0).type) + ") cannot begin a line");
             }
         }
-        return finalPassTokenizedRomLines;
+        return finalRomLines;
     }
     //Sub-methods
     TokenizedInstruction Assembler::parseLineOfTokensIntoTokenizedInstruction(const std::vector<Token> &line,
@@ -793,14 +833,8 @@ namespace assembly {
         instrForThisLine.setOperandsAndAutocorrectImmediates(doNotAutoCorrectImmediates, operands);
         return instrForThisLine;
     }
-
-    TokenizedData Assembler::parseLineOfTokensIntoTokenizedData(const std::vector<Token> &line,
-                                                                const std::unordered_map<std::string, uint16_t> &labelMap,
-                                                                const std::unordered_map<std::string, uint16_t> &constMap,
-                                                                int byteIndex) const {
-    }
-
-    std::vector<parts::Instruction> Assembler::getLiteralRom(const std::vector<TokenizedRomLine>& tknRomLines) {
+    //.text-------------------------------------------------------------------------------------------------------------
+    std::vector<parts::Instruction> Assembler::getLiteralInstructions(const std::vector<TokenizedRomLine>& tknRomLines) {
         std::vector<parts::Instruction> literalInstructions {};
         literalInstructions.reserve(tknRomLines.size());
         for (const auto& line : tknRomLines) {
@@ -846,8 +880,124 @@ namespace assembly {
         }
         return byteVec;
     }
+    //.data---------------------------------------------------------------------------------------------------------------
+    TokenizedData Assembler::parseLineOfTokensIntoTokenizedData(const std::vector<Token> &line,
+                                                                const std::unordered_map<std::string, uint16_t> &labelMap,
+                                                                const std::unordered_map<std::string, uint16_t> &constMap,
+                                                                int byteIndex) const {
+        if (line.empty()) {
+            LOG_ERR("ERROR: empty line fed to be made into TokenizedData");
+            return TokenizedData(Token('\0'));
+        }
 
-    //helpers---------------------------------------------------------------------------------------------------------------
+        const Token& firstTkn = line.at(0);
+
+        std::vector<Token> revisedDataTokens {}; //use this to build finalized data tokens, also make a function for this
+        for (const auto& tkn : line) {
+            if (dataDirectivesToSizeMap.contains(tkn.type) || validDataTokenTypes.contains(tkn.type)
+                || tkn.type == TokenType::DOUB_QUOTE || tkn.type == TokenType::SING_QUOTE || tkn.type == TokenType::REF) {
+                if (validDataTokenTypes.contains(tkn.type)) {
+                    revisedDataTokens.emplace_back(tkn);
+                }
+                if (tkn.type == TokenType::REF) {
+                    if (labelMap.contains(tkn.body)) {
+                        revisedDataTokens.emplace_back(std::to_string(labelMap.at(tkn.body)));
+                        LOG(".data: converted raw REF to label-mapped val: " + tkn.body);
+                    } else if (constMap.contains(tkn.body)) {
+                        revisedDataTokens.emplace_back(std::to_string(constMap.at(tkn.body)));
+                        LOG(".data: converted raw REF to const-mapped val: " + tkn.body);
+                    } else {
+                        Token fixedStrTkn(tkn.body);
+                        fixedStrTkn.type = TokenType::STRING;
+                        revisedDataTokens.emplace_back(fixedStrTkn);
+                        LOG(".data: converted raw REF to STRING since ref was not found in label or const map:" + fixedStrTkn.body);
+                        if (firstTkn.type != TokenType::STRING_DIR) {
+                            LOG_ERR("ERROR: misused string or invalid reference in directive " << toString(firstTkn.type));
+                        }
+                    }
+                }
+            }
+            else {
+                LOG_ERR("ERROR: bad data/directive in .data section: " << toString(tkn.type));
+            }
+        }
+        TokenizedData dataLine(firstTkn);
+        if (dataDirectivesToSizeMap.contains(firstTkn.type)) {
+            dataLine.setDataTokens(std::vector<Token>(line.begin() + 1, line.end()));
+        }
+        else {
+            throwAFit(firstTkn.body);
+            LOG_ERR("ERROR: bad directive" << line.size());
+        }
+        //enforce fixed directives
+        if (firstTkn.type == TokenType::STRING_DIR && revisedDataTokens.size() != 1) {
+            LOG_ERR("ERROR: malformed string directive: " << toString(firstTkn.type));
+        }
+        if (firstTkn.type == TokenType::OCTBYTE_DIR && revisedDataTokens.size() != 1) {
+            LOG_ERR("ERROR: malformed octbyte directive (must have 4 data entries): " << toString(firstTkn.type));
+        }
+        if (firstTkn.type == TokenType::QWORD_DIR && revisedDataTokens.size() != 1) {
+            LOG_ERR("ERROR: malformed qword directive (must have 4 data entries): " << toString(firstTkn.type));
+        }
+        return dataLine;
+    }
+
+    std::vector<uint8_t> Assembler::parseTokenizedDataIntoByteVec(std::vector<TokenizedData> &allTokenizedData) const {
+        std::vector<uint8_t> byteVec {};
+        for (const auto& dataLine : allTokenizedData) {
+            auto lineBytes = parseDataLineIntoBytes(dataLine);
+            for (const auto& byte : lineBytes) {
+                byteVec.emplace_back(byte);
+            }
+        }
+        return byteVec;
+    }
+
+    std::vector<uint8_t> Assembler::parseDataLineIntoBytes(const TokenizedData &dataLine) const {
+        std::vector<uint8_t> lineBytes {};
+        auto lineTkns = dataLine.dataTokens;
+        for (const auto& tkn : lineTkns) {
+            auto thisTranslatedTkn = parsePieceOfDataIntoBytes(tkn);
+            for (const auto& byte : thisTranslatedTkn) {
+                lineBytes.emplace_back(byte);
+            }
+        }
+        return {};
+    }
+
+    std::vector<uint8_t> Assembler::parsePieceOfDataIntoBytes(const Token &pieceOfData) const {
+        std::vector<uint8_t> byteVec {};
+        std::string strBody = pieceOfData.body;
+        const TokenType& tknT = pieceOfData.type;
+        if (tknT == TokenType::STRING) {
+            for (const char& c : strBody) {
+                byteVec.emplace_back(static_cast<uint8_t>(c));
+            }
+            byteVec.emplace_back(0); //null terminator
+        }
+        else if (tknT == TokenType::HEX) {
+            uint16_t hexVal = static_cast<uint16_t>(std::stoi(strBody.substr(2), nullptr, 16));
+            byteVec = convertWordToBytePair(hexVal);
+        }
+        else if (tknT == TokenType::DECIMAL) {
+            auto hexVal = static_cast<uint16_t>(std::stoi(strBody, nullptr, 10));
+            byteVec = convertWordToBytePair(hexVal);
+        }
+        else if (tknT == TokenType::BIN) {
+            uint16_t hexVal = static_cast<uint16_t>(std::stoi(strBody.substr(2), nullptr, 2));
+            byteVec = convertWordToBytePair(hexVal);
+        }
+        else if (tknT == TokenType::CHAR) {
+            byteVec.emplace_back(static_cast<uint8_t>(strBody.at(0)));
+        }
+        else if (tknT == TokenType::CHAR_SPACE) {
+            byteVec.emplace_back(32); //value of space character
+        }
+        return byteVec;
+    }
+
+
+    //helpers-----------------------------------------------------------------------------------------------------------
     TokenType Token::deduceTokenType(const std::string &text) {
         TokenType type = TokenType::MISTAKE;
         if (validOpcodeMnemonics.contains(text)) {
@@ -862,7 +1012,7 @@ namespace assembly {
             }
         }
         else if (symbolToTokenMap.contains(text)) type = symbolToTokenMap.at(text); //for '[', ']', ',', "+", "=", and ':'
-        else if (dataDirectivesMap.contains(text)) type = dataDirectivesMap.at(text); //for directives like .string
+        else if (stringToDataDirectives.contains(text)) type = stringToDataDirectives.at(text); //for directives like .string
         else if (std::regex_match(text, std::regex("^0x[0-9A-Fa-f]+$"))) type = TokenType::HEX;
         else if (std::regex_match(text, std::regex("^0b[01]+$"))) type = TokenType::BIN;
         else if (std::regex_match(text, std::regex("^[-+]?[0-9]+$"))) type = TokenType::DECIMAL;
@@ -902,6 +1052,13 @@ namespace assembly {
         }
         return {opcodeStr, ""};
     }
+
+    TokenizedData::TokenizedData(Token directive) : directive(std::move(directive)) {}
+
+    void TokenizedData::setDataTokens(const std::vector<Token> &dataTokens){
+        this->dataTokens = dataTokens;
+    };
+
     void TokenizedInstruction::setOperandsAndAutocorrectImmediates(const bool& doNotAutoCorrectImmediates, std::vector<Operand> operands) {
         const isa::Opcode_E &opE = opcode.opcode_e;
         bool opHasNoWritImm = opcode.immType == ImmType::NO_IM;

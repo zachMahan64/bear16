@@ -6,6 +6,7 @@ start:
     mov a0, FIB_N
     call fibonacci
     sw STO_LOC, rv
+    call data_sec_test
     hlt
 
 fibonacci:
@@ -31,4 +32,14 @@ base_case:
     mov rv, 1
     ret
 .data
-
+my_val:
+.byte 'a'
+.byte 0x10
+.word '\s'
+.octbyte 0x127caf7641
+.string "hello"
+.text
+data_sec_test:
+lea t0, my_val
+lbrom t3, t0
+ret

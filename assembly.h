@@ -27,8 +27,10 @@ namespace assembly {
     extern const std::unordered_map<isa::Opcode_E, int> opcodeToOperandMinimumCountMap;
     extern const std::unordered_set<isa::Opcode_E> opCodesWithOptionalSrc2OffsetArgument;
     extern const std::unordered_set<isa::Opcode_E> opCodesWithOptionalSrc1OffsetArgument;
-    extern const std::unordered_map<std::string, TokenType> dataDirectivesMap;
+    extern const std::unordered_map<std::string, TokenType> stringToDataDirectives;
+    extern const std::unordered_map<TokenType, size_t> dataDirectivesToSizeMap; //in bytes
     extern const std::unordered_set<char> validSymbols;
+    extern const std::unordered_set<TokenType> validDataTokenTypes;
     //main class
     class Assembler {
     public:
@@ -50,7 +52,10 @@ namespace assembly {
                                                          const std::unordered_map<std::string, uint16_t> &labelMap,
                                                          const std::unordered_map<std::string, uint16_t> &constMap, int byteIndex
         ) const;
-        static std::vector<parts::Instruction> getLiteralRom(const std::vector<TokenizedRomLine>& tknRomLines);
+        std::vector<uint8_t> parseTokenizedDataIntoByteVec(std::vector<TokenizedData> &allTokenizedData) const;
+        std::vector<uint8_t> parseDataLineIntoBytes(const TokenizedData &dataLine) const;
+        std::vector<uint8_t> parsePieceOfDataIntoBytes(const Token &pieceOfData) const;
+        static std::vector<parts::Instruction> getLiteralInstructions(const std::vector<TokenizedRomLine>& tknRomLines);
         static void printLiteralInstruction(const parts::Instruction &litInstr); //debug
         static std::vector<uint8_t> buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction> &literalInstructions);
         static std::vector<uint8_t> build8ByteVecFromSingleLiteralInstruction(const parts::Instruction &literalInstruction);
@@ -240,7 +245,7 @@ namespace assembly {
         return oss.str();
     }
     template <typename MapType, typename ValueType>
-    bool contains_value(const MapType& map, const ValueType& value) {
+    bool containsValue(const MapType& map, const ValueType& value) {
         for (const auto& [key, val] : map) {
             if (val == value) {
                 return true;
@@ -252,7 +257,15 @@ namespace assembly {
     public:
         Token directive;
         std::vector<Token> dataTokens;
-        TokenizedData(std::vector<Token> tokens);
+        explicit TokenizedData(Token directive);
+        void setDataTokens(const std::vector<Token>& dataTokens);
     };
+    //helper
+    inline std::vector<uint8_t> convertWordToBytePair(uint16_t val) {
+        std::vector<uint8_t> bytePair{};
+        bytePair[0] = static_cast<uint8_t>(val & 0xFF);
+        bytePair[1] = static_cast<uint8_t>((val >> 8) & 0xFF);
+        return bytePair;
+    }
 }
 #endif //ASSEMBLER_H
