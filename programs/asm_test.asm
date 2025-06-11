@@ -31,4 +31,4 @@ base_case:
     mov rv, 1
     ret
 .data
-    .string "sybau"
+

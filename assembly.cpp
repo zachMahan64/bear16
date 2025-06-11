@@ -383,7 +383,7 @@ namespace assembly {
     const std::unordered_set<char> validSymbols = {
         '!', '@', '/', '\\', '$', '%', '&', '^', '*', '(', ')', '\'', '~', '-', '\0'
     };
-    const std::unordered_map<std::string, TokenType> directivesMap = {
+    const std::unordered_map<std::string, TokenType> dataDirectivesMap = {
         {".string", TokenType::STRING_DIR},
         {".byte", TokenType::BYTE_DIR},
         {".octbyte", TokenType::OCTBYTE_DIR},
@@ -428,7 +428,7 @@ namespace assembly {
         : isEnableDebug(enableDebug), doNotAutoCorrectImmediates(doNotAutoCorrectImmediates) {};
     std::vector<uint8_t> Assembler::assembleFromFile(const std::string &path) const {
         std::vector<Token> allTokens = tokenizeAsmFirstPass(path);
-        const auto allTokenizedInstructions = parseListOfTokensIntoTokenizedInstructions(allTokens);
+        const auto allTokenizedInstructions = parseListOfTokensIntoTokenizedRomLines(allTokens);
         auto literalInstructions = getLiteralRom(allTokenizedInstructions);
         return buildByteVecFromLiteralInstructions(literalInstructions);
     }
@@ -516,7 +516,7 @@ namespace assembly {
         return firstPassTokens;
     }
     //2nd
-    std::vector<TokenizedRomLine> Assembler::parseListOfTokensIntoTokenizedInstructions(
+    std::vector<TokenizedRomLine> Assembler::parseListOfTokensIntoTokenizedRomLines(
         const std::vector<Token> &tokens) const {
         //look-up tables
         std::unordered_map<std::string, uint16_t> labelMap = {};
@@ -530,7 +530,7 @@ namespace assembly {
         //form lines of tokens to be made into instr
         bool inText = false;
         bool inData = false;
-        int instructionIndex = 0;
+        int byteIndex  = 0;
         for (const Token &tkn: tokens) {
             if (tkn.type == TokenType::TEXT) {
                 inText = true;
@@ -623,10 +623,10 @@ namespace assembly {
         }
 
         //za big dada of tokens
-        std::vector<TokenizedRomLine> finalPassTokenizedInstructions {};
+        std::vector<TokenizedRomLine> finalPassTokenizedRomLines {};
         //form instructions or some shit, resolve references
         int numLines = 0;
-        instructionIndex = 0;
+        byteIndex  = 0;
         for (const std::vector<Token> &line : tokenLinesCombined_TEXT_and_DATA) {
             numLines++;
             if (line.empty()) {
@@ -680,22 +680,26 @@ namespace assembly {
             }
             //lines that SHOULD get made into instructions
             else if (firstTknType == TokenType::OPERATION) {
-                instructionIndex++;
-                TokenizedInstruction instrForThisLine = parseLineOfTokens(line, labelMap, constMap, instructionIndex);
-                finalPassTokenizedInstructions.emplace_back(instrForThisLine);
+                byteIndex += 8;
+                TokenizedInstruction instrForThisLine = parseLineOfTokensIntoTokenizedInstruction(line, labelMap, constMap, byteIndex);
+                finalPassTokenizedRomLines.emplace_back(instrForThisLine);
+            } else if (contains_value(dataDirectivesMap, firstTknType)) {
+                TokenizedData dataForThisLine = parseLineOfTokensIntoTokenizedData(line, labelMap, constMap, byteIndex);
+                finalPassTokenizedRomLines.emplace_back(dataForThisLine);
             } else {
                 throwAFit(numLines);
                 LOG_ERR(line.at(0).body + " (" + toString(line.at(0).type) + ") cannot begin a line");
             }
         }
-        return finalPassTokenizedInstructions;
+        return finalPassTokenizedRomLines;
     }
     //Sub-methods
-    TokenizedInstruction Assembler::parseLineOfTokens(const std::vector<Token> &line,
+    TokenizedInstruction Assembler::parseLineOfTokensIntoTokenizedInstruction(const std::vector<Token> &line,
             const std::unordered_map<std::string, uint16_t> &labelMap,
             const std::unordered_map<std::string, uint16_t> &constMap,
-            const int &instructionIndex
+            const int &byteIndex
             ) const {
+        int instructionIndex = byteIndex / 8;
         //first token is the OPCODE!
         OpCode opCode(line.at(0));
         TokenizedInstruction instrForThisLine(opCode);
@@ -789,6 +793,13 @@ namespace assembly {
         instrForThisLine.setOperandsAndAutocorrectImmediates(doNotAutoCorrectImmediates, operands);
         return instrForThisLine;
     }
+
+    TokenizedData Assembler::parseLineOfTokensIntoTokenizedData(const std::vector<Token> &line,
+                                                                const std::unordered_map<std::string, uint16_t> &labelMap,
+                                                                const std::unordered_map<std::string, uint16_t> &constMap,
+                                                                int byteIndex) const {
+    }
+
     std::vector<parts::Instruction> Assembler::getLiteralRom(const std::vector<TokenizedRomLine>& tknRomLines) {
         std::vector<parts::Instruction> literalInstructions {};
         literalInstructions.reserve(tknRomLines.size());
@@ -851,7 +862,7 @@ namespace assembly {
             }
         }
         else if (symbolToTokenMap.contains(text)) type = symbolToTokenMap.at(text); //for '[', ']', ',', "+", "=", and ':'
-        else if (directivesMap.contains(text)) type = directivesMap.at(text); //for directives like .string
+        else if (dataDirectivesMap.contains(text)) type = dataDirectivesMap.at(text); //for directives like .string
         else if (std::regex_match(text, std::regex("^0x[0-9A-Fa-f]+$"))) type = TokenType::HEX;
         else if (std::regex_match(text, std::regex("^0b[01]+$"))) type = TokenType::BIN;
         else if (std::regex_match(text, std::regex("^[-+]?[0-9]+$"))) type = TokenType::DECIMAL;

@@ -27,7 +27,7 @@ namespace assembly {
     extern const std::unordered_map<isa::Opcode_E, int> opcodeToOperandMinimumCountMap;
     extern const std::unordered_set<isa::Opcode_E> opCodesWithOptionalSrc2OffsetArgument;
     extern const std::unordered_set<isa::Opcode_E> opCodesWithOptionalSrc1OffsetArgument;
-    extern const std::unordered_map<std::string, TokenType> directivesMap;
+    extern const std::unordered_map<std::string, TokenType> dataDirectivesMap;
     extern const std::unordered_set<char> validSymbols;
     //main class
     class Assembler {
@@ -39,12 +39,16 @@ namespace assembly {
         [[nodiscard]] std::vector<uint8_t> assembleFromFile(const std::string &path) const;
     private:
         static std::vector<Token> tokenizeAsmFirstPass(const std::string &filename);
-        [[nodiscard]] std::vector<TokenizedRomLine> parseListOfTokensIntoTokenizedInstructions(
+        [[nodiscard]] std::vector<TokenizedRomLine> parseListOfTokensIntoTokenizedRomLines(
             const std::vector<Token> &tokens) const;
-        [[nodiscard]] TokenizedInstruction parseLineOfTokens(const std::vector<Token> &line,
+        TokenizedInstruction parseLineOfTokensIntoTokenizedInstruction(const std::vector<Token> &line,
                                             const std::unordered_map<std::string, uint16_t> &labelMap,
                                             const std::unordered_map<std::string, uint16_t> &constMap,
                                             const int &instructionIndex
+                                            ) const;
+        TokenizedData parseLineOfTokensIntoTokenizedData(const std::vector<Token> &line,
+                                                         const std::unordered_map<std::string, uint16_t> &labelMap,
+                                                         const std::unordered_map<std::string, uint16_t> &constMap, int byteIndex
         ) const;
         static std::vector<parts::Instruction> getLiteralRom(const std::vector<TokenizedRomLine>& tknRomLines);
         static void printLiteralInstruction(const parts::Instruction &litInstr); //debug
@@ -234,6 +238,15 @@ namespace assembly {
         }
         oss << " }";
         return oss.str();
+    }
+    template <typename MapType, typename ValueType>
+    bool contains_value(const MapType& map, const ValueType& value) {
+        for (const auto& [key, val] : map) {
+            if (val == value) {
+                return true;
+            }
+        }
+        return false;
     }
     class TokenizedData {
     public:
