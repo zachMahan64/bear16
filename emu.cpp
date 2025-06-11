@@ -21,10 +21,10 @@
 #include "core.h"
 #include "emu.h"
 
-int emu::Emulator::run() {
+int emu::Emulator::assembleAndRun() {
     //assemble
     std::string path = "../programs/asm_test.asm";
-    assembly::Assembler testAssembler = assembly::Assembler::initInstance(false, false);
+    assembly::Assembler testAssembler(false, false);
     auto byteVec = testAssembler.assembleFromFile(path);
 
     //init emulated system

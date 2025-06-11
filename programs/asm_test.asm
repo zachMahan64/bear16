@@ -1,18 +1,34 @@
-#SUM OF THE FIRST <N> NATURAL NUMBERS, TUE 20250610
+#PROPER RECURSIVE FIBONACCI CALCULATOR, WORKING MON 20250609
 .text
-.const N_ = 10
-.const RESULT_ADDR = 4096
-
-    mov t0, 1          # counter = 1
-    mov t1, 0          # sum = 0
-
-loop:
-    add t1, t1, t0     # sum += counter
-    add t0, t0, 1      # counter++
-    comp t0, N_
-    jcond_neg loop     # if counter <= N, repeat loop
-
-    sw RESULT_ADDR, t1
-
-end:
+.const FIB_N = 1
+.const STO_LOC = 4096
+start:
+    mov a0, FIB_N
+    call fibonacci
+    sw STO_LOC, rv
     hlt
+
+fibonacci:
+    # a0 = n
+    le base_case, a0, 2   # if a0 <= 1 goto base_case
+
+    push a0            # save n
+
+    sub a0, a0, 1         # a0 = n - 1
+    call fibonacci        # fib(n - 1)
+    pop t0 # n -> t0
+    push rv            # save result onto stack
+
+    sub a0, t0, 2         # a0 = n - 2
+    call fibonacci        # fib(n - 2)
+    push rv           # save result onto stack
+    pop t1 # get fib(n - 2) from stack
+    pop t2 # get fib(n - 2) from stack
+    add rv, t1, t2        # rv = fib(n-1) + fib(n-2)
+    ret
+
+base_case:
+    mov rv, 1
+    ret
+.data
+    .string "sybau"

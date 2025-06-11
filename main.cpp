@@ -5,6 +5,6 @@
 int main() {
     //assembly::asmMnemonicSetGenerator();
     emu::Emulator emulator {};
-    int exitCode = emulator.run();
+    int exitCode = emulator.assembleAndRun();
     return exitCode;
 }
