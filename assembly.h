@@ -31,6 +31,7 @@ namespace assembly {
     extern const std::unordered_map<TokenType, size_t> dataDirectivesToSizeMap; //in bytes
     extern const std::unordered_set<char> validSymbols;
     extern const std::unordered_set<TokenType> validDataTokenTypes;
+    extern const std::unordered_map<TokenType, size_t> fixedDirectivesToSizeMap;
     //main class
     class Assembler {
     public:
@@ -52,7 +53,7 @@ namespace assembly {
                                                          const std::unordered_map<std::string, uint16_t> &labelMap,
                                                          const std::unordered_map<std::string, uint16_t> &constMap, int byteIndex
         ) const;
-        std::vector<uint8_t> parseTokenizedDataIntoByteVec(std::vector<TokenizedData> &allTokenizedData) const;
+        std::vector<uint8_t> parseTokenizedDataIntoByteVec(std::vector<TokenizedRomLine> &allTokenizedData) const;
         std::vector<uint8_t> parseDataLineIntoBytes(const TokenizedData &dataLine) const;
         std::vector<uint8_t> parsePieceOfDataIntoBytes(const Token &pieceOfData) const;
         static std::vector<parts::Instruction> getLiteralInstructions(const std::vector<TokenizedRomLine>& tknRomLines);
@@ -263,8 +264,8 @@ namespace assembly {
     //helper
     inline std::vector<uint8_t> convertWordToBytePair(uint16_t val) {
         std::vector<uint8_t> bytePair{};
-        bytePair[0] = static_cast<uint8_t>(val & 0xFF);
-        bytePair[1] = static_cast<uint8_t>((val >> 8) & 0xFF);
+        bytePair.emplace_back(static_cast<uint8_t>(val & 0xFF));
+        bytePair.emplace_back(static_cast<uint8_t>((val >> 8) & 0xFF));
         return bytePair;
     }
 }

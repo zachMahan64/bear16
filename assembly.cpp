@@ -397,6 +397,10 @@ namespace assembly {
             {TokenType::WORD_DIR, 2},
             {TokenType::QWORD_DIR, 8}
     };
+    const std::unordered_map<TokenType, size_t> fixedDirectivesToSizeMap {
+                {TokenType::OCTBYTE_DIR, 8},
+                {TokenType::QWORD_DIR, 4}
+    };
     const std::unordered_set<TokenType> validDataTokenTypes {
         TokenType::HEX, TokenType::BIN, TokenType::DECIMAL, TokenType::CHAR, TokenType::CHAR_SPACE
     };
@@ -439,9 +443,12 @@ namespace assembly {
         : isEnableDebug(enableDebug), doNotAutoCorrectImmediates(doNotAutoCorrectImmediates) {};
     std::vector<uint8_t> Assembler::assembleFromFile(const std::string &path) const {
         std::vector<Token> allTokens = tokenizeAsmFirstPass(path);
-        const auto allTokenizedInstructions = parseListOfTokensIntoTokenizedRomLines(allTokens);
+        std::vector<TokenizedRomLine> allTokenizedInstructions = parseListOfTokensIntoTokenizedRomLines(allTokens);
         std::vector<parts::Instruction> literalInstructions = getLiteralInstructions(allTokenizedInstructions);
-        return buildByteVecFromLiteralInstructions(literalInstructions);
+        std::vector<uint8_t> byteVec = buildByteVecFromLiteralInstructions(literalInstructions);
+        std::vector<uint8_t> dataByteVec = parseTokenizedDataIntoByteVec(allTokenizedInstructions); //causing segfault
+        byteVec.insert(byteVec.end(), dataByteVec.begin(), dataByteVec.end()); //causing segfault
+        return byteVec;
     }
 
     //main passes ----------------------------------------------------------------------------------------------------------
@@ -627,7 +634,7 @@ namespace assembly {
                             byteNum += static_cast<int>(strTkn.body.length()) + 1; //+1 for null terminator
                         }
                         else {
-                            LOG_ERR("ERROR: invalid string declaration at byte index: ") << byteNum << " | " <<  std::endl;
+                            LOG_ERR("ERROR: invalid string declaration at byte index: " << byteNum <<  std::endl);
                             for (const Token &tkn : line) {
                                 std::cout << tkn.body << " | ";
                             }
@@ -923,31 +930,35 @@ namespace assembly {
         }
         TokenizedData dataLine(firstTkn);
         if (dataDirectivesToSizeMap.contains(firstTkn.type)) {
-            dataLine.setDataTokens(std::vector<Token>(line.begin() + 1, line.end()));
+            dataLine.setDataTokens(std::vector<Token>(revisedDataTokens.begin(), revisedDataTokens.end()));
         }
         else {
             throwAFit(firstTkn.body);
             LOG_ERR("ERROR: bad directive" << line.size());
         }
         //enforce fixed directives
-        if (firstTkn.type == TokenType::STRING_DIR && revisedDataTokens.size() != 1) {
-            LOG_ERR("ERROR: malformed string directive: " << toString(firstTkn.type));
+        if (!fixedDirectivesToSizeMap.contains(firstTkn.type)) {
+            return dataLine;
         }
-        if (firstTkn.type == TokenType::OCTBYTE_DIR && revisedDataTokens.size() != 1) {
-            LOG_ERR("ERROR: malformed octbyte directive (must have 4 data entries): " << toString(firstTkn.type));
-        }
-        if (firstTkn.type == TokenType::QWORD_DIR && revisedDataTokens.size() != 1) {
-            LOG_ERR("ERROR: malformed qword directive (must have 4 data entries): " << toString(firstTkn.type));
+        size_t d_size = fixedDirectivesToSizeMap.at(firstTkn.type);
+        if (dataLine.dataTokens.size() != d_size) {
+            LOG_ERR("ERROR: (" << dataLine.directive.body <<  ") bad fixed-size directive: " << dataLine.dataTokens.size() << " != " << d_size);
+            for (const Token &tkn : dataLine.dataTokens) {
+                std::cerr << tkn.body << " | ";
+            }
         }
         return dataLine;
     }
 
-    std::vector<uint8_t> Assembler::parseTokenizedDataIntoByteVec(std::vector<TokenizedData> &allTokenizedData) const {
+    std::vector<uint8_t> Assembler::parseTokenizedDataIntoByteVec(std::vector<TokenizedRomLine> &allTokenizedData) const {
         std::vector<uint8_t> byteVec {};
-        for (const auto& dataLine : allTokenizedData) {
-            auto lineBytes = parseDataLineIntoBytes(dataLine);
-            for (const auto& byte : lineBytes) {
-                byteVec.emplace_back(byte);
+        for (const auto& romLine : allTokenizedData) {
+            if (std::holds_alternative<TokenizedData>(romLine)) {
+                auto dataLine = std::get<TokenizedData>(romLine);
+                auto lineBytes = parseDataLineIntoBytes(dataLine);
+                for (const auto& byte : lineBytes) {
+                    byteVec.emplace_back(byte);
+                }
             }
         }
         return byteVec;
@@ -962,7 +973,7 @@ namespace assembly {
                 lineBytes.emplace_back(byte);
             }
         }
-        return {};
+        return lineBytes;
     }
 
     std::vector<uint8_t> Assembler::parsePieceOfDataIntoBytes(const Token &pieceOfData) const {
