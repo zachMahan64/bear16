@@ -584,9 +584,18 @@ namespace assembly {
                 }
             }
             else if (tkn.type == TokenType::OPERATION) {
-                if (inData) LOG_ERR("WARNING: instruction in data section: " + tkn.body + " on written line " + std::to_string(lineNumInOrigAsm));
-                if (inText) currentLine_TEXT.push_back(tkn);
-                if (inData) currentLine_DATA.push_back(tkn);
+                Token newTkn(tkn.body);
+                if (inData && tkn.body.length() != 1) {
+                    LOG_ERR("WARNING: instruction in data section: " + tkn.body + " on written line " + std::to_string(lineNumInOrigAsm));
+                } else {
+                    if (tkn.body.length() == 1) {
+                        newTkn.type = TokenType::CHAR;
+                    }
+                }
+                if (inText) currentLine_TEXT.push_back(newTkn);
+                if (inData) {
+                    currentLine_DATA.push_back(newTkn);
+                }
             }
             else if (tkn.type != TokenType::COMMENT && tkn.type != TokenType::COMMA) {
                 if (inText) currentLine_TEXT.push_back(tkn);
@@ -790,7 +799,13 @@ namespace assembly {
                 tokensForOperand.clear();
             } else if (inChar && tkn.type == TokenType::SING_QUOTE) {
                 inChar = false;
-                tokensForOperand.emplace_back(tkn);
+                if (tkn.type == TokenType::OPERATION) {
+                    Token newTkn(tkn.body);
+                    newTkn.type = TokenType::CHAR;
+                    tokensForOperand.emplace_back(newTkn);
+                } else {
+                    tokensForOperand.emplace_back(tkn);
+                }
 
                 // If the char literal is just '', replace it with '\s'
                 if (tokensForOperand.size() == 2 &&
@@ -974,10 +989,11 @@ namespace assembly {
     }
 
     std::vector<uint8_t> Assembler::parseDataLineIntoBytes(const TokenizedData &dataLine) const {
-        std::vector<uint8_t> lineBytes {};
         auto lineTkns = dataLine.dataTokens;
+        const auto & directive = dataLine.directive;
+        std::vector<uint8_t> lineBytes {};
         for (const auto& tkn : lineTkns) {
-            auto thisTranslatedTkn = parsePieceOfDataIntoBytes(tkn);
+            auto thisTranslatedTkn = parsePieceOfDataIntoBytes(tkn, directive);
             for (const auto& byte : thisTranslatedTkn) {
                 lineBytes.emplace_back(byte);
             }
@@ -985,7 +1001,7 @@ namespace assembly {
         return lineBytes;
     }
 
-    std::vector<uint8_t> Assembler::parsePieceOfDataIntoBytes(const Token &pieceOfData) const {
+    std::vector<uint8_t> Assembler::parsePieceOfDataIntoBytes(const Token &pieceOfData, const Token &directive) const {
         std::vector<uint8_t> byteVec {};
         std::string strBody = pieceOfData.body;
         const TokenType& tknT = pieceOfData.type;
@@ -1012,6 +1028,15 @@ namespace assembly {
         }
         else if (tknT == TokenType::CHAR_SPACE) {
             byteVec.emplace_back(32); //value of space character
+        }
+        if (byteVec.size() == 2) {
+            std::cout << "hi_\n";
+            std::cout << byteVec.at(0) << " " << byteVec.at(1) << "\n";
+        }
+        if ((directive.type == TokenType::WORD_DIR || directive.type == TokenType::QWORD_DIR)
+            && byteVec.size() == 1)
+            {
+            byteVec.emplace_back(0);
         }
         return byteVec;
     }

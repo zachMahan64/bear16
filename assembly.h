@@ -55,7 +55,7 @@ namespace assembly {
         ) const;
         std::vector<uint8_t> parseTokenizedDataIntoByteVec(std::vector<TokenizedRomLine> &allTokenizedData) const;
         std::vector<uint8_t> parseDataLineIntoBytes(const TokenizedData &dataLine) const;
-        std::vector<uint8_t> parsePieceOfDataIntoBytes(const Token &pieceOfData) const;
+        std::vector<uint8_t> parsePieceOfDataIntoBytes(const Token &pieceOfData, const Token &directive) const;
         static std::vector<parts::Instruction> getLiteralInstructions(const std::vector<TokenizedRomLine>& tknRomLines);
         static void printLiteralInstruction(const parts::Instruction &litInstr); //debug
         static std::vector<uint8_t> buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction> &literalInstructions);

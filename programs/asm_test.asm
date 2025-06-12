@@ -36,18 +36,27 @@ base_case:
 .data
 my_val:
 .byte 'a'
-.octbyte 0x10 0x10 0x00 0x00 0x00 0x00 0x00 0x00
-.qword 0x1000 0x0174 0x341a 0x23fa
+.octbyte 'b' 'b' 'b' 'b' 'b' 'b' 'b' 'b'
+.qword 'c' 'c' 'c' 'c'
 .word '\s'
 greeting_str:
-    .string "hi"
+    .string "hello"
 
 .text
 data_sec_test:
     lea t0, my_val
     lbrom t3, t0
     ret
+
+.const INIT_OFFSET_FROM_STO_LOC = 2
+.const STR_LEN = 6 # for "hello" (with \0)
 greeting:
-    lbrom s1, greeting_str #not working rn
-    sb STO_LOC, 1, s1
+    clr t0
+    mov t1, INIT_OFFSET_FROM_STO_LOC
+    loop:
+        add t0, t0, 1
+        add t1, t1, 1
+        lbrom s1, greeting_str #not working rn
+        sb STO_LOC, t1, s1
+        ge loop t0, STR_LEN
     ret
