@@ -376,6 +376,8 @@ namespace assembly {
     const std::unordered_set<isa::Opcode_E> opCodesWithOptionalSrc2OffsetArgument = {
         isa::Opcode_E::LW,
         isa::Opcode_E::LB,
+        isa::Opcode_E::LBROM,
+        isa::Opcode_E::LWROM,
         isa::Opcode_E::LEA
         };
     const std::unordered_set<isa::Opcode_E> opCodesWithOptionalSrc1OffsetArgument = {
@@ -775,7 +777,7 @@ namespace assembly {
                     revisedRef = std::to_string(constMap.at(tkn.body));
                 } else {
                     throwAFit(tkn.body);
-                    LOG_ERR("ERROR: bad reference in instruction #" << + instructionIndex);
+                    LOG_ERR("ERROR: bad reference: " << tkn.body << " " << toString(tkn.type) << " in instruction #" << + instructionIndex);
                     LOG_ERR("label map: " + unorderedMapToString(labelMap));
                     LOG_ERR("const map: " + unorderedMapToString(constMap));
                 }
@@ -1029,14 +1031,14 @@ namespace assembly {
         else if (tknT == TokenType::CHAR_SPACE) {
             byteVec.emplace_back(32); //value of space character
         }
-        if (byteVec.size() == 2) {
-            std::cout << "hi_\n";
-            std::cout << byteVec.at(0) << " " << byteVec.at(1) << "\n";
-        }
         if ((directive.type == TokenType::WORD_DIR || directive.type == TokenType::QWORD_DIR)
             && byteVec.size() == 1)
             {
             byteVec.emplace_back(0);
+        }
+        if ((directive.type == TokenType::BYTE_DIR || directive.type == TokenType::OCTBYTE_DIR)
+            && byteVec.size() == 2) {
+            byteVec.pop_back();
         }
         return byteVec;
     }

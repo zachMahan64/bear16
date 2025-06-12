@@ -1,62 +1,69 @@
 #PROPER RECURSIVE FIBONACCI CALCULATOR, WORKING MON 20250609
-.text
-.const FIB_N = 8
-.const STO_LOC = 4096
-start:
-    mov a0, FIB_N
-    call fibonacci
-    sw STO_LOC, rv
-    call data_sec_test
-    call greeting
-    hlt
-
-fibonacci:
-    # a0 = n
-    le base_case, a0, 2   # if a0 <= 1 goto base_case
-
-    push a0            # save n
-
-    sub a0, a0, 1         # a0 = n - 1
-    call fibonacci        # fib(n - 1)
-    pop t0 # n -> t0
-    push rv            # save result onto stack
-
-    sub a0, t0, 2         # a0 = n - 2
-    call fibonacci        # fib(n - 2)
-    push rv           # save result onto stack
-    pop t1 # get fib(n - 2) from stack
-    pop t2 # get fib(n - 2) from stack
-    add rv, t1, t2        # rv = fib(n-1) + fib(n-2)
-    ret
-
-base_case:
-    mov rv, 1
-    ret
 
 .data
-my_val:
-.byte 'a'
-.octbyte 'b' 'b' 'b' 'b' 'b' 'b' 'b' 'b'
-.qword 'c' 'c' 'c' 'c'
-.word '\s'
-greeting_str:
-    .string "hello"
+name_age_arr:
+#struct (6): name (5), age(1) -> manually padding strings here
+    .string "Bob"
+    .byte 0, 42 #manual str padding
+    .string "Ben"
+    .byte 0, 27 #manual str padding
+    .string "Karl"
+    .byte 64
+    .string "Mike"
+    .byte 35
+name_age_arr_end:
+    .byte 0
+desired_name:
+    .string "Karl"
 
 .text
-data_sec_test:
-    lea t0, my_val
-    lbrom t3, t0
-    ret
+.const STRUCT_SIZE = 0x6
+.const STO_LOC = 4096
+start:
+    call cycle_thru_names
+    sw STO_LOC, rv
+    hlt
 
-.const INIT_OFFSET_FROM_STO_LOC = 2
-.const STR_LEN = 6 # for "hello" (with \0)
-greeting:
-    clr t0
-    mov t1, INIT_OFFSET_FROM_STO_LOC
-    loop:
-        add t0, t0, 1
-        add t1, t1, 1
-        lbrom s1, greeting_str #not working rn
-        sb STO_LOC, t1, s1
-        ge loop t0, STR_LEN
-    ret
+cycle_thru_names:
+    mov s0, name_age_arr #struct to read, pass ptr to it
+
+    c_loop:
+        mov a0, s0
+        call check_name
+
+        eq found_name, rv, 1                 # found, go handle
+
+        add s0, s0, STRUCT_SIZE              # increment before next loop
+        ugt not_found, s0, name_age_arr_end  # ran past end
+        jmp c_loop                             # continue looping
+    not_found:
+        mov rv, -1 #error/not found
+        ret
+    found_name:
+        mov t0, STRUCT_SIZE
+        sub t0, t0, 1
+        lbrom rv, s0, t0
+        ret
+
+check_name: # check_name(ptr_to_str_start) <- passed by a0
+    mov t0, a0 #pass argument into reg t0
+    mov s7, desired_name #staring ptr to desired name
+    clr t1 #counter/str offset for current char
+    clr t2 #store current char
+    clr t3 #store current desired char
+    n_loop:
+        lbrom t2, t0, t1
+        lbrom t3, s7, t1
+        inc t1
+        eq found_ret, t2, 0
+        ne bad_ret, t2, t3
+        eq n_loop t2, t3
+    found_ret:
+        mov rv, 1
+        ret
+    bad_ret:
+        mov rv, 0
+        ret
+
+
+
