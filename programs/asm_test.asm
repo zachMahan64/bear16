@@ -7,6 +7,7 @@ start:
     call fibonacci
     sw STO_LOC, rv
     call data_sec_test
+    call greeting
     hlt
 
 fibonacci:
@@ -31,15 +32,22 @@ fibonacci:
 base_case:
     mov rv, 1
     ret
+
 .data
 my_val:
 .byte 'a'
 .octbyte 0x10 0x10 0x00 0x00 0x00 0x00 0x00 0x00
 .qword 0x1000 0x0174 0x341a 0x23fa
 .word '\s'
-.string "hello"
+greeting_str:
+    .string "hi"
+
 .text
 data_sec_test:
-lea t0, my_val
-lbrom t3, t0
-ret
+    lea t0, my_val
+    lbrom t3, t0
+    ret
+greeting:
+    lbrom s1, greeting_str #not working rn
+    sb STO_LOC, 1, s1
+    ret

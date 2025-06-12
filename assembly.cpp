@@ -393,9 +393,9 @@ namespace assembly {
     const std::unordered_map<TokenType, size_t> dataDirectivesToSizeMap {
             {TokenType::STRING_DIR, 0}, //default, must be manually adjusted
             {TokenType::BYTE_DIR, 1},
-            {TokenType::OCTBYTE_DIR, 8},
+            {TokenType::OCTBYTE_DIR, 1},
             {TokenType::WORD_DIR, 2},
-            {TokenType::QWORD_DIR, 8}
+            {TokenType::QWORD_DIR, 2}
     };
     const std::unordered_map<TokenType, size_t> fixedDirectivesToSizeMap {
                 {TokenType::OCTBYTE_DIR, 8},
@@ -646,11 +646,14 @@ namespace assembly {
                         }
                     }
                 } else {
+                    int startingByteNum = byteNum;
                     for (const Token &tkn : line) {
                         if (validDataTokenTypes.contains(tkn.type)) {
                             byteNum += static_cast<int>(dataDirectivesToSizeMap.at(firstTkn.type));
                         }
                     }
+                    int byteNumDiff = byteNum - startingByteNum;
+                    std::cout << byteNumDiff << " bytes added for " << toString(firstTkn.type) << " directive \n";
                 }
             }
         }
@@ -961,6 +964,12 @@ namespace assembly {
                 }
             }
         }
+        std::cout << "DEBUG, serialized data section: \n";
+        for (const auto& byte : byteVec) {
+            std::cout << byte;
+        }
+        std::cout << std::endl;
+
         return byteVec;
     }
 

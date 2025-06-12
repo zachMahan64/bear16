@@ -520,7 +520,9 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             break;
         }
         case(isa::Opcode_E::LBROM): {
-            writeback(dest, fetchByteAsWordFromRom(src1Val + src2Val));
+            uint16_t val = fetchByteAsWordFromRom(src1Val + src2Val);
+            writeback(dest, val);
+            std::cout << "DEBUG: LBROM: " << static_cast<uint8_t>(val) << std::endl;
             break;
         }
         default: {
