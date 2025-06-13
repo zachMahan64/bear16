@@ -37,7 +37,7 @@ int emu::Emulator::assembleAndRun() {
     int exitCode = board.run();
 
     //display diagnostics
-    board.printDiagnostics(true);
+    board.printDiagnostics(false);
     std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode << std::endl;
     for (int i = 0; i < 300; ++i) {
         std::cout << std::hex << board.cpu.rom[i];

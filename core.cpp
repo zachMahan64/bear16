@@ -21,7 +21,7 @@ Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(enableDebug) {}
 
 //Board and loading ROM stuff -------------------------------------------------------
 int Board::run() {
-    constexpr int DELAY = 1;
+    constexpr int DELAY = 0;
     clock.resetCycles(); //set clock cycles to zero @ the start of a new process
     do {
         clock.tick(DELAY);
@@ -516,13 +516,58 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             break;
         }
         case(isa::Opcode_E::LWROM): {
-            writeback(dest, fetchWordFromRom(src1Val + src2Val));
+            const uint16_t& val = fetchWordFromRom(src1Val + src2Val);
+            writeback(dest, val);
             break;
         }
         case(isa::Opcode_E::LBROM): {
-            uint16_t val = fetchByteAsWordFromRom(src1Val + src2Val);
+            const uint16_t val = fetchByteAsWordFromRom(src1Val + src2Val);
             writeback(dest, val);
             std::cout << "DEBUG: LBROM: " << static_cast<uint8_t>(val) << std::endl;
+            break;
+        }
+        case(isa::Opcode_E::ROMCPY): {
+            //enter loop
+            if (isEnableDebug) std::cout << "DEBUG: ROMCPY" << std::endl;
+            if (tickWaitCnt == 0 && tickWaitStopPt == 0) {
+                tickWaitStopPt = src2Val;
+                isInMemcpyLoop = true;
+            }
+            //instr loops to copy bytes in order
+            if (isInMemcpyLoop) {
+                if (isEnableDebug) {
+                    std::cout << "DEBUG: ROMCPY LOOP" << std::endl;
+                    std::cout << "tickWaitStopPt: " << tickWaitCnt << std::endl;
+                }
+                uint16_t startingSrcAddr = src1Val;
+                uint16_t startingDestAddr = dest;
+                writeByteToRam(startingDestAddr + tickWaitCnt, fetchByteFromRom(startingSrcAddr + tickWaitCnt));
+                if (tickWaitCnt == tickWaitStopPt - 1) {
+                    tickWaitCnt = 0; //reset
+                    tickWaitStopPt = 0; //reset
+                    pcIsFrozenThisCycle = false;
+                } else {
+                    tickWaitCnt++;
+                    pcIsFrozenThisCycle = true; //freeze pc
+                }
+            }
+            break;
+        }
+        case (isa::Opcode_E::MULTS): {
+            const uint16_t val = static_cast<int16_t>(src1Val) * static_cast<int16_t>(src2Val);
+            writeback(dest, val);
+            break;
+        }
+        case (isa::Opcode_E::DIVS): {
+            if (src2Val == 0) src2Val = 1; //prevent divide by zero
+            const uint16_t val = static_cast<int16_t>(src1Val) / static_cast<int16_t>(src2Val);
+            writeback(dest, val);
+            break;
+        }
+        case (isa::Opcode_E::MODS):{
+            if (src2Val == 0) src2Val = 1; //prevent divide by zero
+            const uint16_t val = static_cast<int16_t>(src1Val) % static_cast<int16_t>(src2Val);
+            writeback(dest, val);
             break;
         }
         default: {
@@ -689,7 +734,7 @@ void CPU16::writeByteToRam(uint16_t addr, uint8_t val) {
 }
 void CPU16::printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool asChar) const {
     std::cout << "Starting Address: " << startingAddr << " | # bytes read: " << numBytes << std::endl;
-    std::cout << "Leading word @ starting addr: " << fetchWordFromRam(startingAddr) << "\n";
+    std::cout << "Leading word @ starting addr: " << (int16_t) fetchWordFromRam(startingAddr) << "\n";
     for (uint16_t i = 0; i < numBytes; i++) {
         if (asChar) std::cout << "Index: " << i << " = " << sram.at(startingAddr + i) << "\n";
         else std::cout << "Index: " << i << " = " << static_cast<int>(sram.at(startingAddr + i)) << "\n";
@@ -703,7 +748,7 @@ inline uint8_t CPU16::fetchByteFromRom(uint16_t addr) const {
     return rom[addr];
 }
 inline uint16_t CPU16::fetchWordFromRom(uint16_t addr) const {
-    uint16_t word = static_cast<uint16_t>(rom[addr]) | static_cast<uint16_t>(sram[addr + 1] << 8);
+    uint16_t word = static_cast<uint16_t>(rom[addr]) | static_cast<uint16_t>(rom[addr + 1] << 8);
     return word;
 }
 void CPU16::jumpTo(const uint16_t& destAddrInRom) {

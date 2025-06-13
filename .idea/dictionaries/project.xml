@@ -7,6 +7,7 @@
       <w>memcpy</w>
       <w>octbyte</w>
       <w>operandsandautocorrectimmediates</w>
+      <w>romcpy</w>
     </words>
   </dictionary>
 </component>

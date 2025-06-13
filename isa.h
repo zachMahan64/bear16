@@ -66,6 +66,10 @@ enum class Opcode_E : uint16_t {
         SB     = 0x002C, //store byte (8 bit)
         LBROM  = 0x002D, //load byte from ROM -> not implemented/ WIP
         LWROM  = 0x002E, //load word from ROM -> not implemented/ WIP
+        ROMCPY = 0x002F,
+        MULTS  = 0x0030,
+        DIVS   = 0x0031,
+        MODS   = 0x0032,
         //CTRL Flow
         CALL      = 0x0040,   // call sub-routine  (dest = target PC)
         RET       = 0x0041,   // return from CALL
