@@ -1,4 +1,4 @@
-#SIMPLE QUADTRATIC SOLVER, FRI 20250613
+#SIMPLE QUADRATIC SOLVER, FRI 20250613
 .data
 #struct: val {2-byte}, sqrt(val) {2-byte}
 sqrt_table:
@@ -264,9 +264,9 @@ quadtratic_params:
     _a:
     .word 1
     _b:
-    .word -3
+    .word -82
     _c:
-    .word -10
+    .word 1645
 .text
 .const STO_LOC = 4096
 start:

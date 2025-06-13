@@ -52,6 +52,12 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << "sp: " << cpu.getValInReg(18) << std::endl;
     std::cout << "fp: " << cpu.getValInReg(19) << std::endl;
     std::cout << "pc: " << cpu.getValInReg(20) << std::endl;
+    std::cout << "=====================" << std::endl;
+    std::cout << "First 64 bytes of RAM: \n";
+    for (int i = 0; i < 64; i++) {
+        std::cout << cpu.sram.at(i);
+    }
+    std::cout << "\n=====================" << std::endl;
     uint16_t startingAddr = 4096;
     uint16_t numBytes = 20;
     cpu.printSectionOfRam(startingAddr, numBytes, printMemAsChars);

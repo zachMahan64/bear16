@@ -5,6 +5,7 @@
 int main() {
     //assembly::asmMnemonicSetGenerator();
     emu::Emulator emulator {};
-    int exitCode = emulator.assembleAndRun();
+    std::string path = "../programs/asm_test.asm";
+    int exitCode = emulator.assembleAndRun(path);
     return exitCode;
 }

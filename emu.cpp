@@ -21,9 +21,8 @@
 #include "core.h"
 #include "emu.h"
 
-int emu::Emulator::assembleAndRun() {
+int emu::Emulator::assembleAndRun(const std::string& path) {
     //assemble
-    std::string path = "../programs/asm_test.asm";
     assembly::Assembler testAssembler(false, false);
     auto byteVec = testAssembler.assembleFromFile(path);
 

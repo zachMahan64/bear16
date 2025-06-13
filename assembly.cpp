@@ -888,7 +888,7 @@ namespace assembly {
             if (std::holds_alternative<TokenizedInstruction>(line)) {
                 TokenizedInstruction lineAsInstr = std::get<TokenizedInstruction>(line);
                 parts::Instruction litInstr = lineAsInstr.getLiteralInstruction();
-                printLiteralInstruction(litInstr); //for debug
+                //printLiteralInstruction(litInstr); //for debug
                 literalInstructions.emplace_back(litInstr);
             }
         }
@@ -1040,7 +1040,6 @@ namespace assembly {
         else if (tknT == TokenType::DECIMAL) {
             auto hexVal = static_cast<uint16_t>(std::stoi(strBody, nullptr, 10));
             byteVec = convertWordToBytePair(hexVal);
-            std::cout << std::hex << "DEBUG: parsed decimal: " << (int) byteVec.at(1) << (int) byteVec.at(0) << "\n";
         }
         else if (tknT == TokenType::BIN) {
             uint16_t hexVal = static_cast<uint16_t>(std::stoi(strBody.substr(2), nullptr, 2));

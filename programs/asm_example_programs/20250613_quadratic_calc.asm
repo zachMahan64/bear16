@@ -1,4 +1,4 @@
-#SIMPLE QUADTRATIC SOLVER, FRI 20250613
+#SIMPLE QUADRATIC SOLVER, FRI 20250613
 .data
 #struct: val {2-byte}, sqrt(val) {2-byte}
 sqrt_table:
