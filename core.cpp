@@ -659,11 +659,11 @@ void CPU16::writeback(uint16_t dest, uint16_t val) {
         genRegs[dest].set(val);
     } else if (dest < NUM_GEN_REGS + NUM_IO) {
         outs[dest - NUM_GEN_REGS] = val;
-    } else if (dest == 0x0012) {
+    } else if (dest == 0x001D) {
         stackPtr.set(val);
-    } else if (dest == 0x0013) {
+    } else if (dest == 0x001E) {
         framePtr.set(val);
-    } else if (dest == 0x0014) {
+    } else if (dest == 0x001F) {
         pc = val;
     } else {
         std::cout << "ERROR: Unknown dest when writing back: " << std::hex << std::setw(4) << std::setfill('0') << dest << std::endl;
@@ -675,11 +675,11 @@ uint16_t CPU16::getValInReg(uint16_t reg) const {
         regVal = genRegs[reg].val;
     } else if (reg < NUM_GEN_REGS + NUM_IO) {
         regVal = inps[reg - NUM_GEN_REGS];
-    } else if (reg == 0x0012) {
+    } else if (reg == 0x001D) {
         regVal = stackPtr.val;
-    } else if (reg == 0x0013) {
+    } else if (reg == 0x001E) {
         regVal = framePtr.val;
-    } else if (reg == 0x0014) {
+    } else if (reg == 0x001F) {
         regVal = pc;
     } else {
         std::cout << "ERROR: Unknown dest when getValInReg:" << reg << std::endl;
