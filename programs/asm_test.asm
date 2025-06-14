@@ -260,7 +260,7 @@ sqrt_table:
     .word 65025 255
 sqrt_table_size:
     .word 256
-quadtratic_params:
+quadratic_params:
     _a:
     .word 1
     _b:
@@ -270,17 +270,29 @@ quadtratic_params:
 str_a:
     .string "a = "
 str_b:
-    .string "b="
+    .string "b = "
 str_c:
-    .string "c="
-
+    .string "c = "
+str_ans:
+    .string "ans: "
 .text
 .const STO_LOC = 4096
 .const PRNT_STRT_LOC = 0
 start:
     call pr_params
     call solve_quad
+    call pr_ans
     hlt
+
+pr_ans:
+    #not done yet
+    sb 0, s6, ' '
+    inc s6
+    add s6, s6, 5
+    romcpy 26, str_ans, 5 #prnt "a="
+    lw a0, STO_LOC
+    call pr_s_num_four_dig
+    ret
 
 pr_params: #print into memory, not the console (we not there yet)
     clr s6 # this will be our print address ptr
@@ -288,6 +300,17 @@ pr_params: #print into memory, not the console (we not there yet)
     romcpy PRNT_STRT_LOC, str_a, s6 #prnt "a="
     lwrom a0, _a
     call pr_s_num_four_dig
+    sb 0, s6, ' '
+    add s6, s6, 4
+    romcpy 9, str_b, 4 #prnt "b = "
+    lwrom a0, _b
+    call pr_s_num_four_dig
+    sb 0, s6, ' '
+    add s6, s6, 4
+    romcpy 18, str_c, 4 #prnt "c = "
+    lwrom a0, _c
+    call pr_s_num_four_dig
+    sb 0, s6, ' '
     ret
 
 pr_s_num_four_dig: #fn(a0, &s6) = fn(val_of_num, print_loc_ptr)
@@ -297,7 +320,6 @@ fd_main:
     divs t0, a0, 1000
     add t0, t0, 48
     sb 0, s6, t0 # #000
-    mov s4, t0 #debug
     inc s6
     divs t0, a0, 100
     mods t0, t0, 10
@@ -316,6 +338,7 @@ fd_main:
     ret
 _neg:
     sb 0, s6, '-'
+    neg a0, a0
     inc s6
     jmp fd_main
 

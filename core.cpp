@@ -197,36 +197,8 @@ void CPU16::execute(parts::Instruction instr) {
     uint16_t src1Val = 0;
     uint16_t src2Val = 0;
 
-    if (im1) {
-        src1Val = instr.src1;
-    } else if (instr.src1 < NUM_GEN_REGS) {
-        src1Val = genRegs[instr.src1].val;
-    } else if (instr.src1 < NUM_GEN_REGS + NUM_IO) {
-        src1Val = inps[instr.src1 - NUM_GEN_REGS];
-    } else if (instr.src1 == 0x0012) {
-        src1Val = stackPtr.val;
-    } else if (instr.src1 == 0x0013) {
-        src1Val = framePtr.val;
-    } else if (instr.src1 == 0x0013) {
-        src1Val = pc;
-    } else {
-        std::cout << "ERROR: unknown operand (src1): " << std::hex << std::setw(4) << std::setfill('0') << instr.src1 << std::endl;
-    }
-    if (im2) {
-        src2Val = instr.src2;
-    } else if (instr.src2 < NUM_GEN_REGS) {
-        src2Val = genRegs[instr.src2].val;
-    } else if (instr.src2 < NUM_GEN_REGS + NUM_IO) {
-        src2Val = inps[instr.src2 - NUM_GEN_REGS];
-    } else if (instr.src2 == 0x0012) {
-        src2Val = stackPtr.val;
-    } else if (instr.src2 == 0x0013) {
-        src2Val = framePtr.val;
-    } else if (instr.src2 == 0x0014) {
-        src2Val = pc;
-    } else {
-        std::cout << "ERROR: unknown operand (src2): "  << std::hex << std::setw(4) << std::setfill('0') << instr.src2 << std::endl;
-    }
+    src1Val = im1 ? instr.src1 : getValInReg(instr.src1);
+    src2Val = im2 ? instr.src2 : getValInReg(instr.src2);
     performOp(instr, src1Val, src2Val);
 }
 //carry out execution and writeback (when applicable)
@@ -691,6 +663,8 @@ void CPU16::writeback(uint16_t dest, uint16_t val) {
         stackPtr.set(val);
     } else if (dest == 0x0013) {
         framePtr.set(val);
+    } else if (dest == 0x0014) {
+        pc = val;
     } else {
         std::cout << "ERROR: Unknown dest when writing back: " << std::hex << std::setw(4) << std::setfill('0') << dest << std::endl;
     }
