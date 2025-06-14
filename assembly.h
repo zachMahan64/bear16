@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <unordered_set>
 #include <vector>
-#include <vector>
 
 #include "isa.h"
 #include "parts.h"
@@ -22,6 +21,7 @@ namespace assembly {
     //valid set & map for opcode & named operands respectively ------------------------------------------------------
     extern const std::unordered_set<std::string> validOpcodeMnemonics;
     extern const std::unordered_map<std::string, uint16_t> namedOperandToBinMap;
+    extern const std::vector<std::string> namedOperandsInOrder;
     //Enum maps
     extern const std::unordered_map<std::string, isa::Opcode_E> stringToOpcodeMap;
     extern const std::unordered_map<isa::Opcode_E, int> opcodeToOperandMinimumCountMap;

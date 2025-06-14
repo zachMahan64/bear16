@@ -83,6 +83,7 @@ public:
     explicit Board(bool enableDebug);
     int run();
     void printDiagnostics(bool printMemAsChars) const;
+    void printAllRegisterContents() const;
     void loadRomFromBinInTxtFile(const std::string &path);
     void loadRomFromHexInTxtFile(const std::string &path);
     void loadRomFromByteVector(std::vector<uint8_t>& rom);

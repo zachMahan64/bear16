@@ -333,6 +333,51 @@ namespace assembly {
         {"r29", 29}, {"sp", 29},
         {"r30", 30}, {"fp", 30},
         {"r31", 31}, {"pc", 31}};
+    const std::vector<std::string> namedOperandsInOrder {
+        // temporaries (volatile)
+        "r0", "t0",
+        "r1", "t1",
+        "r2", "t2",
+        "r3", "t3",
+        "r4", "t4",
+        "r5", "t5",
+        "r6", "t6",
+        "r7", "t7",
+        "r8", "t8",
+        "r9", "t9",
+        "r10", "t10",
+
+        // saved registers
+        "r11", "s0",
+        "r12", "s1",
+        "r13", "s2",
+        "r14", "s3",
+        "r15", "s4",
+        "r16", "s5",
+        "r17", "s6",
+        "r18", "s7",
+        "r19", "s8",
+        "r20", "s9",
+        "r21", "s10",
+
+        // return value and arguments
+        "r22", "rv",
+        "r23", "a0",
+        "r24", "a1",
+        "r25", "a2",
+
+        // return address
+        "r26", "ra",
+
+        // io ports
+        "r27", "io0",
+        "r28", "io1",
+
+        // special-purpose
+        "r29", "sp",
+        "r30", "fp",
+        "r31", "pc"
+    };
 
     const std::unordered_map<std::string, isa::Opcode_E> stringToOpcodeMap = {
         // Arith & Bitwise

@@ -3,6 +3,7 @@
 //
 #include <iostream>
 #include "core.h"
+#include "assembly.h"
 #include <utility>
 #include <vector>
 #include "isa.h"
@@ -33,25 +34,7 @@ int Board::run() {
 void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << std::dec;
     std::cout << "RESULTS\n========" << std::endl;
-    std::cout << "pc: " << cpu.getPc() << std::endl;
-    std::cout << "t0: " << cpu.getValInReg(0) << std::endl;
-    std::cout << "t1: " << cpu.getValInReg(1) << std::endl;
-    std::cout << "t2: " << cpu.getValInReg(2) << std::endl;
-    std::cout << "t3: " << cpu.getValInReg(3) << std::endl;
-    std::cout << "s0: " << cpu.getValInReg(4) << std::endl;
-    std::cout << "s1: " << cpu.getValInReg(5) << std::endl;
-    std::cout << "s2: " << cpu.getValInReg(6) << std::endl;
-    std::cout << "s3: " << cpu.getValInReg(7) << std::endl;
-    std::cout << "s4: " << cpu.getValInReg(8) << std::endl;
-    std::cout << "s5: " << cpu.getValInReg(9) << std::endl;
-    std::cout << "s6: " << cpu.getValInReg(10) << std::endl;
-    std::cout << "s7: " << cpu.getValInReg(11) << std::endl;
-    std::cout << "rv: " << cpu.getValInReg(12) << std::endl;
-    std::cout << "a0: " << cpu.getValInReg(13) << std::endl;
-    std::cout << "a1: " << cpu.getValInReg(14) << std::endl;
-    std::cout << "sp: " << cpu.getValInReg(18) << std::endl;
-    std::cout << "fp: " << cpu.getValInReg(19) << std::endl;
-    std::cout << "pc: " << cpu.getValInReg(20) << std::endl;
+    printAllRegisterContents();
     std::cout << "=====================" << std::endl;
     std::cout << "First 64 bytes of RAM: \n";
     for (int i = 0; i < 64; i++) {
@@ -63,6 +46,27 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     cpu.printSectionOfRam(startingAddr, numBytes, printMemAsChars);
     std::cout << "Total cycles: " << clock.getCycles() << std::endl;
     std::cout << "=====================" << std::endl;
+}
+
+void Board::printAllRegisterContents() const {
+    int cnt = 0;
+    std::string printBuffer{};
+    for (const auto& regName : assembly::namedOperandsInOrder) {
+        if (regName.at(0) == 'r' && regName != "ra" && regName != "rv") {
+            continue;
+        }
+        std::ostringstream oss;
+        oss << std::left << std::setw(5) << (regName + ": ") << std::left << std::setw(7) << std::to_string(cpu.getValInReg(assembly::namedOperandToBinMap.at(regName)));
+        printBuffer += oss.str();
+        cnt++;
+        if (cnt % 4 == 0) {
+            std::cout << printBuffer << std::endl;
+            printBuffer.clear();
+        }
+    }
+    if (!printBuffer.empty()) {
+        std::cout << printBuffer << std::endl;
+    }
 }
 
 void Board::loadRomFromBinInTxtFile(const std::string &path) {
