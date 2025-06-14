@@ -403,7 +403,8 @@ namespace assembly {
         isa::Opcode_E::SW, isa::Opcode_E::SB
     };
     const std::unordered_set<char> validSymbols = {
-        '!', '@', '/', '\\', '$', '%', '&', '^', '*', '(', ')', '\'', '~', '-', '\0'
+        '!', '@', '/', '\\', '$', '%', '&', '^', '*', '(', ')', '\'', '~', '-', '\0', ':', ';', '[', ']', ' ', '{', '}', '?',
+        '=', '|', ',', '.', '+'
     };
     const std::unordered_map<std::string, TokenType> stringToDataDirectives = {
         {".string", TokenType::STRING_DIR},
@@ -492,6 +493,7 @@ namespace assembly {
 
         std::string currentStr {};
         bool inComment = false;
+        bool inString = false;
 
         for (char c : buffer) {
             if (inComment) {
@@ -508,6 +510,22 @@ namespace assembly {
             if (c == '#') {
                 inComment = true;
                 currentStr += c;
+                continue;
+            }
+            if (inString) {
+                if (c == '"') {
+                    inString = false;
+                    firstPassTokens.emplace_back(currentStr);
+                    firstPassTokens.emplace_back('"');
+                    currentStr.clear();
+                    continue;
+                }
+                currentStr += c;
+                continue;
+            }
+            if (c == '"') {
+                inString = true;
+                firstPassTokens.emplace_back(c);
                 continue;
             }
             if (c == ' ' || c == '\t' || c == '\n') {
@@ -646,7 +664,7 @@ namespace assembly {
 
         //IMP: MUST UPDATE HERE W/ LABEL RES FOR DATA DIR
         int byteNum  = 0;
-        for (const std::vector<Token> &line: tokenLines_TEXT_and_DATA) {
+        for (std::vector<Token> &line: tokenLines_TEXT_and_DATA) {
             Token firstTkn = line.at(0);
             if (firstTkn.type == TokenType::OPERATION) {
                 byteNum += 8;
@@ -660,9 +678,25 @@ namespace assembly {
             else if (containsValue(stringToDataDirectives, firstTkn.type)) {
                 if (firstTkn.type == TokenType::STRING_DIR) {
                     try {
-                        if (line.at(2).type == TokenType::REF && line.size() == 4) {
-                            const Token& strTkn = line.at(2);
-                            byteNum += static_cast<int>(strTkn.body.length()) + 1; //+1 for null terminator
+                        if (line.at(1).type == TokenType::DOUB_QUOTE && line.at(line.size()-1).type == TokenType::DOUB_QUOTE) {
+                            std::vector<Token> fixedStrLine {};
+                            fixedStrLine.emplace_back(line.at(0));
+                            fixedStrLine.emplace_back(line.at(1));
+                            std::string newStrBuffer {};
+                            for (int i = 2; i < line.size()-1; i++) {
+                                newStrBuffer += line.at(i).body;
+                            }
+                            Token newStrTkn(newStrBuffer);
+                            newStrTkn.type = TokenType::STRING;
+                            fixedStrLine.emplace_back(newStrTkn);
+                            fixedStrLine.emplace_back(line.at(line.size()-1));
+                            line = fixedStrLine;
+                            LOG ("REVISING STRING");
+                            for (const Token &tkn : line) {
+                                std::cout << toString(tkn.type) << "-" << tkn.body << " | ";
+                            }
+                            std::cout << std::endl;
+                            byteNum += static_cast<int>(newStrTkn.body.length()) + 1; //+1 for null terminator
                         }
                         else {
                             LOG_ERR("ERROR: invalid string declaration at byte index: " << byteNum <<  std::endl);
@@ -942,8 +976,9 @@ namespace assembly {
         std::vector<Token> revisedDataTokens {}; //use this to build finalized data tokens, also make a function for this
         for (const auto& tkn : line) {
             if (dataDirectivesToSizeMap.contains(tkn.type) || validDataTokenTypes.contains(tkn.type)
-                || tkn.type == TokenType::DOUB_QUOTE || tkn.type == TokenType::SING_QUOTE || tkn.type == TokenType::REF) {
-                if (validDataTokenTypes.contains(tkn.type)) {
+                || tkn.type == TokenType::DOUB_QUOTE || tkn.type == TokenType::SING_QUOTE || tkn.type == TokenType::REF
+                || tkn.type == TokenType::STRING) {
+                if (validDataTokenTypes.contains(tkn.type) || tkn.type == TokenType::STRING) {
                     revisedDataTokens.emplace_back(tkn);
                 }
                 if (tkn.type == TokenType::REF) {
@@ -1095,6 +1130,7 @@ namespace assembly {
         else if (text == ".data") type = TokenType::DATA;
         else if (text == ".text") type = TokenType::TEXT;
         else if (std::ranges::all_of(text, [](char c) { return (std::isalnum(c) || c == '_'); })) type = TokenType::REF;
+        else if (std::ranges::all_of(text, [](char c) { return (std::isalnum(c) || validSymbols.contains(c)); })) type = TokenType::STRING;
         return type;
     }
 

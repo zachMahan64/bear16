@@ -267,6 +267,7 @@ quadtratic_params:
     .word -3
     _c:
     .word -10
+
 .text
 .const STO_LOC = 4096
 start:

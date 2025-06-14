@@ -267,11 +267,59 @@ quadtratic_params:
     .word -82
     _c:
     .word 1645
+str_a:
+    .string "a = "
+str_b:
+    .string "b="
+str_c:
+    .string "c="
+
 .text
 .const STO_LOC = 4096
+.const PRNT_STRT_LOC = 0
 start:
+    call pr_params
     call solve_quad
     hlt
+
+pr_params: #print into memory, not the console (we not there yet)
+    clr s6 # this will be our print address ptr
+    add s6, s6, 4
+    romcpy PRNT_STRT_LOC, str_a, s6 #prnt "a="
+    lwrom a0, _a
+    call pr_s_num_four_dig
+    ret
+
+pr_s_num_four_dig: #fn(a0, &s6) = fn(val_of_num, print_loc_ptr)
+    comp a0, 0
+    jcond_neg _neg
+fd_main:
+    divs t0, a0, 1000
+    add t0, t0, 48
+    sb 0, s6, t0 # #000
+    mov s4, t0 #debug
+    inc s6
+    divs t0, a0, 100
+    mods t0, t0, 10
+    add t0, t0, 48
+    sb 0, s6, t0 # 0#00
+    inc s6
+    divs t0, a0, 10
+    mods t0, t0, 10
+    add t0, t0, 48
+    sb 0, s6, t0 # 00#0
+    inc s6
+    mods t0, a0, 10
+    add t0, t0, 48
+    sb 0, s6, t0 # 000#
+    inc s6
+    ret
+_neg:
+    sb 0, s6, '-'
+    inc s6
+    jmp fd_main
+
+
 
 solve_quad:
     lwrom s0, _a
@@ -341,7 +389,6 @@ sqrt:
         add t1, t1, 2
         mov s3, t1 # debug
         lwrom rv, sqrt_table, t1 # <load from rom> t2, *sqrt_table, new_offset (*sqrt(val))
-        mov s6, rv # debug
         ret
     overshot:
         sub t3, t1, 2
