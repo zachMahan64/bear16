@@ -476,7 +476,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
                     std::cout << "tickWaitStopPt: " << tickWaitCnt << std::endl;
                 }
                 uint16_t startingSrcAddr = src1Val;
-                uint16_t startingDestAddr = dest;
+                uint16_t startingDestAddr = getValInReg(dest);
                 writeByteToRam(startingDestAddr + tickWaitCnt, fetchByteFromRam(startingSrcAddr + tickWaitCnt));
                 if (tickWaitCnt == tickWaitStopPt - 1) {
                     tickWaitCnt = 0; //reset
@@ -490,11 +490,11 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             break;
         }
         case(isa::Opcode_E::SW): {
-            writeWordToRam(dest + src1Val, src2Val);
+            writeWordToRam(getValInReg(dest) + src1Val, src2Val);
             break;
         }
         case (isa::Opcode_E::SB): {
-            writeByteToRam(src1Val + dest, static_cast<uint8_t>(src2Val));
+            writeByteToRam(getValInReg(dest) + src1Val, static_cast<uint8_t>(src2Val));
             break;
         }
         case(isa::Opcode_E::LWROM): {
@@ -522,7 +522,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
                     std::cout << "tickWaitStopPt: " << tickWaitCnt << std::endl;
                 }
                 uint16_t startingSrcAddr = src1Val;
-                uint16_t startingDestAddr = dest;
+                uint16_t startingDestAddr = getValInReg(dest);
                 writeByteToRam(startingDestAddr + tickWaitCnt, fetchByteFromRom(startingSrcAddr + tickWaitCnt));
                 if (tickWaitCnt == tickWaitStopPt - 1) {
                     tickWaitCnt = 0; //reset

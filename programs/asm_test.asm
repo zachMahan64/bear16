@@ -1,4 +1,4 @@
-#SIMPLE QUADRATIC SOLVER, FRI 20250613
+#SIMPLE QUADRATIC SOLVER, SAT 20250614
 .data
 #struct: val {2-byte}, sqrt(val) {2-byte}
 sqrt_table:
@@ -275,6 +275,8 @@ str_c:
     .string "c = "
 str_ans:
     .string "ans: "
+str_and:
+    .string " and "
 .text
 .const STO_LOC = 4096
 .const PRNT_STRT_LOC = 0
@@ -286,31 +288,41 @@ start:
 
 pr_ans:
     #not done yet
-    sb 0, s6, ' '
+    sb s6, ' '
     inc s6
     add s6, s6, 5
-    romcpy 26, str_ans, 5 #prnt "a="
+    lea t4, 26
+    romcpy t4, str_ans, 5 #prnt "ans: "
     lw a0, STO_LOC
     call pr_s_num_four_dig
+    romcpy s6, str_and, 5 #prnt " and "
+    add s6, s6, 5
+    add t0, STO_LOC, 2
+    lw a0, t0
+    call pr_s_num_four_dig
+    sb s6, ' '
     ret
 
 pr_params: #print into memory, not the console (we not there yet)
     clr s6 # this will be our print address ptr
     add s6, s6, 4
-    romcpy PRNT_STRT_LOC, str_a, s6 #prnt "a="
+    lea t4, 0
+    romcpy t4, str_a, 4 #prnt "a="
     lwrom a0, _a
     call pr_s_num_four_dig
-    sb 0, s6, ' '
+    sb s6, ' '
     add s6, s6, 4
-    romcpy 9, str_b, 4 #prnt "b = "
+    lea t4, 9
+    romcpy t4, str_b, 4 #prnt "b = "
     lwrom a0, _b
     call pr_s_num_four_dig
-    sb 0, s6, ' '
+    sb s6, ' '
     add s6, s6, 4
-    romcpy 18, str_c, 4 #prnt "c = "
+    lea t4, 18
+    romcpy t4, str_c, 4 #prnt "c = "
     lwrom a0, _c
     call pr_s_num_four_dig
-    sb 0, s6, ' '
+    sb s6, ' '
     ret
 
 pr_s_num_four_dig: #fn(a0, &s6) = fn(val_of_num, print_loc_ptr)
@@ -319,25 +331,25 @@ pr_s_num_four_dig: #fn(a0, &s6) = fn(val_of_num, print_loc_ptr)
 fd_main:
     divs t0, a0, 1000
     add t0, t0, 48
-    sb 0, s6, t0 # #000
+    sb s6, t0 # #000
     inc s6
     divs t0, a0, 100
     mods t0, t0, 10
     add t0, t0, 48
-    sb 0, s6, t0 # 0#00
+    sb s6, t0 # 0#00
     inc s6
     divs t0, a0, 10
     mods t0, t0, 10
     add t0, t0, 48
-    sb 0, s6, t0 # 00#0
+    sb s6, t0 # 00#0
     inc s6
     mods t0, a0, 10
     add t0, t0, 48
-    sb 0, s6, t0 # 000#
+    sb s6, t0 # 000#
     inc s6
     ret
 _neg:
-    sb 0, s6, '-'
+    sb s6, '-'
     neg a0, a0
     inc s6
     jmp fd_main
@@ -349,9 +361,10 @@ solve_quad:
     lwrom s1, _b
     lwrom s2, _c
     call pos_sol
-    sw STO_LOC, rv
+    lea t3, STO_LOC
+    sw t3, rv
     call neg_sol
-    sw STO_LOC, 2, rv
+    sw t3, 2, rv
     ret
 pos_sol:
     neg t0, s1 # -b

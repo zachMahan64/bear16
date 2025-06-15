@@ -1,4 +1,4 @@
-#SIMPLE QUADRATIC SOLVER, FRI 20250613
+#SIMPLE QUADRATIC SOLVER, SAT 20250614
 .data
 #struct: val {2-byte}, sqrt(val) {2-byte}
 sqrt_table:
@@ -260,28 +260,111 @@ sqrt_table:
     .word 65025 255
 sqrt_table_size:
     .word 256
-quadtratic_params:
+quadratic_params:
     _a:
     .word 1
     _b:
-    .word -3
+    .word -82
     _c:
-    .word -10
-
+    .word 1645
+str_a:
+    .string "a = "
+str_b:
+    .string "b = "
+str_c:
+    .string "c = "
+str_ans:
+    .string "ans: "
+str_and:
+    .string " and "
 .text
 .const STO_LOC = 4096
+.const PRNT_STRT_LOC = 0
 start:
+    call pr_params
     call solve_quad
+    call pr_ans
     hlt
+
+pr_ans:
+    #not done yet
+    sb s6, ' '
+    inc s6
+    add s6, s6, 5
+    lea t4, 26
+    romcpy t4, str_ans, 5 #prnt "ans: "
+    lw a0, STO_LOC
+    call pr_s_num_four_dig
+    romcpy s6, str_and, 5 #prnt " and "
+    add s6, s6, 5
+    add t0, STO_LOC, 2
+    lw a0, t0
+    call pr_s_num_four_dig
+    sb s6, ' '
+    ret
+
+pr_params: #print into memory, not the console (we not there yet)
+    clr s6 # this will be our print address ptr
+    add s6, s6, 4
+    lea t4, 0
+    romcpy t4, str_a, 4 #prnt "a="
+    lwrom a0, _a
+    call pr_s_num_four_dig
+    sb s6, ' '
+    add s6, s6, 4
+    lea t4, 9
+    romcpy t4, str_b, 4 #prnt "b = "
+    lwrom a0, _b
+    call pr_s_num_four_dig
+    sb s6, ' '
+    add s6, s6, 4
+    lea t4, 18
+    romcpy t4, str_c, 4 #prnt "c = "
+    lwrom a0, _c
+    call pr_s_num_four_dig
+    sb s6, ' '
+    ret
+
+pr_s_num_four_dig: #fn(a0, &s6) = fn(val_of_num, print_loc_ptr)
+    comp a0, 0
+    jcond_neg _neg
+fd_main:
+    divs t0, a0, 1000
+    add t0, t0, 48
+    sb s6, t0 # #000
+    inc s6
+    divs t0, a0, 100
+    mods t0, t0, 10
+    add t0, t0, 48
+    sb s6, t0 # 0#00
+    inc s6
+    divs t0, a0, 10
+    mods t0, t0, 10
+    add t0, t0, 48
+    sb s6, t0 # 00#0
+    inc s6
+    mods t0, a0, 10
+    add t0, t0, 48
+    sb s6, t0 # 000#
+    inc s6
+    ret
+_neg:
+    sb s6, '-'
+    neg a0, a0
+    inc s6
+    jmp fd_main
+
+
 
 solve_quad:
     lwrom s0, _a
     lwrom s1, _b
     lwrom s2, _c
     call pos_sol
-    sw STO_LOC, rv
+    lea t3, STO_LOC
+    sw t3, rv
     call neg_sol
-    sw STO_LOC, 2, rv
+    sw t3, 2, rv
     ret
 pos_sol:
     neg t0, s1 # -b
@@ -342,7 +425,6 @@ sqrt:
         add t1, t1, 2
         mov s3, t1 # debug
         lwrom rv, sqrt_table, t1 # <load from rom> t2, *sqrt_table, new_offset (*sqrt(val))
-        mov s6, rv # debug
         ret
     overshot:
         sub t3, t1, 2
