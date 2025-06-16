@@ -16,6 +16,7 @@
 #include <string>
 #include <cstddef>
 #include <filesystem>
+#include <SDL2/SDL.h>
 
 
 Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(enableDebug) {}
@@ -735,7 +736,7 @@ inline uint16_t CPU16::fetchWordFromRom(uint16_t addr) const {
     uint16_t word = static_cast<uint16_t>(rom[addr]) | static_cast<uint16_t>(rom[addr + 1] << 8);
     return word;
 }
-void CPU16::jumpTo(const uint16_t& destAddrInRom) {
+void CPU16::jumpTo(uint16_t destAddrInRom) {
     pc = destAddrInRom;
     pcIsFrozenThisCycle = true;
 }

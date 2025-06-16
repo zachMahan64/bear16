@@ -14,6 +14,7 @@
 #include <iostream>
 #include <string>
 #include <cstddef>
+#include <SDL2/SDL.h>
 
 class CPU16 {
     bool isEnableDebug = false;
@@ -23,7 +24,7 @@ public: //only all public for debugging ease
     const short NUM_IO = isa::IO_COUNT;
     //MEMORY
     std::array<uint8_t, isa::SRAM_SIZE> sram {};
-    std::array<uint8_t, isa::SRAM_SIZE> rom {};
+    std::array<uint8_t, isa::ROM_SIZE> rom {};
     //CTRL FLOW (primitive registers)
     uint16_t pc = 0;
     uint16_t tickWaitCnt = 0; //for multicycle operations
@@ -65,7 +66,7 @@ public: //only all public for debugging ease
     [[nodiscard]] uint8_t fetchByteFromRom(uint16_t addr) const;
     [[nodiscard]] uint16_t fetchWordFromRom(uint16_t addr) const;
 
-    void jumpTo(const uint16_t& destAddrInRom);
+    void jumpTo(uint16_t destAddrInRom);
 
     //diagnostic
     void printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool asChars) const;
@@ -77,6 +78,7 @@ class Board {
     const std::size_t SRAM_SIZE = isa::SRAM_SIZE;
     uint64_t input  = 0;
     uint64_t output = 0;
+    std::unique_ptr<SDL_Window, void(*)(SDL_Window*)> screen{nullptr, SDL_DestroyWindow};
 public:
     CPU16 cpu; //public for testing purposes (change later)
     parts::Clock clock = parts::Clock();
