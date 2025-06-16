@@ -817,41 +817,45 @@ namespace assembly {
                 continue; //becuz we already placed the label!
             }
             if (firstTknType == TokenType::CONST) {
-                if (line.size() > 3 && line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
-                        && (line.at(3).type == TokenType::DECIMAL
-                        || line.at(3).type == TokenType::HEX
-                        || line.at(3).type == TokenType::BIN)
-                        || (line.at(3).type == TokenType::SING_QUOTE
-                            && line.at(4).type == TokenType::CHAR
-                            && line.at(5).type == TokenType::SING_QUOTE))
-                {
-                    int value = 0;
-                    try {
-                        if (line.at(3).type == TokenType::DECIMAL) {
-                            value = std::stoi(line.at(3).body, nullptr, 10);
-                        } else if (line.at(3).type == TokenType::HEX) {
-                            value = std::stoi(line.at(3).body, nullptr, 16);
-                        } else if (line.at(3).type == TokenType::BIN) {
-                            const auto &body = line.at(3).body;
-                            if (body.rfind("0b", 0) == 0 && body.length() > 2)
-                                value = std::stoi(body.substr(2), nullptr, 2);
-                            else
-                                throw std::invalid_argument("Binary constant without 0b prefix");
-                        } else if (line.at(4).type == TokenType::CHAR) {
-                            value = static_cast<int>(line.at(4).body.at(0));
+                try {
+                    if (line.size() > 3 && line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
+                            && (line.at(3).type == TokenType::DECIMAL
+                            || line.at(3).type == TokenType::HEX
+                            || line.at(3).type == TokenType::BIN)
+                            || (line.at(3).type == TokenType::SING_QUOTE
+                                && line.at(4).type == TokenType::CHAR
+                                && line.at(5).type == TokenType::SING_QUOTE))
+                    {
+                        int value = 0;
+                        try {
+                            if (line.at(3).type == TokenType::DECIMAL) {
+                                value = std::stoi(line.at(3).body, nullptr, 10);
+                            } else if (line.at(3).type == TokenType::HEX) {
+                                value = std::stoi(line.at(3).body, nullptr, 16);
+                            } else if (line.at(3).type == TokenType::BIN) {
+                                const auto &body = line.at(3).body;
+                                if (body.rfind("0b", 0) == 0 && body.length() > 2)
+                                    value = std::stoi(body.substr(2), nullptr, 2);
+                                else
+                                    throw std::invalid_argument("Binary constant without 0b prefix");
+                            } else if (line.at(4).type == TokenType::CHAR) {
+                                value = static_cast<int>(line.at(4).body.at(0));
+                            }
+                        } catch (const std::exception &e) {
+                            LOG_ERR("ERROR: bad const value: " << line.at(3).body << " (" << e.what() << ")");
+                            throw;
                         }
-                    } catch (const std::exception &e) {
-                        LOG_ERR("ERROR: bad const value: " << line.at(3).body << " (" << e.what() << ")");
-                        throw;
+                        if(auto [it, inserted] = constMap.emplace(line.at(1).body, value); !inserted) {
+                            LOG_ERR("ERROR: duplicate const name: " << line.at(1).body);
+                        }
+                    } else if (line.size() > 1){
+                        std::string complaint = line.at(1).body;
+                        throwAFit(complaint);
+                    } else {
+                        LOG_ERR("ERROR: bad const declaration at line with tokens: " << line.size());
                     }
-                    if(auto [it, inserted] = constMap.emplace(line.at(1).body, value); !inserted) {
-                        LOG_ERR("ERROR: duplicate const name: " << line.at(1).body);
-                    }
-                } else if (line.size() > 1){
-                    std::string complaint = line.at(1).body;
-                    throwAFit(complaint);
-                } else {
-                    LOG_ERR("ERROR: bad const declaration at line with tokens: " << line.size());
+                } catch (std::out_of_range &e) {
+                    LOG_ERR("ERROR: bad const declaration");
                 }
             }
             //INSTR -> lines that SHOULD get made into instructions

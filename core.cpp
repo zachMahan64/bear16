@@ -764,7 +764,6 @@ Screen::Screen() {
                                     SDL_TEXTUREACCESS_STREAMING,
                                     WIDTH, HEIGHT));
 }
-
 Screen::~Screen() {
     SDL_Quit();
 }
@@ -788,14 +787,14 @@ void Screen::renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE>& sram, con
         int basePixelIndex = byteIdx * 8; // (for this byte in framebuffer)
 
         // unpack and convert to 32bit pix vals
-        framebuffer[basePixelIndex + 0] = (byte & 0x80) ? 0xFFFFFFFF : 0x00000000;
-        framebuffer[basePixelIndex + 1] = (byte & 0x40) ? 0xFFFFFFFF : 0x00000000;
-        framebuffer[basePixelIndex + 2] = (byte & 0x20) ? 0xFFFFFFFF : 0x00000000;
-        framebuffer[basePixelIndex + 3] = (byte & 0x10) ? 0xFFFFFFFF : 0x00000000;
-        framebuffer[basePixelIndex + 4] = (byte & 0x08) ? 0xFFFFFFFF : 0x00000000;
-        framebuffer[basePixelIndex + 5] = (byte & 0x04) ? 0xFFFFFFFF : 0x00000000;
-        framebuffer[basePixelIndex + 6] = (byte & 0x02) ? 0xFFFFFFFF : 0x00000000;
-        framebuffer[basePixelIndex + 7] = (byte & 0x01) ? 0xFFFFFFFF : 0x00000000;
+        framebuffer[basePixelIndex + 0] = (byte & 0x80) ? FB_COLOR : 0x00000000;
+        framebuffer[basePixelIndex + 1] = (byte & 0x40) ? FB_COLOR : 0x00000000;
+        framebuffer[basePixelIndex + 2] = (byte & 0x20) ? FB_COLOR : 0x00000000;
+        framebuffer[basePixelIndex + 3] = (byte & 0x10) ? FB_COLOR : 0x00000000;
+        framebuffer[basePixelIndex + 4] = (byte & 0x08) ? FB_COLOR : 0x00000000;
+        framebuffer[basePixelIndex + 5] = (byte & 0x04) ? FB_COLOR : 0x00000000;
+        framebuffer[basePixelIndex + 6] = (byte & 0x02) ? FB_COLOR : 0x00000000;
+        framebuffer[basePixelIndex + 7] = (byte & 0x01) ? FB_COLOR : 0x00000000;
     }
 }
 

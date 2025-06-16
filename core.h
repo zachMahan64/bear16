@@ -70,10 +70,22 @@ public: //only all public for debugging ease
     //diagnostic
     void printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool asChars) const;
 };
+
+//scr helper
+constexpr uint32_t makeRGBA8888(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    return (static_cast<uint32_t>(r) << 24) |
+           (static_cast<uint32_t>(g) << 16) |
+           (static_cast<uint32_t>(b) << 8)  |
+           static_cast<uint32_t>(a);
+}
+
 class Screen {
     static constexpr int WIDTH = 256;
     static constexpr int HEIGHT = 192;
     static constexpr int SCALE = 4;
+
+    static constexpr uint32_t FB_COLOR = makeRGBA8888(0, 255, 0, 0);  // green
+
     static constexpr uint16_t FB_ADDR = 0x0000; // framebuffer base address in SRAM
 
     std::array<uint32_t, WIDTH * HEIGHT> framebuffer{};
@@ -88,6 +100,7 @@ public:
     void updateFB();
     void renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE>& sram, uint16_t fbAddr = FB_ADDR);
 };
+
 class Board {
     //flags
     bool power = true;
