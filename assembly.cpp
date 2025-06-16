@@ -532,8 +532,9 @@ namespace assembly {
         std::vector<TokenizedRomLine> allTokenizedInstructions = parseListOfTokensIntoTokenizedRomLines(allTokens);
         std::vector<parts::Instruction> literalInstructions = getLiteralInstructions(allTokenizedInstructions);
         std::vector<uint8_t> byteVec = buildByteVecFromLiteralInstructions(literalInstructions);
-        std::vector<uint8_t> dataByteVec = parseTokenizedDataIntoByteVec(allTokenizedInstructions); //causing segfault
-        byteVec.insert(byteVec.end(), dataByteVec.begin(), dataByteVec.end()); //causing segfault
+        std::vector<uint8_t> dataByteVec = parseTokenizedDataIntoByteVec(allTokenizedInstructions);
+        byteVec.insert(byteVec.end(), dataByteVec.begin(), dataByteVec.end());
+        LOG("Final ROM Size (bytes): " << std::dec << byteVec.size());
         return byteVec;
     }
 

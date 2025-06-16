@@ -48,7 +48,6 @@ start:
     mov a1, 0 # index
     mov a2, date_str_1
     call blit_strl_rom #blitting a str
-
     call inf_loop # stall
     hlt
 
