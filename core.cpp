@@ -18,18 +18,42 @@
 #include <filesystem>
 #include <SDL2/SDL.h>
 
+#ifdef DEBUG_MODE
+  #define LOG(x) std::cout << x << std::endl
+#else
+  #define LOG(x)
+#endif
 
-Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(enableDebug) {}
+Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(sram, rom, enableDebug) {}
 
 //Board and loading ROM stuff -------------------------------------------------------
 int Board::run() {
     constexpr int DELAY = 0;
     clock.resetCycles(); //set clock cycles to zero @ the start of a new process
+    SDL_Event e;
+
+    constexpr double TARGET_FRAME_TIME = 1.0 / 60.0; // 60 FPS, TODO: link to start of VRAM later
+    uint64_t lastFrameTime = SDL_GetPerformanceCounter();
+    uint64_t freq = SDL_GetPerformanceFrequency();
+
     do {
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) return 0;
+        }
         clock.tick(DELAY);
-        if (clock.bit) cpu.step();
-    } while (cpu.cpuIsHalted == false && cpu.pc <= ROM_SIZE);
-    if (cpu.pc >= ROM_SIZE) std::cerr << "ERROR: PC overflowed: " << cpu.pc << std::endl;
+        cpu.step();
+
+        const uint64_t now = SDL_GetPerformanceCounter();
+        const double elapsed = static_cast<double>(now - lastFrameTime) / freq;
+
+        if (elapsed >= TARGET_FRAME_TIME) {
+            screen.renderSramToFB(sram);
+            screen.updateFB();
+            lastFrameTime = now;
+        }
+
+
+    } while (cpu.isHalted == false);
     return 0;
 }
 void Board::printDiagnostics(bool printMemAsChars) const {
@@ -48,7 +72,6 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << "Total cycles: " << clock.getCycles() << std::endl;
     std::cout << "=====================" << std::endl;
 }
-
 void Board::printAllRegisterContents() const {
     int cnt = 0;
     std::string printBuffer{};
@@ -69,7 +92,6 @@ void Board::printAllRegisterContents() const {
         std::cout << printBuffer << std::endl;
     }
 }
-
 void Board::loadRomFromBinInTxtFile(const std::string &path) {
     std::ifstream file(path);
     std::vector<uint8_t> byteRom{};
@@ -105,7 +127,7 @@ void Board::loadRomFromBinInTxtFile(const std::string &path) {
 
     std::cout << "------------ROM loaded------------" << std::endl;
     file.close();
-    cpu.setRom(byteRom);
+    setRom(byteRom);
 }
 void Board::loadRomFromHexInTxtFile(const std::string &path) {
     std::ifstream file(path, std::ios::in | std::ios::binary);
@@ -154,17 +176,12 @@ void Board::loadRomFromHexInTxtFile(const std::string &path) {
     }
 
     std::cout << "------------ROM loaded------------" << std::endl;
-    cpu.setRom(byteRom);
+    setRom(byteRom);
 }
 void Board::loadRomFromByteVector(std::vector<uint8_t>& rom) {
-    cpu.setRom(rom);
+    setRom(rom);
 }
-
-//CPU ----------------------------------------------------------------------------
-uint16_t CPU16::getPc() const {
-    return pc;
-}
-void CPU16::setRom(std::vector<uint8_t>& rom) {
+void Board::setRom(std::vector<uint8_t>& rom) {
     if (rom.size() > isa::ROM_SIZE) {
         std::cerr << "ERROR: ROM size exceeds " << isa::ROM_SIZE << " bytes" << std::endl;
         return;
@@ -172,10 +189,19 @@ void CPU16::setRom(std::vector<uint8_t>& rom) {
     std::ranges::copy(rom, this->rom.begin());
 }
 
+CPU16::CPU16(std::array<uint8_t, isa::SRAM_SIZE>& sram, std::array<uint8_t, isa::ROM_SIZE>& rom, bool enableDebug)
+    : isEnableDebug(enableDebug), sram(sram), rom(rom)
+{}
+
+//CPU ----------------------------------------------------------------------------
+uint16_t CPU16::getPc() const {
+    return pc;
+}
+
 //CPU16 flow of execution
 void CPU16::step() {
     //fetch & prelim. decoding
-    if (isEnableDebug) std::cout << "DEBUG: PC = " << std::to_string(pc) << std::endl;
+    LOG("DEBUG: PC = " << std::to_string(pc));
     auto instr = parts::Instruction(fetchInstruction());
     //execute & writeback
     execute(instr);
@@ -185,13 +211,10 @@ void CPU16::step() {
     pcIsFrozenThisCycle = false;
 }
 //fetch
-uint64_t CPU16::fetchInstruction() {
-    uint64_t instr = 0;
-    for (int i = 0; i < 8; i++) {
-        instr <<= 8;
-        instr |= rom[pc + i];
-    }
-    return instr;
+uint64_t CPU16::fetchInstruction() const {
+    uint64_t instr;
+    std::memcpy(&instr, &rom[pc], sizeof(uint64_t));
+    return __builtin_bswap64(instr); // cuz big endian
 }
 //execute
 void CPU16::execute(parts::Instruction instr) {
@@ -376,7 +399,7 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
         }
         if (cond) {
             jumpTo(dest);
-            if (isEnableDebug) std::cout << "DEBUG: cond true, jumping to " << dest << std::endl;
+            LOG("DEBUG: cond true, jumping to " << dest);
         }
     } else {
         switch (thisOp) { //set flags in flagReg manually
@@ -430,7 +453,6 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             bool overflow = (src1Neg != src2Neg) && (src1Neg != resultNeg);
             flagReg.setOverflow(overflow);
             flagReg.setZero(testVal == 0);
-            if (testVal == 0) std::cout << "DEBUG: COMP: zero" << std::endl;
             flagReg.setNegative(resultNeg);
             break;
         }
@@ -441,12 +463,12 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         case(isa::Opcode_E::PUSH): {
             stackPtr.set(stackPtr.val - 2);
             writeWordToRam(stackPtr.val, src1Val);
-            if (isEnableDebug) std::cout << "DEBUG: pushing " << static_cast<int>(src1Val) << " to " << stackPtr.val << std::endl;
+            LOG("DEBUG: pushing " << static_cast<int>(src1Val) << " to " << stackPtr.val);
             break;
         }
         case(isa::Opcode_E::POP): {
             src1Val = fetchWordFromRam(stackPtr.val);
-            if (isEnableDebug) std::cout << "DEBUG: popping " << src1Val << " from " << stackPtr.val << " to " << dest << std::endl;
+            LOG("DEBUG: popping " << src1Val << " from " << stackPtr.val << " to " << dest);
             stackPtr.set(stackPtr.val + 2);
             writeback(dest, src1Val);
             break;
@@ -465,17 +487,17 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         }
         case(isa::Opcode_E::MEMCPY): {
             //enter loop
-            if (isEnableDebug) std::cout << "DEBUG: MEMCPY" << std::endl;
+            LOG("DEBUG: MEMCPY");
             if (tickWaitCnt == 0 && tickWaitStopPt == 0) {
                 tickWaitStopPt = src2Val;
                 isInMemcpyLoop = true;
             }
             //instr loops to copy bytes in order
             if (isInMemcpyLoop) {
-                if (isEnableDebug) {
-                    std::cout << "DEBUG: MEMCPY LOOP" << std::endl;
-                    std::cout << "tickWaitStopPt: " << tickWaitCnt << std::endl;
-                }
+                LOG(
+                    "DEBUG: MEMCPY LOOP" << std::endl
+                    << "tickWaitStopPt: " << tickWaitCnt
+                );
                 uint16_t startingSrcAddr = src1Val;
                 uint16_t startingDestAddr = getValInReg(dest);
                 writeByteToRam(startingDestAddr + tickWaitCnt, fetchByteFromRam(startingSrcAddr + tickWaitCnt));
@@ -506,22 +528,21 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
         case(isa::Opcode_E::LBROM): {
             const uint16_t val = fetchByteAsWordFromRom(src1Val + src2Val);
             writeback(dest, val);
-            std::cout << "DEBUG: LBROM: " << static_cast<uint8_t>(val) << std::endl;
             break;
         }
         case(isa::Opcode_E::ROMCPY): {
             //enter loop
-            if (isEnableDebug) std::cout << "DEBUG: ROMCPY" << std::endl;
+            LOG("DEBUG: ROMCPY");
             if (tickWaitCnt == 0 && tickWaitStopPt == 0) {
                 tickWaitStopPt = src2Val;
                 isInMemcpyLoop = true;
             }
             //instr loops to copy bytes in order
             if (isInMemcpyLoop) {
-                if (isEnableDebug) {
-                    std::cout << "DEBUG: ROMCPY LOOP" << std::endl;
-                    std::cout << "tickWaitStopPt: " << tickWaitCnt << std::endl;
-                }
+                LOG(
+                     "DEBUG: ROMCPY LOOP" << std::endl <<
+                     "tickWaitStopPt: " << tickWaitCnt
+                );
                 uint16_t startingSrcAddr = src1Val;
                 uint16_t startingDestAddr = getValInReg(dest);
                 writeByteToRam(startingDestAddr + tickWaitCnt, fetchByteFromRom(startingSrcAddr + tickWaitCnt));
@@ -564,13 +585,13 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
     const auto thisOp = static_cast<isa::Opcode_E>(op14);
     switch (thisOp) {
         case(isa::Opcode_E::CALL): {
-            std::cout << "DEBUG: CALL" << std::endl;
+            LOG("DEBUG: CALL" << std::endl);
 
             // Push return address
             stackPtr -= 2;
             uint16_t returnAddr = pc + 8;
             writeWordToRam(stackPtr.val, returnAddr);            // [SP] = return addr
-            std::cout << std::dec << "DEBUG: storing return address " <<" at SP = " << stackPtr.val << "\n";
+            LOG(std::dec << "DEBUG: storing return address " <<" at SP = " << stackPtr.val << "\n");
 
             // Push old FP
             stackPtr -= 2;
@@ -597,11 +618,11 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             stackPtr.set(currentFrameBaseAddr + 4);
 
             // debug
-            std::cout << std::dec << "DEBUG: fetched return address = " << retAddr << " from FP+2 = " << static_cast<int>(currentFrameBaseAddr) + 2 << "\n";
+            LOG(std::dec << "DEBUG: fetched return address = " << retAddr << " from FP+2 = " << static_cast<int>(currentFrameBaseAddr) + 2 << "\n");
 
             // jump back to the caller
             jumpTo(retAddr);
-            std::cout << std::dec<< "DEBUG: RET to " << retAddr << std::endl;
+            LOG(std::dec<< "DEBUG: RET to " << retAddr);
             break;
         }
         case(isa::Opcode_E::JMP): {
@@ -637,9 +658,9 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             break;
         }
         case(isa::Opcode_E::HLT): {
-            if (isEnableDebug) std::cout << "debug: HALTED" << std::endl;
+            LOG("debug: HALTED");
             pcIsFrozenThisCycle = true;
-            cpuIsHalted = true;
+            isHalted = true;
             break;
         }
         case(isa::Opcode_E::JAL): {
@@ -659,7 +680,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
 
 //gen purpose
 void CPU16::writeback(uint16_t dest, uint16_t val) {
-    if (isEnableDebug) std::cout << "DEBUG: writeback: " << std::hex << std::setw(4) << std::setfill('0') << dest << " " << val << std::endl;
+    LOG("DEBUG: writeback: " << std::hex << std::setw(4) << std::setfill('0') << dest << " " << val);
     if (dest < NUM_GEN_REGS) {
         genRegs[dest].set(val);
     } else if (dest < NUM_GEN_REGS + NUM_IO) {
@@ -711,11 +732,11 @@ inline std::array<uint8_t, 2> CPU16::convertWordToBytePair(uint16_t val) {
 inline void CPU16::writeWordToRam(uint16_t addr, uint16_t val) {
     sram[addr] = static_cast<uint8_t>(val & 0xFF);
     sram[addr + 1] = static_cast<uint8_t>((val >> 8) & 0xFF);
-    if (isEnableDebug) std::cout << std::dec << "DEBUG: wrote word to addr " << addr << ", val:" << val << std::endl << std::hex;
+    LOG(std::dec << "DEBUG: wrote word to addr " << addr << ", val:" << val << std::endl << std::hex);
 }
 void CPU16::writeByteToRam(uint16_t addr, uint8_t val) {
     sram[addr] = val;
-    if (isEnableDebug) std::cout << std::dec << "DEBUG: wrote byte to addr " << addr << ", val:" << val << std::endl << std::hex;
+    LOG(std::dec << "DEBUG: wrote byte to addr " << addr << ", val:" << val << std::endl << std::hex);
 }
 void CPU16::printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool asChar) const {
     std::cout << "Starting Address: " << startingAddr << " | # bytes read: " << numBytes << std::endl;
@@ -725,6 +746,60 @@ void CPU16::printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool a
         else std::cout << "Index: " << i << " = " << static_cast<int>(sram.at(startingAddr + i)) << "\n";
        }
 }
+
+//Screen
+Screen::Screen() {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        std::cerr << "SDL Init Error: " << SDL_GetError() << std::endl;
+    }
+    window.reset(SDL_CreateWindow("CPU16 Display",
+                                  SDL_WINDOWPOS_CENTERED,
+                                  SDL_WINDOWPOS_CENTERED,
+                                  WIDTH * SCALE,
+                                  HEIGHT * SCALE,
+                                  SDL_WINDOW_SHOWN));
+    renderer.reset(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_PRESENTVSYNC));
+    texture.reset(SDL_CreateTexture(renderer.get(),
+                                    SDL_PIXELFORMAT_RGBA8888,
+                                    SDL_TEXTUREACCESS_STREAMING,
+                                    WIDTH, HEIGHT));
+}
+
+Screen::~Screen() {
+    SDL_Quit();
+}
+void Screen::updateFB() {
+    uint32_t* fbPtr = framebuffer.data();
+    SDL_UpdateTexture(texture.get(), nullptr, fbPtr, WIDTH * sizeof(uint32_t));
+    SDL_RenderClear(renderer.get());
+    SDL_RenderCopy(renderer.get(), texture.get(), nullptr, nullptr);
+    SDL_RenderPresent(renderer.get());
+}
+void Screen::renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE>& sram, const uint16_t fbAddr) {
+    // We have WIDTH * HEIGHT pixels total
+    // Each byte in SRAM encodes 8 horizontal pixels (MSB first)
+    // So number of bytes = total pixels / 8
+    constexpr int totalPixels = WIDTH * HEIGHT;
+    constexpr int bytesPerFrame = totalPixels / 8;
+
+    for (int byteIdx = 0; byteIdx < bytesPerFrame; ++byteIdx) {
+        uint8_t byte = sram[fbAddr + byteIdx];
+
+        int basePixelIndex = byteIdx * 8; // (for this byte in framebuffer)
+
+        // unpack and convert to 32bit pix vals
+        framebuffer[basePixelIndex + 0] = (byte & 0x80) ? 0xFFFFFFFF : 0x00000000;
+        framebuffer[basePixelIndex + 1] = (byte & 0x40) ? 0xFFFFFFFF : 0x00000000;
+        framebuffer[basePixelIndex + 2] = (byte & 0x20) ? 0xFFFFFFFF : 0x00000000;
+        framebuffer[basePixelIndex + 3] = (byte & 0x10) ? 0xFFFFFFFF : 0x00000000;
+        framebuffer[basePixelIndex + 4] = (byte & 0x08) ? 0xFFFFFFFF : 0x00000000;
+        framebuffer[basePixelIndex + 5] = (byte & 0x04) ? 0xFFFFFFFF : 0x00000000;
+        framebuffer[basePixelIndex + 6] = (byte & 0x02) ? 0xFFFFFFFF : 0x00000000;
+        framebuffer[basePixelIndex + 7] = (byte & 0x01) ? 0xFFFFFFFF : 0x00000000;
+    }
+}
+
+
 //ROM
 inline uint16_t CPU16::fetchByteAsWordFromRom(uint16_t addr) const {
     return static_cast<uint16_t>(rom[addr]);

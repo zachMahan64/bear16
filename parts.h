@@ -18,8 +18,6 @@ namespace parts {
         void resetCycles() {
             cycles = 0;
         }
-        bool bit = false;
-        bool lastBit = false;
         bool frozen = false;
         Clock() = default;
         void freeze();

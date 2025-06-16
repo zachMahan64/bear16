@@ -27,7 +27,7 @@ int emu::Emulator::assembleAndRun(const std::string& path) {
     auto byteVec = testAssembler.assembleFromFile(path);
 
     //init emulated system
-    Board board(true);
+    Board board(false);
     board.loadRomFromByteVector(byteVec);
     //board.loadRomFromBinInTxtFile("../programs/bin_prog.txt");
     //board.loadRomFromHexInTxtFile("../programs/hex_prog.txt");

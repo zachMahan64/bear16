@@ -23,15 +23,15 @@ public: //only all public for debugging ease
     const size_t NUM_GEN_REGS = isa::GEN_REG_COUNT;
     const short NUM_IO = isa::IO_COUNT;
     //MEMORY
-    std::array<uint8_t, isa::SRAM_SIZE> sram {};
-    std::array<uint8_t, isa::ROM_SIZE> rom {};
+    std::array<uint8_t, isa::SRAM_SIZE>& sram;
+    std::array<uint8_t, isa::ROM_SIZE>& rom;
     //CTRL FLOW (primitive registers)
     uint16_t pc = 0;
     uint16_t tickWaitCnt = 0; //for multicycle operations
     uint16_t tickWaitStopPt = 0;
     bool pcIsFrozenThisCycle = false;
     bool isInMemcpyLoop = false; //rework at some point
-    bool cpuIsHalted = false;
+    bool isHalted = false;
     //IO
     std::array<uint16_t, isa::IO_COUNT> inps {};
     std::array<uint16_t, isa::IO_COUNT> outs {};
@@ -41,12 +41,11 @@ public: //only all public for debugging ease
     parts::GenRegister  stackPtr = parts::GenRegister(isa::MAX_UINT_16BIT); //sp stacks at end of RAM for downward growth
     parts::GenRegister  framePtr = parts::GenRegister(isa::MAX_UINT_16BIT);
     //Constr
-    explicit CPU16(bool enableDebug) : isEnableDebug(enableDebug) {};
+    CPU16(std::array<uint8_t, isa::SRAM_SIZE>& sram, std::array<uint8_t, isa::ROM_SIZE>& rom, bool enableDebug);
     //doStuff
     [[nodiscard]] uint16_t getPc() const;
-    void setRom(std::vector<uint8_t>& rom);
     void step();
-    uint64_t fetchInstruction();
+    uint64_t fetchInstruction() const;
     void execute(parts::Instruction instr);
     void performOp(const parts::Instruction &instr, uint16_t src1Val, uint16_t src2Val);
     void doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest);
@@ -71,17 +70,40 @@ public: //only all public for debugging ease
     //diagnostic
     void printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool asChars) const;
 };
+class Screen {
+    static constexpr int WIDTH = 256;
+    static constexpr int HEIGHT = 192;
+    static constexpr int SCALE = 4;
+    static constexpr uint16_t FB_ADDR = 0x0000; // framebuffer base address in SRAM
+
+    std::array<uint32_t, WIDTH * HEIGHT> framebuffer{};
+
+    std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> window{nullptr, SDL_DestroyWindow};
+    std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> renderer{nullptr, SDL_DestroyRenderer};
+    std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> texture{nullptr, SDL_DestroyTexture};
+
+public:
+    Screen();
+    ~Screen();
+    void updateFB();
+    void renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE>& sram, uint16_t fbAddr = FB_ADDR);
+};
 class Board {
+    //flags
     bool power = true;
     bool isEnableDebug = false;
-    const std::size_t ROM_SIZE = isa::ROM_SIZE;
-    const std::size_t SRAM_SIZE = isa::SRAM_SIZE;
+    //memory
+    std::array<uint8_t, isa::SRAM_SIZE> sram {};
+    std::array<uint8_t, isa::ROM_SIZE> rom {};
+    //IO (WIP)
     uint64_t input  = 0;
     uint64_t output = 0;
-    std::unique_ptr<SDL_Window, void(*)(SDL_Window*)> screen{nullptr, SDL_DestroyWindow};
+    //Framebuffer
+    Screen screen {};
+
 public:
     CPU16 cpu; //public for testing purposes (change later)
-    parts::Clock clock = parts::Clock();
+    parts::Clock clock {};
     explicit Board(bool enableDebug);
     int run();
     void printDiagnostics(bool printMemAsChars) const;
@@ -89,6 +111,8 @@ public:
     void loadRomFromBinInTxtFile(const std::string &path);
     void loadRomFromHexInTxtFile(const std::string &path);
     void loadRomFromByteVector(std::vector<uint8_t>& rom);
+    void setRom(std::vector<uint8_t>& rom);
 };
+
 
 #endif //CORE_H

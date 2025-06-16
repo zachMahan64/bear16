@@ -12,16 +12,12 @@ void Clock::freeze()  { frozen = true;  }
 void Clock::unfreeze(){ frozen = false; }
 void Clock::tick() {
     if (frozen) return;
-    lastBit = bit;
-    bit     = 1 - bit;
-    if (bit) ++cycles;
+    ++cycles;
 }
 void Clock::tick(int delayMillis) {
     if (frozen) return;
     std::this_thread::sleep_for(std::chrono::milliseconds(delayMillis));
-    lastBit = bit;
-    bit = 1 - bit;
-    if (bit) ++cycles;
+    ++cycles;
 }
 
 //instr
