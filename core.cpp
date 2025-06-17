@@ -38,7 +38,7 @@ int Board::run() {
 
     do {
         while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) return 0;
+            if (e.type == SDL_QUIT) return 130;
         }
         clock.tick(DELAY);
         cpu.step();

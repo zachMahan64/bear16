@@ -467,7 +467,7 @@ namespace assembly {
     };
     const std::unordered_set<char> validSymbols = {
         '!', '@', '/', '\\', '$', '%', '&', '^', '*', '(', ')', '\'', '~', '-', '\0', ':', ';', '[', ']', ' ', '{', '}', '?',
-        '=', '|', ',', '.', '+'
+        '=', '|', ',', '.', '+', '<',
     };
     const std::unordered_map<std::string, TokenType> stringToDataDirectives = {
         {".string", TokenType::STRING_DIR},
@@ -558,6 +558,7 @@ namespace assembly {
         std::string currentStr {};
         bool inComment = false;
         bool inString = false;
+        bool inChar = false;
 
         for (char c : buffer) {
             if (inComment) {
@@ -589,6 +590,27 @@ namespace assembly {
             }
             if (c == '"') {
                 inString = true;
+                firstPassTokens.emplace_back(c);
+                continue;
+            }
+            if (inChar) {
+                if (c == '\'') {
+                    inChar = false;
+                    if (currentStr.length() > 1) {
+                        LOG_ERR("ERROR: invalid char declaration (length greater than 1 char)");
+                    }
+                    Token charTkn(currentStr);
+                    charTkn.type = TokenType::CHAR;
+                    firstPassTokens.emplace_back(charTkn);
+                    firstPassTokens.emplace_back('\'');
+                    currentStr.clear();
+                    continue;
+                }
+                currentStr += c;
+                continue;
+            }
+            if (c == '\'') {
+                inChar = true;
                 firstPassTokens.emplace_back(c);
                 continue;
             }
@@ -668,9 +690,10 @@ namespace assembly {
                 LOG_ERR("NOT IN TEXT OR DATA SECTION: " + toString(tkn.type) + "-" + tkn.body);
             }
             else if (tkn.type == TokenType::MISTAKE) {
+                throwAFit(lineNumInOrigAsm);
+                LOG_ERR("ERROR: MISTAKE -> " + tkn.body);
                 if (inText) currentLine_TEXT.push_back(tkn);
                 if (inData) currentLine_DATA.push_back(tkn);
-                throwAFit(lineNumInOrigAsm);
             }
             else if (tkn.type == TokenType::EOL) {
                 lineNumInOrigAsm++;
@@ -1188,7 +1211,7 @@ namespace assembly {
         else if (std::regex_match(text, std::regex("^[-+]?[0-9]+$"))) type = TokenType::DECIMAL;
         else if (text[0] == '#') type = TokenType::COMMENT;
         else if (text[0] == '\n') type = TokenType::EOL;
-        else if (text.length() == 1 && (std::isalpha(text[0]) || validSymbols.contains(text[0]))) type = TokenType::CHAR;
+        else if (text.length() == 1 && (std::isalpha(text[0]) || std::__format_spec::__is_ascii(text[0]))) type = TokenType::CHAR;
         else if (text == "\\0"){
             type = TokenType::CHAR;
         }
