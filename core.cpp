@@ -775,9 +775,9 @@ void Screen::updateFB() {
     SDL_RenderPresent(renderer.get());
 }
 void Screen::renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE>& sram, const uint16_t fbAddr) {
-    // We have WIDTH * HEIGHT pixels total
-    // Each byte in SRAM encodes 8 horizontal pixels (MSB first)
-    // So number of bytes = total pixels / 8
+    // we have WIDTH * HEIGHT pixels total
+    // each byte in SRAM encodes 8 horizontal pixels (MSB first)
+    // so number of bytes = total pixels / 8
     constexpr int totalPixels = WIDTH * HEIGHT;
     constexpr int bytesPerFrame = totalPixels / 8;
 
