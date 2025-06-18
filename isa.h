@@ -15,6 +15,8 @@ namespace isa {
     static constexpr size_t STACK_FRAME_SIZE = 32; //bytes
     static constexpr size_t RA_INDEX = 0x000F;
 
+    static constexpr uint16_t KEY_IO_MEM_LOC = 6144;
+
 enum class Opcode_E : uint16_t {
         //Arith & Bitwise
         ADD  = 0x0000,

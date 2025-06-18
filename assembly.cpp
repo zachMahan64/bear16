@@ -527,6 +527,14 @@ namespace assembly {
     //assembler class
     Assembler::Assembler(bool enableDebug, bool doNotAutoCorrectImmediates)
         : isEnableDebug(enableDebug), doNotAutoCorrectImmediates(doNotAutoCorrectImmediates) {};
+    void Assembler::writeToFile(const std::string& filename, const std::vector<uint8_t>& data) {
+        std::ofstream outFile(filename, std::ios::binary);
+        if (!outFile) {
+            throw std::runtime_error("Failed to open file for writing: " + filename);
+        }
+        outFile.write(reinterpret_cast<const char*>(data.data()), data.size());
+        outFile.close();
+    }
     std::vector<uint8_t> Assembler::assembleFromFile(const std::string &path) const {
         std::vector<Token> allTokens = tokenizeAsmFirstPass(path);
         std::vector<TokenizedRomLine> allTokenizedInstructions = parseListOfTokensIntoTokenizedRomLines(allTokens);

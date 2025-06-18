@@ -84,7 +84,7 @@ class Screen {
     static constexpr int HEIGHT = 192;
     static constexpr int SCALE = 4;
 
-    static constexpr uint32_t FB_COLOR = makeRGBA8888(0, 255, 0, 0);  // green
+    static constexpr uint32_t FB_COLOR = makeRGBA8888(0, 255, 0, 255);  // green
 
     static constexpr uint16_t FB_ADDR = 0x0000; // framebuffer base address in SRAM
 

@@ -32,15 +32,26 @@ int Board::run() {
     clock.resetCycles(); //set clock cycles to zero @ the start of a new process
     SDL_Event e;
 
-    constexpr double TARGET_FRAME_TIME = 1.0 / 60.0; // 60 FPS, TODO: link to start of VRAM later
+    constexpr double TARGET_FRAME_TIME = 1.0 / 60.0; // 60 FPS,
     uint64_t lastFrameTime = SDL_GetPerformanceCounter();
     uint64_t freq = SDL_GetPerformanceFrequency();
 
     do {
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) return 130;
+            if (e.type == SDL_KEYDOWN) {
+                if (e.key.keysym.sym == SDLK_ESCAPE) return 131;
+
+                // Only process key presses with ASCII range (0-127)
+                int keycode = e.key.keysym.sym;
+                if (keycode >= 0 && keycode < 128) {
+                    sram[isa::KEY_IO_MEM_LOC] = static_cast<uint8_t>(keycode);
+                    std::cout << "DEBUG: key pressed: " << std::to_string(keycode) << "\n";
+                    // add bounds check for memIndex if needed
+                }
+            }
         }
-        clock.tick(DELAY);
+        clock.tick();
         cpu.step();
 
         const uint64_t now = SDL_GetPerformanceCounter();
