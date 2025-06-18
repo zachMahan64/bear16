@@ -24,7 +24,7 @@
   #define LOG(x)
 #endif
 
-Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(sram, rom, enableDebug) {}
+Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(sram, userRom, kernelRom, enableDebug) {}
 
 //Board and loading ROM stuff -------------------------------------------------------
 int Board::run() {
@@ -74,7 +74,7 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << "=====================" << std::endl;
     std::cout << "First 64 bytes of RAM: \n";
     for (int i = 0; i < 64; i++) {
-        std::cout << cpu.sram.at(i);
+        std::cout << sram.at(i);
     }
     std::cout << "\n=====================" << std::endl;
     uint16_t startingAddr = 4096;
@@ -103,7 +103,7 @@ void Board::printAllRegisterContents() const {
         std::cout << printBuffer << std::endl;
     }
 }
-void Board::loadRomFromBinInTxtFile(const std::string &path) {
+void Board::loadUserRomFromBinInTxtFile(const std::string &path) {
     std::ifstream file(path);
     std::vector<uint8_t> byteRom{};
     if (!file.is_open()) {
@@ -138,9 +138,9 @@ void Board::loadRomFromBinInTxtFile(const std::string &path) {
 
     std::cout << "------------ROM loaded------------" << std::endl;
     file.close();
-    setRom(byteRom);
+    setUserRom(byteRom);
 }
-void Board::loadRomFromHexInTxtFile(const std::string &path) {
+void Board::loadUserRomFromHexInTxtFile(const std::string &path) {
     std::ifstream file(path, std::ios::in | std::ios::binary);
     if (!file) {
         std::cout << "ERROR: Could not open file" << std::endl;
@@ -187,26 +187,35 @@ void Board::loadRomFromHexInTxtFile(const std::string &path) {
     }
 
     std::cout << "------------ROM loaded------------" << std::endl;
-    setRom(byteRom);
+    setUserRom(byteRom);
 }
-void Board::loadRomFromByteVector(std::vector<uint8_t>& rom) {
-    setRom(rom);
+void Board::loadUserRomFromByteVector(std::vector<uint8_t>& rom) {
+    setUserRom(rom);
 }
-void Board::setRom(std::vector<uint8_t>& rom) {
+void Board::setUserRom(std::vector<uint8_t>& rom) {
     if (rom.size() > isa::ROM_SIZE) {
         std::cerr << "ERROR: ROM size exceeds " << isa::ROM_SIZE << " bytes" << std::endl;
         return;
     }
-    std::ranges::copy(rom, this->rom.begin());
+    std::ranges::copy(rom, this->userRom.begin());
 }
 
-CPU16::CPU16(std::array<uint8_t, isa::SRAM_SIZE>& sram, std::array<uint8_t, isa::ROM_SIZE>& rom, bool enableDebug)
-    : isEnableDebug(enableDebug), sram(sram), rom(rom)
-{}
+void Board::loadKernelRomFromByteVector(std::vector<uint8_t> &rom) {
+    setUserRom(rom);
+}
+
+void Board::setKernelRom(std::vector<uint8_t> &rom) {
+    if (rom.size() > isa::ROM_SIZE) {
+        std::cerr << "ERROR: ROM size exceeds " << isa::ROM_SIZE << " bytes" << std::endl;
+        return;
+    }
+    std::ranges::copy(rom, this->kernelRom.begin());
+}
 
 //CPU ----------------------------------------------------------------------------
-uint16_t CPU16::getPc() const {
-    return pc;
+CPU16::CPU16(std::array<uint8_t, isa::SRAM_SIZE>& sram, std::array<uint8_t, isa::ROM_SIZE>& userRom,
+    std::array<uint8_t, isa::ROM_SIZE>& kernelRom, bool enableDebug)
+    : isEnableDebug(enableDebug), sram(sram), userRom(userRom), kernelRom(kernelRom), activeRom(this->userRom) {
 }
 
 //CPU16 flow of execution
@@ -221,10 +230,21 @@ void CPU16::step() {
     }
     pcIsFrozenThisCycle = false;
 }
+//Interrupt interface
+void CPU16::setActiveRomToUser() {
+    activeRom = this->userRom;
+}
+void CPU16::setActiveRomToKernel() {
+    activeRom = this->kernelRom;
+}
+void CPU16::setTrapReturnAddress(uint16_t trapRetAddr) {
+    this->trapRetAddr.set(trapRetAddr);
+}
+
 //fetch
 uint64_t CPU16::fetchInstruction() const {
     uint64_t instr;
-    std::memcpy(&instr, &rom[pc], sizeof(uint64_t));
+    std::memcpy(&instr, &activeRom[pc], sizeof(uint64_t));
     return __builtin_bswap64(instr); // cuz big endian
 }
 //execute
@@ -812,13 +832,13 @@ void Screen::renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE>& sram, con
 
 //ROM
 inline uint16_t CPU16::fetchByteAsWordFromRom(uint16_t addr) const {
-    return static_cast<uint16_t>(rom[addr]);
+    return static_cast<uint16_t>(activeRom[addr]);
 }
 inline uint8_t CPU16::fetchByteFromRom(uint16_t addr) const {
-    return rom[addr];
+    return activeRom[addr];
 }
 inline uint16_t CPU16::fetchWordFromRom(uint16_t addr) const {
-    uint16_t word = static_cast<uint16_t>(rom[addr]) | static_cast<uint16_t>(rom[addr + 1] << 8);
+    uint16_t word = static_cast<uint16_t>(activeRom[addr]) | static_cast<uint16_t>(activeRom[addr + 1] << 8);
     return word;
 }
 void CPU16::jumpTo(uint16_t destAddrInRom) {

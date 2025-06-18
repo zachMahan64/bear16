@@ -86,6 +86,7 @@ enum class Opcode_E : uint16_t {
         HLT       = 0x004A,   // halt
         JAL       = 0x004B,   // Jump and link
         RETL      = 0x004C,   // Ret from link (in ra)
+        RETT      = 0x004D,   // Ret from trap
         //Video
         CLRFB  = 0x0080,  // clear framebuffer
         SETPX  = 0x0081,  // set pixel at (X,Y), dest = 0/1

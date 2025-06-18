@@ -21,16 +21,15 @@
 #include "core.h"
 #include "emu.h"
 
-int emu::Emulator::assembleAndRun(const std::string& path) {
+int emu::Emulator::assembleAndRun(const std::string& path) const {
     //assemble
     assembly::Assembler testAssembler(false, false);
-    auto byteVec = testAssembler.assembleFromFile(path);
-
+    auto kernelRom = testAssembler.assembleFromFile("../programs/kernel_versions/kv_001.asm");
+    auto userRom = testAssembler.assembleFromFile(path);
     //init emulated system
     Board board(false);
-    board.loadRomFromByteVector(byteVec);
-    //board.loadRomFromBinInTxtFile("../programs/bin_prog.txt");
-    //board.loadRomFromHexInTxtFile("../programs/hex_prog.txt");
+    board.loadKernelRomFromByteVector(kernelRom);
+    board.loadUserRomFromByteVector(userRom);
 
     //run
     int exitCode = board.run();

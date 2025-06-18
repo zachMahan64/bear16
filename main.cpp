@@ -11,4 +11,3 @@ int main(int argc, char* argv[]) {
     int exitCode = emulator.assembleAndRun(path);
     return exitCode;
 }
-

@@ -5,10 +5,10 @@
 #define EMU_H
 #include <string>
 namespace emu {
-    constexpr std::string version = "0.0.1";
     class Emulator {
+        static constexpr std::string version = "0.0.1";
     public:
-        int assembleAndRun(const std::string &path = "../programs/asm_test.asm");
+        int assembleAndRun(const std::string &path = "../programs/asm_test.asm") const;
     };
 
 }

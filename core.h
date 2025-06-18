@@ -14,24 +14,24 @@
 #include <iostream>
 #include <string>
 #include <cstddef>
+#include <span>
 #include <SDL2/SDL.h>
 
 class CPU16 {
     bool isEnableDebug = false;
-public: //only all public for debugging ease
     //ISA specs
     const size_t NUM_GEN_REGS = isa::GEN_REG_COUNT;
     const short NUM_IO = isa::IO_COUNT;
     //MEMORY
     std::array<uint8_t, isa::SRAM_SIZE>& sram;
-    std::array<uint8_t, isa::ROM_SIZE>& rom;
+    std::array<uint8_t, isa::ROM_SIZE>& userRom;
+    std::array<uint8_t, isa::ROM_SIZE>& kernelRom;
+    std::span<uint8_t, isa::ROM_SIZE> activeRom;
     //CTRL FLOW (primitive registers)
-    uint16_t pc = 0;
     uint16_t tickWaitCnt = 0; //for multicycle operations
     uint16_t tickWaitStopPt = 0;
     bool pcIsFrozenThisCycle = false;
     bool isInMemcpyLoop = false; //rework at some point
-    bool isHalted = false;
     //IO
     std::array<uint16_t, isa::IO_COUNT> inps {};
     std::array<uint16_t, isa::IO_COUNT> outs {};
@@ -40,11 +40,7 @@ public: //only all public for debugging ease
     parts::FlagRegister flagReg = parts::FlagRegister();
     parts::GenRegister  stackPtr = parts::GenRegister(isa::MAX_UINT_16BIT); //sp stacks at end of RAM for downward growth
     parts::GenRegister  framePtr = parts::GenRegister(isa::MAX_UINT_16BIT);
-    //Constr
-    CPU16(std::array<uint8_t, isa::SRAM_SIZE>& sram, std::array<uint8_t, isa::ROM_SIZE>& rom, bool enableDebug);
-    //doStuff
-    [[nodiscard]] uint16_t getPc() const;
-    void step();
+    parts::GenRegister  trapRetAddr = parts::GenRegister(isa::MAX_UINT_16BIT);
     uint64_t fetchInstruction() const;
     void execute(parts::Instruction instr);
     void performOp(const parts::Instruction &instr, uint16_t src1Val, uint16_t src2Val);
@@ -54,7 +50,6 @@ public: //only all public for debugging ease
     void doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val);
     void doVid(uint16_t op14, uint16_t src1Val, uint16_t src2Val);
     void writeback(uint16_t dest, uint16_t val);
-    [[nodiscard]] uint16_t getValInReg(uint16_t reg) const;
     [[nodiscard]] uint16_t fetchByteAsWordFromRam(uint16_t addr) const;
     [[nodiscard]] uint8_t fetchByteFromRam(uint16_t addr) const;
     [[nodiscard]] uint16_t fetchWordFromRam(uint16_t addr) const; //little endian
@@ -64,10 +59,23 @@ public: //only all public for debugging ease
     [[nodiscard]] uint16_t fetchByteAsWordFromRom(uint16_t addr) const;
     [[nodiscard]] uint8_t fetchByteFromRom(uint16_t addr) const;
     [[nodiscard]] uint16_t fetchWordFromRom(uint16_t addr) const;
-
     void jumpTo(uint16_t destAddrInRom);
-
-    //diagnostic
+public:
+    //PUBLIC FLAG(S)
+    bool isHalted = false;
+    //PC
+    uint16_t pc = 0;
+    //CONSTRUCTOR
+    CPU16(std::array<uint8_t, isa::SRAM_SIZE>& sram, std::array<uint8_t, isa::ROM_SIZE>& userRom,
+    std::array<uint8_t, isa::ROM_SIZE>& kernelRom, bool enableDebug);
+    //EXECUTION
+    void step();
+    //INTERRUPT COMMUNICATION INTERFACE
+    void setActiveRomToUser();
+    void setActiveRomToKernel();
+    void setTrapReturnAddress(uint16_t trapRetAddr);
+    //DIAGNOSTIC
+    [[nodiscard]] uint16_t getValInReg(uint16_t reg) const;
     void printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool asChars) const;
 };
 
@@ -85,7 +93,6 @@ class Screen {
     static constexpr int SCALE = 4;
 
     static constexpr uint32_t FB_COLOR = makeRGBA8888(0, 255, 0, 255);  // green
-
     static constexpr uint16_t FB_ADDR = 0x0000; // framebuffer base address in SRAM
 
     std::array<uint32_t, WIDTH * HEIGHT> framebuffer{};
@@ -101,30 +108,42 @@ public:
     void renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE>& sram, uint16_t fbAddr = FB_ADDR);
 };
 
+class InterruptController {
+public:
+    uint64_t numInterrupts = 0;
+    void handleKeyboardInterrupt();
+};
+
 class Board {
     //flags
     bool power = true;
     bool isEnableDebug = false;
     //memory
     std::array<uint8_t, isa::SRAM_SIZE> sram {};
-    std::array<uint8_t, isa::ROM_SIZE> rom {};
+    std::array<uint8_t, isa::ROM_SIZE> userRom {};
+    std::array<uint8_t, isa::ROM_SIZE> kernelRom {};
     //IO (WIP)
     uint64_t input  = 0;
     uint64_t output = 0;
-    //Framebuffer
+    //Core Components
     Screen screen {};
-
-public:
-    CPU16 cpu; //public for testing purposes (change later)
+    CPU16 cpu;
     parts::Clock clock {};
+    void setKernelRom(std::vector<uint8_t>& rom);
+    void setUserRom(std::vector<uint8_t>& rom);
+public:
+    //CONSTRUCTOR
     explicit Board(bool enableDebug);
+    //EXECUTING ROM
     int run();
+    //ROM LOADING
+    void loadUserRomFromBinInTxtFile(const std::string &path);
+    void loadUserRomFromHexInTxtFile(const std::string &path);
+    void loadUserRomFromByteVector(std::vector<uint8_t>& rom);
+    void loadKernelRomFromByteVector(std::vector<uint8_t>& rom);
+    //DIAGNOSTICS
     void printDiagnostics(bool printMemAsChars) const;
     void printAllRegisterContents() const;
-    void loadRomFromBinInTxtFile(const std::string &path);
-    void loadRomFromHexInTxtFile(const std::string &path);
-    void loadRomFromByteVector(std::vector<uint8_t>& rom);
-    void setRom(std::vector<uint8_t>& rom);
 };
 
 

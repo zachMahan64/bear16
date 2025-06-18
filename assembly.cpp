@@ -553,9 +553,11 @@ namespace assembly {
 
         std::ifstream file(path, std::ios::in | std::ios::binary);
         if (!file) {
-            std::cerr << "Current working directory: " << std::filesystem::current_path() << std::endl;
-            std::cerr << "ERROR: Could not open .asm file: " << path << std::endl;
+            LOG_ERR("Current working directory: " << std::filesystem::current_path());
+            LOG_ERR("ERROR: Could not open .asm file: " << path);
             return firstPassTokens;
+        } else {
+            LOG("Successfully opened .asm file: " + path);
         }
 
         std::string buffer((std::istreambuf_iterator<char>(file)),
