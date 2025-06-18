@@ -108,9 +108,15 @@ public:
     void renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE>& sram, uint16_t fbAddr = FB_ADDR);
 };
 
+class InputController {
+    std::array<uint8_t, isa::SRAM_SIZE>& sram;
+public:
+    explicit InputController(std::array<uint8_t, isa::SRAM_SIZE>& sramRef);
+    void handleKeyboardInput(const SDL_Event& e) const;
+};
+
 class InterruptController {
 public:
-    uint64_t numInterrupts = 0;
     void handleKeyboardInterrupt();
 };
 
@@ -129,6 +135,8 @@ class Board {
     Screen screen {};
     CPU16 cpu;
     parts::Clock clock {};
+    InterruptController interruptController {};
+    InputController inputController;
     void setKernelRom(std::vector<uint8_t>& rom);
     void setUserRom(std::vector<uint8_t>& rom);
 public:

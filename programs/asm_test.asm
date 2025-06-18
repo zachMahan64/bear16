@@ -44,13 +44,14 @@ my_str_0:
 my_str_1:
     .string "We have all of printable ASCII!"
 my_str_2:
-    .string "No line-length checking though!"
+    .string "Working on IO now!"
 
 .text
 .const FB_LOC = 0
 .const LINE_SIZE = 256
 .const TILE_MAP_SIZE = 256
 .const LINE_WIDTH_B = 32
+.const IO_LOC = 6143
 
 start:
     sub s10, ctset_end, ctset_start
@@ -71,14 +72,42 @@ start:
     mov a2, my_str_2
     call blit_strl_rom #blitting a str
 
-    call inf_loop
+    #call utility_inf_loop
+    mov a0, 9
+    call main
     hlt
 
 
 
-inf_loop:
-    jmp inf_loop
+main:
+    # a0 = starting line
+    mov s1, a0 # s1 = line ptr
+    main_loop:
+    lb t0, IO_LOC
+    ugt subr_print_new_char, t0, 0
+    jmp main_loop
     ret
+    subr_print_new_char:
+        # s0 = current char* to print
+        mov a0, s1
+        mov a1, s0     # a1 = index
+        lb a2, IO_LOC # a2 = char
+        call blit_cl # a0, a1, a2 used
+        inc s0
+        lea t0, IO_LOC
+        sb t0, 0 # clear IO memory location
+        uge subr_go_on_newline, s0, LINE_WIDTH_B
+        jmp main_loop
+        subr_go_on_newline:
+            inc s1 # next line!
+            clr s0 # set index on line back to zero
+            jmp main_loop
+
+
+utility_inf_loop:
+    jmp utility_inf_loop
+    ret
+    
 blit_cl:
     #a0 = line, a1 = index, a2 = desired char
     mult t0, a0, LINE_SIZE # set line

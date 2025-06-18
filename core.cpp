@@ -24,7 +24,17 @@
   #define LOG(x)
 #endif
 
-Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(sram, userRom, kernelRom, enableDebug) {}
+//#define ENABLE_KEYBOARD_INTERRUPT
+#ifdef ENABLE_KEYBOARD_INTERRUPT
+    #define HANDLE_KBD_INTERRUPT() interruptController.handleKeyboardInterrupt()
+#else
+    #define HANDLE_KBD_INTERRUPT() ((void)0)
+#endif
+
+
+Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(sram, userRom, kernelRom, enableDebug),
+                                inputController(sram) {
+}
 
 //Board and loading ROM stuff -------------------------------------------------------
 int Board::run() {
@@ -41,14 +51,7 @@ int Board::run() {
             if (e.type == SDL_QUIT) return 130;
             if (e.type == SDL_KEYDOWN) {
                 if (e.key.keysym.sym == SDLK_ESCAPE) return 131;
-
-                // Only process key presses with ASCII range (0-127)
-                int keycode = e.key.keysym.sym;
-                if (keycode >= 0 && keycode < 128) {
-                    sram[isa::KEY_IO_MEM_LOC] = static_cast<uint8_t>(keycode);
-                    std::cout << "DEBUG: key pressed: " << std::to_string(keycode) << "\n";
-                    // add bounds check for memIndex if needed
-                }
+                inputController.handleKeyboardInput(e);
             }
         }
         clock.tick();
@@ -778,6 +781,23 @@ void CPU16::printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool a
        }
 }
 
+
+//ROM
+inline uint16_t CPU16::fetchByteAsWordFromRom(uint16_t addr) const {
+    return static_cast<uint16_t>(activeRom[addr]);
+}
+inline uint8_t CPU16::fetchByteFromRom(uint16_t addr) const {
+    return activeRom[addr];
+}
+inline uint16_t CPU16::fetchWordFromRom(uint16_t addr) const {
+    uint16_t word = static_cast<uint16_t>(activeRom[addr]) | static_cast<uint16_t>(activeRom[addr + 1] << 8);
+    return word;
+}
+void CPU16::jumpTo(uint16_t destAddrInRom) {
+    pc = destAddrInRom;
+    pcIsFrozenThisCycle = true;
+}
+
 //Screen
 Screen::Screen() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -829,19 +849,22 @@ void Screen::renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE>& sram, con
     }
 }
 
+InputController::InputController(std::array<uint8_t, isa::SRAM_SIZE>& sramRef) : sram(sramRef) {}
 
-//ROM
-inline uint16_t CPU16::fetchByteAsWordFromRom(uint16_t addr) const {
-    return static_cast<uint16_t>(activeRom[addr]);
+void InputController::handleKeyboardInput(const SDL_Event &e) const {
+    // Only process key presses with ASCII range (0-127)
+    int keycode = e.key.keysym.sym;
+    if (keycode >= 0 && keycode < 128) {
+        const auto charVal = static_cast<uint8_t>(keycode);
+        sram[isa::KEY_IO_MEM_LOC] = charVal;
+        //std::cout << "DEBUG: key pressed: " << std::to_string(keycode) << "\n";
+        HANDLE_KBD_INTERRUPT();
+    }
 }
-inline uint8_t CPU16::fetchByteFromRom(uint16_t addr) const {
-    return activeRom[addr];
+
+void InterruptController::handleKeyboardInterrupt() {
+
 }
-inline uint16_t CPU16::fetchWordFromRom(uint16_t addr) const {
-    uint16_t word = static_cast<uint16_t>(activeRom[addr]) | static_cast<uint16_t>(activeRom[addr + 1] << 8);
-    return word;
-}
-void CPU16::jumpTo(uint16_t destAddrInRom) {
-    pc = destAddrInRom;
-    pcIsFrozenThisCycle = true;
-}
+
+//Interrupt Controller
+
