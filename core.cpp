@@ -51,7 +51,9 @@ int Board::run() {
             if (e.type == SDL_QUIT) return 130;
             if (e.type == SDL_KEYDOWN) {
                 if (e.key.keysym.sym == SDLK_ESCAPE) return 131;
-                inputController.handleKeyboardInput(e);
+                inputController.handleKeyboardPress(e);
+            } else if (e.type == SDL_KEYUP) {
+                inputController.handleKeyboardRelease(e);
             }
         }
         clock.tick();
@@ -851,13 +853,23 @@ void Screen::renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE>& sram, con
 
 InputController::InputController(std::array<uint8_t, isa::SRAM_SIZE>& sramRef) : sram(sramRef) {}
 
-void InputController::handleKeyboardInput(const SDL_Event &e) const {
+void InputController::handleKeyboardPress(const SDL_Event &e) const {
     // Only process key presses with ASCII range (0-127)
-    int keycode = e.key.keysym.sym;
+    const int keycode = e.key.keysym.sym;
     if (keycode >= 0 && keycode < 128) {
         const auto charVal = static_cast<uint8_t>(keycode);
         sram[isa::KEY_IO_MEM_LOC] = charVal;
         //std::cout << "DEBUG: key pressed: " << std::to_string(keycode) << "\n";
+        HANDLE_KBD_INTERRUPT();
+    } else if (keycode == SDLK_LSHIFT || keycode == SDLK_RSHIFT) {
+        sram[isa::SHIFT_KEY_IO_MEM_LOC] = 0xFF;
+        HANDLE_KBD_INTERRUPT();
+    }
+}
+void InputController::handleKeyboardRelease(const SDL_Event &e) const {
+    int keycode = e.key.keysym.sym;
+    if (keycode == SDLK_LSHIFT || keycode == SDLK_RSHIFT) {
+        sram[isa::SHIFT_KEY_IO_MEM_LOC] = 0x00;
         HANDLE_KBD_INTERRUPT();
     }
 }

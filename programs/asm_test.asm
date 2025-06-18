@@ -52,6 +52,7 @@ my_str_2:
 .const TILE_MAP_SIZE = 256
 .const LINE_WIDTH_B = 32
 .const IO_LOC = 6143
+.const SHIFT_LOC = 6142
 
 start:
     sub s10, ctset_end, ctset_start
@@ -92,6 +93,9 @@ main:
         mov a0, s1
         mov a1, s0     # a1 = index
         lb a2, IO_LOC # a2 = char
+        lb t6, SHIFT_LOC
+        ugt subr_shift, t6, 0 # if shift = true
+        subr_shift_exit:
         call blit_cl # a0, a1, a2 used
         inc s0
         lea t0, IO_LOC
@@ -102,6 +106,9 @@ main:
             inc s1 # next line!
             clr s0 # set index on line back to zero
             jmp main_loop
+        subr_shift:
+            sub a2, a2, 32
+            jmp subr_shift_exit
 
 
 utility_inf_loop:

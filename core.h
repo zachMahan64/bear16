@@ -112,7 +112,8 @@ class InputController {
     std::array<uint8_t, isa::SRAM_SIZE>& sram;
 public:
     explicit InputController(std::array<uint8_t, isa::SRAM_SIZE>& sramRef);
-    void handleKeyboardInput(const SDL_Event& e) const;
+    void handleKeyboardPress(const SDL_Event& e) const;
+    void handleKeyboardRelease(const SDL_Event& e) const;
 };
 
 class InterruptController {
