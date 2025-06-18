@@ -107,7 +107,7 @@ main:
             clr s0 # set index on line back to zero
             jmp main_loop
         subr_shift:
-            sub a2, a2, 32
+            sub a2, a2, 32 #non-uniform shift transforms not programmed
             jmp subr_shift_exit
 
 
