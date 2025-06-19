@@ -7,6 +7,33 @@
 
 using namespace parts;
 
+//clock
+void Clock::initMemMappedTime() {
+    using namespace std::chrono;
+
+    // get system clock time (local time)
+    std::time_t now_c = std::time(nullptr);
+    std::tm* localTime = std::localtime(&now_c);
+
+    // Set internal-state
+    seconds = static_cast<uint8_t>(localTime->tm_sec);
+    minutes = static_cast<uint8_t>(localTime->tm_min);
+    hours   = static_cast<uint8_t>(localTime->tm_hour);
+    days    = static_cast<uint8_t>(localTime->tm_mday);
+    months  = static_cast<uint8_t>(localTime->tm_mon + 1); // tm_mon: 0 = Jan
+    years   = static_cast<uint16_t>(localTime->tm_year + 1900); // tm_year: years since 1900
+
+    // set mem-mapped values
+    sram[isa::SECONDS_PTR_MEM_LOC] = seconds;
+    sram[isa::MINUTES_PTR_MEM_LOC] = minutes;
+    sram[isa::HOURS_PTR_MEM_LOC]   = hours;
+    sram[isa::DAYS_PTR_MEM_LOC]    = days;
+    sram[isa::MONTHS_PTR_MEM_LOC]  = months;
+
+    // for 16-bit year, store as little-endian
+    sram[isa::YEARS_PTR_MEM_LOC]     = static_cast<uint8_t>(years & 0xFF);
+    sram[isa::YEARS_PTR_MEM_LOC + 1] = static_cast<uint8_t>((years >> 8) & 0xFF);
+}
 void Clock::incMemMappedTime() {
     ++frames;
     sram[isa::FRAMES_MEM_LOC] = frames;
@@ -30,15 +57,24 @@ void Clock::incMemMappedTime() {
                     hours = 0;
                     sram[isa::HOURS_PTR_MEM_LOC] = hours;
                     sram[isa::DAYS_PTR_MEM_LOC] = days;
+                    if (daysInMonths[months] == days) {
+                        ++months;
+                        days = 1;
+                        sram[isa::DAYS_PTR_MEM_LOC] = days;
+                        sram[isa::MONTHS_PTR_MEM_LOC] = months;
+                        if (months == 12) {
+                            ++years;
+                            months = 0;
+                            sram[isa::MONTHS_PTR_MEM_LOC] = months;
+                            sram[isa::YEARS_PTR_MEM_LOC] = years;
+                        }
+                    }
                 }
             }
         }
     }
 }
-
 Clock::Clock(std::array<uint8_t, isa::SRAM_SIZE> &sram) : sram(sram){}
-
-//clock
 void Clock::freeze()  { frozen = true;  }
 void Clock::unfreeze(){ frozen = false; }
 void Clock::tick() {

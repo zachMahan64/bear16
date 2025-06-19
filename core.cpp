@@ -38,13 +38,14 @@ Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(sram, userRom, k
 
 //Board and loading ROM stuff -------------------------------------------------------
 int Board::run() {
+    //init clock & SDL2 timings
     constexpr int DELAY = 0;
-    clock.resetCycles(); //set clock cycles to zero @ the start of a new process
     SDL_Event e;
-
+    clock.resetCycles(); //set clock cycles to zero @ the start of a new process
     constexpr double TARGET_FRAME_TIME = 1.0 / 60.0; // 60 FPS,
     uint64_t lastFrameTime = SDL_GetPerformanceCounter();
     const uint64_t freq = SDL_GetPerformanceFrequency();
+    clock.initMemMappedTime();
 
     do {
         while (SDL_PollEvent(&e)) {
@@ -71,7 +72,7 @@ int Board::run() {
             screen.renderSramToFB(sram);
             screen.updateFB();
             lastFrameTime = now;
-            clock.incMemMappedTime();
+            clock.incMemMappedTime(); //updates VM real-time
         }
 
 
@@ -88,8 +89,8 @@ void Board::printDiagnostics(bool printMemAsChars) const {
         std::cout << sram.at(i);
     }
     std::cout << "\n=====================" << std::endl;
-    uint16_t startingAddr = 4096;
-    uint16_t numBytes = 20;
+    uint16_t startingAddr = 6100;
+    uint16_t numBytes = 100;
     cpu.printSectionOfRam(startingAddr, numBytes, printMemAsChars);
     std::cout << "Total cycles: " << clock.getCycles() << std::endl;
     std::cout << "=====================" << std::endl;
@@ -785,7 +786,7 @@ void CPU16::printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool a
     std::cout << "Leading word @ starting addr: " << (int16_t) fetchWordFromRam(startingAddr) << "\n";
     for (uint16_t i = 0; i < numBytes; i++) {
         if (asChar) std::cout << "Index: " << i << " = " << sram.at(startingAddr + i) << "\n";
-        else std::cout << "Index: " << i << " = " << static_cast<int>(sram.at(startingAddr + i)) << "\n";
+        else std::cout << "Index: " << startingAddr + i << " = " << static_cast<int>(sram.at(startingAddr + i)) << "\n";
        }
 }
 

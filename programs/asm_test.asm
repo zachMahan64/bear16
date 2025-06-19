@@ -76,27 +76,29 @@ my_str_0:
 .const LINE_SIZE = 256
 .const TILE_MAP_SIZE = 256
 .const LINE_WIDTH_B = 32
-.const IO_LOC = 6143
-.const SHIFT_LOC = 6142
+.const IO_LOC = 6144 # SUBJ TO CHANGE
+.const SHIFT_LOC = 6145 # SUBJ TO CHANGE
 
 start:
-    #sub t0, ctset_end, ctset_start
-    #romcpy FB_LOC, ctset_start, t0 # t0 = length of Char Tile Set
+    call init_os
     mov a0, 1 # line
     mov a1, 0 # index
     mov a2, my_str_0
     call blit_strl_rom #blitting a str
 
     #call utility_inf_loop
+
+    # go into text editor (WIP)
     mov a0, s1 # move into s1 line ptr into line arg
-    call text_editor
+    call text_editor_main
     hlt
 
-text_editor:
+text_editor_main:
     # a0 = starting line
     mov s1, a0 # s1 = line ptr
     clr s0     # s0 = index ptr
     text_editor_loop:
+    call os_main_update
     mov a0, s1  # line ptr
     mov a1, s0  # index ptr
     mov a2, '_' # underscore for our cursor
@@ -232,3 +234,50 @@ blit_strl_rom:
     bstrl_rom_tab:
         add a1, a1, 2
         jmp bstrl_rom_subr_exit
+
+#OS Stuff (WIP)
+#CLOCK MEM_LOC CONSTANTS (ALL SUBJ TO CHANGE)
+.const FRAMES_MEM_LOC = 6146
+.const SECONDS_PTR_MEM_LOC = 6147
+.const MINUTES_PTR_MEM_LOC = 6148
+.const HOURS_PTR_MEM_LOC = 6149
+.const DAYS_PTR_MEM_LOC = 6150
+.const MONTHS_PTR_MEM_LOC = 6151
+.const YEARS_PTR_MEM_LOC = 6152
+    init_os:
+        call subr_init_os_draw_bottom_line # perhaps inline
+        ret
+        subr_init_os_draw_bottom_line:
+            clr s2 # cnt & index
+            subr_init_os_draw_bottom_line_loop:
+                mov a0, 22
+                mov a1, s2
+                mov a2, '_'
+                call blit_cl
+                inc s2
+                ult subr_init_os_draw_bottom_line_loop, s2, 32
+            ret
+    os_main_update:
+        call os_update_time_display
+        ret
+        
+    os_update_time_display:
+        mov a0, 23 # line
+        mov a1, 30 # index
+        lb a2, SECONDS_PTR_MEM_LOC
+        call blit_2dig_pint
+        ret
+
+    blit_2dig_pint:
+        # a0 = line, a1 = index, a2 = num
+        div t0, a2, 10 # tens digit
+        mod t1, a2, 10 # ones digit
+        push t1
+        # reuse a0 and a1 for blitting char tiles
+        add a2, t0, 48 # recover tens digit into a2 & add 48 to get char val from num val
+        call blit_cl
+        inc a1         # increment index
+        pop t1         # recover ones digit
+        add a2, t1, 48 # t1 (ones digit) -> a2 & add 48 to get char val from num val
+        call blit_cl
+        ret

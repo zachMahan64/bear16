@@ -21,7 +21,12 @@ namespace parts {
         uint8_t minutes = 0;
         uint8_t hours = 0;
         uint8_t days = 0;
+        uint8_t months = 0;
+        uint16_t years = 0;
+        //map for days in months
+        static constexpr std::array<uint8_t, 12> daysInMonths = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     public:
+        void initMemMappedTime();
         void incMemMappedTime();
         [[nodiscard]] uint64_t getCycles() const {
             return cycles;

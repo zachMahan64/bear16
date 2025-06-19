@@ -15,13 +15,15 @@ namespace isa {
     static constexpr size_t STACK_FRAME_SIZE = 32; //bytes
     static constexpr size_t RA_INDEX = 0x000F;
 
-    static constexpr uint16_t KEY_IO_MEM_LOC = 6143;
-    static constexpr uint16_t SHIFT_KEY_IO_MEM_LOC = 6142;
-    static constexpr uint16_t FRAMES_MEM_LOC = 6141;
-    static constexpr uint16_t SECONDS_PTR_MEM_LOC = 6140;
-    static constexpr uint16_t MINUTES_PTR_MEM_LOC = 6139;
-    static constexpr uint16_t HOURS_PTR_MEM_LOC = 6138;
-    static constexpr uint16_t DAYS_PTR_MEM_LOC = 6137;
+    static constexpr uint16_t KEY_IO_MEM_LOC = 6144;
+    static constexpr uint16_t SHIFT_KEY_IO_MEM_LOC = 6145;
+    static constexpr uint16_t FRAMES_MEM_LOC = 6146;
+    static constexpr uint16_t SECONDS_PTR_MEM_LOC = 6147;
+    static constexpr uint16_t MINUTES_PTR_MEM_LOC = 6148;
+    static constexpr uint16_t HOURS_PTR_MEM_LOC = 6149;
+    static constexpr uint16_t DAYS_PTR_MEM_LOC = 6150;
+    static constexpr uint16_t MONTHS_PTR_MEM_LOC = 6151;
+    static constexpr uint16_t YEARS_PTR_MEM_LOC = 6152;
 
 enum class Opcode_E : uint16_t {
         //Arith & Bitwise
