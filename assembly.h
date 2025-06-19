@@ -18,7 +18,9 @@ namespace assembly {
     using TokenizedRomLine = std::variant<TokenizedInstruction, TokenizedData>;
 
     void asmMnemonicSetGenerator();
-    //valid set & map for opcode & named operands respectively ------------------------------------------------------
+    //first pass
+    extern const std::unordered_map<char, char> escapeCharMap;
+    //valid set & map for opcode & named operands respectively ---------------------------------------------------------
     extern const std::unordered_set<std::string> validOpcodeMnemonics;
     extern const std::unordered_map<std::string, uint16_t> namedOperandToBinMap;
     extern const std::vector<std::string> namedOperandsInOrder;

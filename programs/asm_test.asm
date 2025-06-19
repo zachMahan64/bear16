@@ -39,12 +39,37 @@ ctset_3:
 .byte 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000 0b00000000
 ctset_end:
 
+nonalpha_shift_map: # we use this for linear look ups
+    .byte '`', '~'
+    .byte '1', '!'
+    .byte '2', '@'
+    .byte '3', '\#'
+    .byte '4', '$'
+    .byte '5', '%'
+    .byte '6', '^'
+    .byte '7', '&'
+    .byte '8', '*'
+    .byte '9', '('
+    .byte '0', ')'
+    .byte '-', '_'
+    .byte '=', '+'
+    .byte '[', '{'
+    .byte ']', '}'
+    .byte '\\', '|'
+    .byte ';', ':'
+    .byte '\'', '\"'
+    .byte ',', '<'
+    .byte '.', '>'
+    .byte '/', '?'
+    .byte ' ', ' '
+.text
+.const NONALPHA_SHIFT_MAP_ENTRY_SIZE = 2
+.const NONALPHA_SHIFT_MAP_ENTRY_COUNT = 22
+.const NONALPHA_SHIFT_MAP_SIZE = 44
+.data
+
 my_str_0:
-    .string "Hello World"
-my_str_1:
-    .string "We have all of printable ASCII!"
-my_str_2:
-    .string "Working on IO now!"
+    .string "Welcome to the Bear16 Console! \n    VERSION 0.0.1, 20250619"
 
 .text
 .const FB_LOC = 0
@@ -55,36 +80,31 @@ my_str_2:
 .const SHIFT_LOC = 6142
 
 start:
-    sub s10, ctset_end, ctset_start
-    romcpy FB_LOC, ctset_start, s10 # s10 = length of Char Tile Set
-
-    mov a0, 5 # line
+    #sub t0, ctset_end, ctset_start
+    #romcpy FB_LOC, ctset_start, t0 # t0 = length of Char Tile Set
+    mov a0, 1 # line
     mov a1, 0 # index
     mov a2, my_str_0
     call blit_strl_rom #blitting a str
 
-    mov a0, 6 # line
-    mov a1, 0 # index
-    mov a2, my_str_1
-    call blit_strl_rom #blitting a str
-
-    mov a0, 7 # line
-    mov a1, 0 # index
-    mov a2, my_str_2
-    call blit_strl_rom #blitting a str
-
     #call utility_inf_loop
-    mov a0, 9
+    mov a0, s1 # move into s1 line ptr into line arg
     call main
     hlt
-
-
 
 main:
     # a0 = starting line
     mov s1, a0 # s1 = line ptr
+    clr s0     # s0 = index ptr
     main_loop:
+    mov a0, s1  # line ptr
+    mov a1, s0  # index ptr
+    mov a2, '_' # underscore for our cursor
+    call blit_cl
     lb t0, IO_LOC
+    eq subr_backspace, t0, 8 # for backspace
+    eq subr_newline, t0, 13  # for newline
+    eq subr_tab, t0, 9       # for tab
     ugt subr_print_new_char, t0, 0
     jmp main_loop
     ret
@@ -98,8 +118,8 @@ main:
         subr_shift_exit:
         call blit_cl # a0, a1, a2 used
         inc s0
-        lea t0, IO_LOC
-        sb t0, 0 # clear IO memory location
+        lea t0, IO_LOC # ->
+        sb t0, 0       # clear IO memory location
         uge subr_go_on_newline, s0, LINE_WIDTH_B
         jmp main_loop
         subr_go_on_newline:
@@ -107,8 +127,59 @@ main:
             clr s0 # set index on line back to zero
             jmp main_loop
         subr_shift:
-            sub a2, a2, 32 #non-uniform shift transforms not programmed
+            ult ssubr_nonalpha_shift, a2, 97
+            ugt ssubr_nonalpha_shift, a2, 122
+            sub a2, a2, 32
             jmp subr_shift_exit
+            ssubr_nonalpha_shift:
+                    lea t7, nonalpha_shift_map
+                ssubr_nonalpha_shift_loop:
+                    lbrom t8, t7
+                    mov s6, t7 # debug
+                    eq ssubr_nonalpha_shift_hit, a2, t8
+                    add t7, t7, 2
+                    jmp ssubr_nonalpha_shift_loop
+                    #error if t7 > size of nonalpha shift map
+                    jmp subr_shift_exit
+                ssubr_nonalpha_shift_hit:
+                    lbrom a2, t7, 1
+                    jmp subr_shift_exit
+        subr_backspace:
+            #clear @ current spot
+            mov a0, s1  # line ptr
+            mov a1, s0  # index ptr
+            mov a2, ' ' # space for blank
+            call blit_cl
+            dec s0
+            lt ssubr_backline, s0, 0
+            ssubr_backline_exit:
+            lea t0, IO_LOC # ->
+            sb t0, 0       # clear IO memory location
+            jmp main_loop
+                ssubr_backline:
+                    dec s1               # go back a line
+                    mov s0, 31 # set index ptr to end of last line
+                    jmp ssubr_backline_exit
+        subr_newline:
+            mov a0, s1  # line ptr
+            mov a1, s0  # index ptr
+            mov a2, ' ' # space for blank
+            call blit_cl
+            lea t0, IO_LOC # ->
+            sb t0, 0       # clear IO memory location
+            inc s1
+            clr s0
+            jmp main_loop
+        subr_tab:
+            mov a0, s1  # line ptr
+            mov a1, s0  # index ptr
+            mov a2, ' ' # space for blank
+            call blit_cl
+            add s0, s0, 3 # move forward 2 indices for tab + 1 for going to next char
+            lea t0, IO_LOC # ->
+            sb t0, 0       # clear IO memory location
+            jmp main_loop
+
 
 
 utility_inf_loop:
@@ -141,10 +212,23 @@ blit_strl_rom:
     mov t5, a2 # current char ptr
     bstrl_rom_loop:
         lbrom a2, t5 # a2 <- *char
-        eq bstrl_ret, a2, 0
+        eq bstrl_rom_ret, a2, 0
+        eq bstrl_rom_tab, a2, 9
+        eq bstrl_rom_newline, a2, 10
         call blit_cl #reuse a0 & a1
         inc a1
+        uge bstrl_rom_newline, a1, 32 # if index >= 32 do \n
+        bstrl_rom_subr_exit:
         inc t5
         jmp bstrl_rom_loop
-    bstrl_ret:
+    bstrl_rom_ret:
+        add s1, a0, 1 # set line ptr to end of strl + 1
+        clr s0        # set index ptr 0 (start of line)
         ret
+    bstrl_rom_newline:
+        inc a0
+        clr a1
+        jmp bstrl_rom_subr_exit
+    bstrl_rom_tab:
+        add a1, a1, 2
+        jmp bstrl_rom_subr_exit

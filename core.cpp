@@ -44,16 +44,21 @@ int Board::run() {
 
     constexpr double TARGET_FRAME_TIME = 1.0 / 60.0; // 60 FPS,
     uint64_t lastFrameTime = SDL_GetPerformanceCounter();
-    uint64_t freq = SDL_GetPerformanceFrequency();
+    const uint64_t freq = SDL_GetPerformanceFrequency();
 
     do {
         while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) return 130;
-            if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.sym == SDLK_ESCAPE) return 131;
-                inputController.handleKeyboardPress(e);
-            } else if (e.type == SDL_KEYUP) {
-                inputController.handleKeyboardRelease(e);
+            switch (e.type) {
+                case SDL_QUIT:
+                    return 130;
+                case SDL_KEYDOWN:
+                    if (e.key.keysym.sym == SDLK_ESCAPE) return 131;
+                    inputController.handleKeyboardPress(e);
+                    break;
+                case SDL_KEYUP:
+                    inputController.handleKeyboardRelease(e);
+                    break;
+                default: break;
             }
         }
         clock.tick();
@@ -518,7 +523,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             break;
         }
         case (isa::Opcode_E::DEC): {
-            writeback(dest, genRegs[dest].val + 2);
+            writeback(dest, genRegs[dest].val - 1);
             break;
         }
         case(isa::Opcode_E::MEMCPY): {

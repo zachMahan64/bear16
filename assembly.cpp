@@ -20,6 +20,15 @@ namespace assembly {
     using TokenizedRomLine = std::variant<TokenizedInstruction, TokenizedData>;
 
     //maps & sets ----------------------------------------------------------------------------------------------------------
+    const std::unordered_map<char, char> escapeCharMap {
+        {'n', '\n'},
+        {'0', '\0'},
+        {'t', '\t'},
+        {'\\', '\\'},
+        {'\"', '\"'},
+        {'\'', '\''},
+        {'#', '#'}
+    };
     const std::unordered_set<std::string> validOpcodeMnemonics = {
     "add",
     "addi",
@@ -467,7 +476,7 @@ namespace assembly {
     };
     const std::unordered_set<char> validSymbols = {
         '!', '@', '/', '\\', '$', '%', '&', '^', '*', '(', ')', '\'', '~', '-', '\0', ':', ';', '[', ']', ' ', '{', '}', '?',
-        '=', '|', ',', '.', '+', '<',
+        '=', '|', ',', '.', '+', '<', '\n', '\t'
     };
     const std::unordered_map<std::string, TokenType> stringToDataDirectives = {
         {".string", TokenType::STRING_DIR},
@@ -569,8 +578,23 @@ namespace assembly {
         bool inComment = false;
         bool inString = false;
         bool inChar = false;
+        bool inEscapeStr = false;
 
         for (char c : buffer) {
+            if (inEscapeStr) {
+                if (escapeCharMap.contains(c)) {
+                    inEscapeStr = false;
+                    c = escapeCharMap.at(c);
+                    currentStr += c;
+                    continue;
+                }
+                LOG_ERR("ERROR: invalid escape sequence: " + std::string(1, c));
+                continue;
+            }
+            if (c == '\\') {
+                inEscapeStr = true;
+                continue;
+            }
             if (inComment) {
                 if (c == '\n') {
                     inComment = false;
@@ -1182,7 +1206,11 @@ namespace assembly {
             byteVec = convertWordToBytePair(hexVal);
         }
         else if (tknT == TokenType::CHAR) {
-            byteVec.emplace_back(static_cast<uint8_t>(strBody.at(0)));
+            try {
+                byteVec.emplace_back(static_cast<uint8_t>(strBody.at(0)));
+            } catch (std::out_of_range &e) {
+                LOG_ERR("ERROR: bad char literal: " << strBody);
+            }
         }
         else if (tknT == TokenType::CHAR_SPACE) {
             byteVec.emplace_back(32); //value of space character
@@ -1231,7 +1259,7 @@ namespace assembly {
         else if (text == ".data") type = TokenType::DATA;
         else if (text == ".text") type = TokenType::TEXT;
         else if (std::ranges::all_of(text, [](char c) { return (std::isalnum(c) || c == '_'); })) type = TokenType::REF;
-        else if (std::ranges::all_of(text, [](char c) { return (std::isalnum(c) || validSymbols.contains(c)); })) type = TokenType::STRING;
+        else type = TokenType::STRING;
         return type;
     }
 
