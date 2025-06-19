@@ -33,7 +33,7 @@
 
 
 Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(sram, userRom, kernelRom, enableDebug),
-                                inputController(sram) {
+                                inputController(sram), clock(sram) {
 }
 
 //Board and loading ROM stuff -------------------------------------------------------
@@ -71,6 +71,7 @@ int Board::run() {
             screen.renderSramToFB(sram);
             screen.updateFB();
             lastFrameTime = now;
+            clock.incMemMappedTime();
         }
 
 

@@ -7,6 +7,37 @@
 
 using namespace parts;
 
+void Clock::incMemMappedTime() {
+    ++frames;
+    sram[isa::FRAMES_MEM_LOC] = frames;
+    if (frames == 60) {
+        ++seconds;
+        frames = 0;
+        sram[isa::FRAMES_MEM_LOC] = frames;
+        sram[isa::SECONDS_PTR_MEM_LOC] = seconds;
+        if (seconds == 60) {
+            ++minutes;
+            seconds = 0;
+            sram[isa::SECONDS_PTR_MEM_LOC] = seconds;
+            sram[isa::MINUTES_PTR_MEM_LOC] = minutes;
+            if (minutes == 60) {
+                ++hours;
+                minutes = 0;
+                sram[isa::MINUTES_PTR_MEM_LOC] = minutes;
+                sram[isa::HOURS_PTR_MEM_LOC] = hours;
+                if (hours == 24) {
+                    ++days;
+                    hours = 0;
+                    sram[isa::HOURS_PTR_MEM_LOC] = hours;
+                    sram[isa::DAYS_PTR_MEM_LOC] = days;
+                }
+            }
+        }
+    }
+}
+
+Clock::Clock(std::array<uint8_t, isa::SRAM_SIZE> &sram) : sram(sram){}
+
 //clock
 void Clock::freeze()  { frozen = true;  }
 void Clock::unfreeze(){ frozen = false; }

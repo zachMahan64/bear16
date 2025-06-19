@@ -135,7 +135,7 @@ class Board {
     //Core Components
     Screen screen {};
     CPU16 cpu;
-    parts::Clock clock {};
+    parts::Clock clock;
     InterruptController interruptController {};
     InputController inputController;
     void setKernelRom(std::vector<uint8_t>& rom);

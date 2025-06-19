@@ -26,6 +26,7 @@ int emu::Emulator::assembleAndRun(const std::string& path) const {
     assembly::Assembler testAssembler(false, false);
     auto kernelRom = testAssembler.assembleFromFile("../programs/kernel_versions/kv_001.asm");
     auto userRom = testAssembler.assembleFromFile(path);
+
     //init emulated system
     Board board(false);
     board.loadKernelRomFromByteVector(kernelRom);

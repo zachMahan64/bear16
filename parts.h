@@ -7,11 +7,22 @@
 #include <cstdint>
 #include <iostream>
 #include <thread>
+#include "isa.h"
 
 namespace parts {
     class Clock {
+        //reference to board memory
+        std::array<uint8_t, isa::SRAM_SIZE>& sram;
+        //cum cycles
         uint64_t cycles = 0;
+        //values for mem-mapped time
+        uint8_t frames = 0;
+        uint8_t seconds = 0;
+        uint8_t minutes = 0;
+        uint8_t hours = 0;
+        uint8_t days = 0;
     public:
+        void incMemMappedTime();
         [[nodiscard]] uint64_t getCycles() const {
             return cycles;
         }
@@ -19,7 +30,7 @@ namespace parts {
             cycles = 0;
         }
         bool frozen = false;
-        Clock() = default;
+        explicit Clock(std::array<uint8_t, isa::SRAM_SIZE>& sram);
         void freeze();
         void unfreeze();
         void tick();

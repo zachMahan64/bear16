@@ -89,14 +89,14 @@ start:
 
     #call utility_inf_loop
     mov a0, s1 # move into s1 line ptr into line arg
-    call main
+    call text_editor
     hlt
 
-main:
+text_editor:
     # a0 = starting line
     mov s1, a0 # s1 = line ptr
     clr s0     # s0 = index ptr
-    main_loop:
+    text_editor_loop:
     mov a0, s1  # line ptr
     mov a1, s0  # index ptr
     mov a2, '_' # underscore for our cursor
@@ -106,7 +106,7 @@ main:
     eq subr_newline, t0, 13  # for newline
     eq subr_tab, t0, 9       # for tab
     ugt subr_print_new_char, t0, 0
-    jmp main_loop
+    jmp text_editor_loop
     ret
     subr_print_new_char:
         # s0 = current char* to print
@@ -121,11 +121,11 @@ main:
         lea t0, IO_LOC # ->
         sb t0, 0       # clear IO memory location
         uge subr_go_on_newline, s0, LINE_WIDTH_B
-        jmp main_loop
+        jmp text_editor_loop
         subr_go_on_newline:
             inc s1 # next line!
             clr s0 # set index on line back to zero
-            jmp main_loop
+            jmp text_editor_loop
         subr_shift:
             ult ssubr_nonalpha_shift, a2, 97
             ugt ssubr_nonalpha_shift, a2, 122
@@ -155,7 +155,7 @@ main:
             ssubr_backline_exit:
             lea t0, IO_LOC # ->
             sb t0, 0       # clear IO memory location
-            jmp main_loop
+            jmp text_editor_loop
                 ssubr_backline:
                     dec s1               # go back a line
                     mov s0, 31 # set index ptr to end of last line
@@ -169,7 +169,7 @@ main:
             sb t0, 0       # clear IO memory location
             inc s1
             clr s0
-            jmp main_loop
+            jmp text_editor_loop
         subr_tab:
             mov a0, s1  # line ptr
             mov a1, s0  # index ptr
@@ -178,7 +178,7 @@ main:
             add s0, s0, 3 # move forward 2 indices for tab + 1 for going to next char
             lea t0, IO_LOC # ->
             sb t0, 0       # clear IO memory location
-            jmp main_loop
+            jmp text_editor_loop
 
 
 
