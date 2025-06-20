@@ -20,7 +20,7 @@ void Clock::initMemMappedTime() {
     minutes = static_cast<uint8_t>(localTime->tm_min);
     hours   = static_cast<uint8_t>(localTime->tm_hour);
     days    = static_cast<uint8_t>(localTime->tm_mday);
-    months  = static_cast<uint8_t>(localTime->tm_mon + 1); // tm_mon: 0 = Jan
+    months  = static_cast<uint8_t>(localTime->tm_mon); // tm_mon: 0 = Jan
     years   = static_cast<uint16_t>(localTime->tm_year + 1900); // tm_year: years since 1900
 
     // set mem-mapped values

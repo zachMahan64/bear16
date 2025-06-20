@@ -18,6 +18,7 @@
 #include <filesystem>
 #include <SDL2/SDL.h>
 
+//macros
 #ifdef DEBUG_MODE
   #define LOG(x) std::cout << x << std::endl
 #else
@@ -92,6 +93,11 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     uint16_t startingAddr = 6100;
     uint16_t numBytes = 100;
     cpu.printSectionOfRam(startingAddr, numBytes, printMemAsChars);
+    startingAddr = 64000;
+    numBytes = isa::MAX_UINT_16BIT - startingAddr;
+    std::cout << "=====================" << std::endl;
+    std::cout << "Bottom of stack: \n";
+    cpu.printSectionOfRam(startingAddr, numBytes, true);
     std::cout << "Total cycles: " << clock.getCycles() << std::endl;
     std::cout << "=====================" << std::endl;
 }

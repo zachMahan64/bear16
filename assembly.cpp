@@ -1388,9 +1388,10 @@ namespace assembly {
             Token sigTkn(significantBody);
             significantToken = sigTkn;
             //handle edge cases
-            if (significantToken.type == TokenType::OPERATION) {
+            if (significantBody.length() == 1
+                && (significantToken.type == TokenType::OPERATION || validSymbols.contains(significantBody.at(0)))) {
                 significantToken.type = TokenType::CHAR;
-            } //handles the weird edge case of single letter operations!
+            } //handles the weird edge case of single letter operations! + symbols as operand chars not working
             else if (significantToken.type == TokenType::CONST || significantToken.type == TokenType::LABEL) {
                 LOG_ERR("MISUSED DECLARATION: " + significantBody + " (" + toString(significantToken.type));
             }
