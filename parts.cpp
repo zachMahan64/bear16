@@ -12,10 +12,10 @@ void Clock::initMemMappedTime() {
     using namespace std::chrono;
 
     // get system clock time (local time)
-    std::time_t now_c = std::time(nullptr);
-    std::tm* localTime = std::localtime(&now_c);
+    const std::time_t now = std::time(nullptr);
+    const std::tm* localTime = std::localtime(&now);
 
-    // Set internal-state
+    // Set clock internal-state
     seconds = static_cast<uint8_t>(localTime->tm_sec);
     minutes = static_cast<uint8_t>(localTime->tm_min);
     hours   = static_cast<uint8_t>(localTime->tm_hour);

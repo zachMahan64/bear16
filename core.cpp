@@ -96,8 +96,8 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     startingAddr = 64000;
     numBytes = isa::MAX_UINT_16BIT - startingAddr;
     std::cout << "=====================" << std::endl;
-    std::cout << "Bottom of stack: \n";
-    cpu.printSectionOfRam(startingAddr, numBytes, true);
+    //std::cout << "Bottom of stack: \n";
+    //cpu.printSectionOfRam(startingAddr, numBytes, true);
     std::cout << "Total cycles: " << clock.getCycles() << std::endl;
     std::cout << "=====================" << std::endl;
 }

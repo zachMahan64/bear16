@@ -1,4 +1,4 @@
-#FULL WORKING ASCII extremely basic text processor (no input handling yet, though) TUE 20250617
+#WIP OS 20250619
 
 # REG CONV: Overload s10 to a3 & s9 to a4, {s0 = index ptr, s1 = line ptr} -> for cursor,
 
@@ -142,8 +142,8 @@ start:
 text_editor_main:
 # buffer assumes this memory is reserved for now, in future malloc this
 # actually, adjust this cuz bottom two lines reserved for OS display
-.const TEXT_PAGE_SIZE = 768 # abs. max, also inexact
-.const NUM_PAGES      = 8   # inexact
+.const TEXT_PAGE_SIZE = 768
+.const NUM_PAGES      = 8
 .const TEXT_EDITOR_BUFFER_STRT = 12288
 .const TEXT_EDITOR_BUFFER_END  = 18432 # (8 pages difference)
     # a0 = starting line
