@@ -1,6 +1,7 @@
 #FULL WORKING ASCII extremely basic text processor (no input handling yet, though) TUE 20250617
-
 # REG CONV: Overload s10 to a3 & s9 to a4, {s0 = index ptr, s1 = line ptr} -> for cursor,
+
+@include "test.asm"
 
 .data
 ctset_start: #Char Tile Set (ASCII)
@@ -135,7 +136,7 @@ start:
     mov s10, 1 # true
     call blit_strl_rom #blitting a str
 
-    #call utility_inf_loop
+    call test_bite_of_87 # from test.asm
 
     # go into text editor (WIP)
     mov a0, s1 # move into s1 line ptr into line arg

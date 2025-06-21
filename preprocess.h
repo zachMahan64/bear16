@@ -21,19 +21,22 @@ namespace preprocess {
         MISTAKE
     };
     class IncludeToken {
-        std::string path;
+        std::string fullPath {};
+        std::string projectPath {};
+        std::string fileName {};
         std::string contents {};
-        void adjustPathAccordingToProjectPath(std::string& projectPath);
+        void adjustFullPathAccordingToProjectPath(std::string& projectPath);
         [[nodiscard]] bool checkPathValidity() const;
         void buildContents();
     public:
-        [[nodiscard]] std::string getPath() const;
+        [[nodiscard]] std::string getFullPath() const;
         [[nodiscard]] std::string getContents() const;
+        [[nodiscard]] std::string getFileName() const;
         friend struct std::hash<IncludeToken>;
         bool operator==(const IncludeToken& other) const {
-            return path == other.path;
+            return fullPath == other.fullPath;
         }
-        explicit IncludeToken(std::string path, std::string projectPath);
+        explicit IncludeToken(std::string fileName, std::string projectPath);
     };
     class MacroDefToken {
         std::string name;
@@ -53,7 +56,7 @@ namespace std {
     template <>
     struct hash<preprocess::IncludeToken> {
         size_t operator()(const preprocess::IncludeToken& token) const noexcept {
-            return hash<std::string>{}(token.path);
+            return hash<std::string>{}(token.fullPath);
         }
     };
 
@@ -74,14 +77,16 @@ namespace preprocess {
         std::string entry {};
         std::vector<IncludeToken> includes {};
         std::vector<MacroDefToken> macros {};
-        void addIncludeIfAbsent(const IncludeToken &tkn);
+        bool addIncludeIfAbsent(const IncludeToken &tkn);
         void addMacroDefIfAbsent(const MacroDefToken& tkn);
         [[nodiscard]] static PreprocessTokenType deducePreprocessTokenType(const std::string &token);
     public:
         Preprocessor() = default;
         void setProject(const std::string &projectPath, const std::string &entry);
-        std::string preprocessOpenAsmProject();
+        auto preprocessAsmProject(const std::string &fileName) -> std::string;
     };
+    //helper
+    bool isBlank(const std::string& str);
 }
 
 #endif // PREPROCESS_H

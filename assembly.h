@@ -42,13 +42,14 @@ namespace assembly {
         bool doNotAutoCorrectImmediates = false;
         Assembler(bool enableDebug, bool doNotAutoCorrectImmediates);
         //reading asm file
-        void setProject(std::string projectPath, std::string entry);
-        [[nodiscard]] std::vector<uint8_t> assembleProject() const;
+        void openProject(std::string projectPath, std::string entry);
+        void changeEntry(std::string entry);
+        [[nodiscard]] std::vector<uint8_t> assembleOpenedProject();
     private:
         preprocess::Preprocessor preprocessor {};
         std::string projectPath {};
         std::string entry {};
-        static std::vector<Token> tokenizeAsmFirstPass(const std::string &filename); //make this take in the string from preprocessor
+        static std::vector<Token> tokenizeAsmFirstPass(const std::string& processedAsm);
 
         static void writeToFile(const std::string& filename, const std::vector<uint8_t>& data);
         [[nodiscard]] std::vector<TokenizedRomLine> parseListOfTokensIntoTokenizedRomLines(

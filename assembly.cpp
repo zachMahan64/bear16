@@ -14,6 +14,7 @@
 #include <regex>
 #include "core.h"
 #include "assembly.h"
+#include "preprocess.h"
 // variant definition
 namespace assembly {
     using TokenizedRomLine = std::variant<TokenizedInstruction, TokenizedData>;
@@ -534,10 +535,13 @@ namespace assembly {
     //assembler class
     Assembler::Assembler(bool enableDebug, bool doNotAutoCorrectImmediates)
         : isEnableDebug(enableDebug), doNotAutoCorrectImmediates(doNotAutoCorrectImmediates) {}
-    void Assembler::setProject(std::string projectPath, std::string entry) {
+    void Assembler::openProject(std::string projectPath, std::string entry) {
         this->projectPath = std::move(projectPath);
         this->entry = std::move(entry);
-        preprocessor.setProject(projectPath, entry);
+        preprocessor.setProject(this->projectPath, this->entry);
+    }
+    void Assembler::changeEntry(std::string entry) {
+        this->entry = std::move(entry);
     }
     void Assembler::writeToFile(const std::string& filename, const std::vector<uint8_t>& data) {
         std::ofstream outFile(filename, std::ios::binary);
@@ -547,9 +551,11 @@ namespace assembly {
         outFile.write(reinterpret_cast<const char*>(data.data()), data.size());
         outFile.close();
     }
-    std::vector<uint8_t> Assembler::assembleProject() const {
+    std::vector<uint8_t> Assembler::assembleOpenedProject() {
         std::string fullPath = std::filesystem::path(projectPath) / entry;
-        std::vector<Token> allTokens = tokenizeAsmFirstPass(fullPath);
+        LOG("Now assembling: " + fullPath);
+        std::string processedAsm = preprocessor.preprocessAsmProject(entry);
+        std::vector<Token> allTokens = tokenizeAsmFirstPass(processedAsm);
         std::vector<TokenizedRomLine> allTokenizedInstructions = parseListOfTokensIntoTokenizedRomLines(allTokens);
         std::vector<parts::Instruction> literalInstructions = getLiteralInstructions(allTokenizedInstructions);
         std::vector<uint8_t> byteVec = buildByteVecFromLiteralInstructions(literalInstructions);
@@ -561,20 +567,10 @@ namespace assembly {
 
     //main passes ----------------------------------------------------------------------------------------------------------
     //1st
-    std::vector<Token> Assembler::tokenizeAsmFirstPass(const std::string &path) {
+    std::vector<Token> Assembler::tokenizeAsmFirstPass(const std::string& processedAsm) {
         std::vector<Token> firstPassTokens {};
 
-        std::ifstream file(path, std::ios::in | std::ios::binary);
-        if (!file) {
-            LOG_ERR("Current working directory: " << std::filesystem::current_path());
-            LOG_ERR("ERROR: Could not open .asm file: " << path);
-            return firstPassTokens;
-        }
-        LOG("Successfully opened .asm file: " + path);
-
-
-        std::string buffer((std::istreambuf_iterator<char>(file)),
-                           std::istreambuf_iterator<char>());
+        std::string buffer = processedAsm;
 
         std::cout << "Orig asm (debug):\n" << buffer << std::endl;
 
@@ -797,6 +793,9 @@ namespace assembly {
             else if (firstTkn.type == TokenType::LABEL) {
                 std::string labelName = firstTkn.body.substr(0, firstTkn.body.length() - 1);
                 const int& labelValue = byteNum;
+                if (labelMap.contains(labelName)) {
+                    LOG_ERR("WARNING: duplicate label: " + labelName);
+                }
                 labelMap.emplace(labelName, labelValue);
                 LOG("placed label " << labelName << " at " << std::hex << labelValue);
             } else if (firstTkn.type == TokenType::CONST) {

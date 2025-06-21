@@ -24,10 +24,11 @@
 int emu::Emulator::assembleAndRun(const std::string &projectPath, const std::string& entry) const {
     //assemble
     assembly::Assembler testAssembler(false, false);
-    testAssembler.setProject("../projects/kernel_versions/", "kv_001.asm");
-    auto kernelRom = testAssembler.assembleProject();
-    testAssembler.setProject(projectPath, entry);
-    auto userRom = testAssembler.assembleProject();
+    //testAssembler.openProject("../projects/kernel_versions/", "kv_001.asm");
+    //auto kernelRom = testAssembler.assembleOpenedProject();
+    std::vector<uint8_t> kernelRom {};
+    testAssembler.openProject(projectPath, entry);
+    auto userRom = testAssembler.assembleOpenedProject();
 
     //init emulated system
     Board board(false);
