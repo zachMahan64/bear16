@@ -557,31 +557,6 @@ namespace assembly {
 
 
     //main passes ----------------------------------------------------------------------------------------------------------
-    //preprocess
-    std::string Assembler::preprocessAsmFile(const std::string &path) {
-        std::string revisedAsm {};
-        std::ifstream file(path, std::ios::in | std::ios::binary);
-        if (!file) {
-            LOG_ERR("Current working directory: " << std::filesystem::current_path());
-            LOG_ERR("ERROR: Could not open .asm file for preprocessing: " << path);
-            return {};
-        }
-        LOG("Successfully opened .asm file: " + path);
-
-
-        std::string buffer((std::istreambuf_iterator<char>(file)),
-                           std::istreambuf_iterator<char>());
-        //std::vector<> tknsForDirective {}; TODO
-        bool inPreprocDir = false;
-        for (char c : buffer) {
-            if (c == '@') {
-                inPreprocDir = true;
-                continue;
-            }
-        }
-
-        return revisedAsm;
-    }
     //1st
     std::vector<Token> Assembler::tokenizeAsmFirstPass(const std::string &path) {
         std::vector<Token> firstPassTokens {};

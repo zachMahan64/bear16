@@ -43,7 +43,6 @@ namespace assembly {
         //reading asm file
         [[nodiscard]] std::vector<uint8_t> assembleFromFile(const std::string &path) const;
     private:
-        static std::string preprocessAsmFile(const std::string &path); //make this into it's own header
         static std::vector<Token> tokenizeAsmFirstPass(const std::string &filename); //make this take in the string from preprocessor
 
         static void writeToFile(const std::string& filename, const std::vector<uint8_t>& data);
