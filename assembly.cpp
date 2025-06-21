@@ -555,7 +555,33 @@ namespace assembly {
         return byteVec;
     }
 
+
     //main passes ----------------------------------------------------------------------------------------------------------
+    //preprocess
+    std::string Assembler::preprocessAsmFile(const std::string &path) {
+        std::string revisedAsm {};
+        std::ifstream file(path, std::ios::in | std::ios::binary);
+        if (!file) {
+            LOG_ERR("Current working directory: " << std::filesystem::current_path());
+            LOG_ERR("ERROR: Could not open .asm file for preprocessing: " << path);
+            return {};
+        }
+        LOG("Successfully opened .asm file: " + path);
+
+
+        std::string buffer((std::istreambuf_iterator<char>(file)),
+                           std::istreambuf_iterator<char>());
+        //std::vector<> tknsForDirective {}; TODO
+        bool inPreprocDir = false;
+        for (char c : buffer) {
+            if (c == '@') {
+                inPreprocDir = true;
+                continue;
+            }
+        }
+
+        return revisedAsm;
+    }
     //1st
     std::vector<Token> Assembler::tokenizeAsmFirstPass(const std::string &path) {
         std::vector<Token> firstPassTokens {};
@@ -795,6 +821,47 @@ namespace assembly {
                 const int& labelValue = byteNum;
                 labelMap.emplace(labelName, labelValue);
                 LOG("placed label " << labelName << " at " << std::hex << labelValue);
+            } else if (firstTkn.type == TokenType::CONST) {
+                try {
+                    if (line.size() > 3 && line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
+                            && (line.at(3).type == TokenType::DECIMAL
+                            || line.at(3).type == TokenType::HEX
+                            || line.at(3).type == TokenType::BIN)
+                            || (line.at(3).type == TokenType::SING_QUOTE
+                                && line.at(4).type == TokenType::CHAR
+                                && line.at(5).type == TokenType::SING_QUOTE))
+                    {
+                        int value = 0;
+                        try {
+                            if (line.at(3).type == TokenType::DECIMAL) {
+                                value = std::stoi(line.at(3).body, nullptr, 10);
+                            } else if (line.at(3).type == TokenType::HEX) {
+                                value = std::stoi(line.at(3).body, nullptr, 16);
+                            } else if (line.at(3).type == TokenType::BIN) {
+                                const auto &body = line.at(3).body;
+                                if (body.rfind("0b", 0) == 0 && body.length() > 2)
+                                    value = std::stoi(body.substr(2), nullptr, 2);
+                                else
+                                    throw std::invalid_argument("Binary constant without 0b prefix");
+                            } else if (line.at(4).type == TokenType::CHAR) {
+                                value = static_cast<int>(line.at(4).body.at(0));
+                            }
+                        } catch (const std::exception &e) {
+                            LOG_ERR("ERROR: bad const value: " << line.at(3).body << " (" << e.what() << ")");
+                            throw;
+                        }
+                        if(auto [it, inserted] = constMap.emplace(line.at(1).body, value); !inserted) {
+                            LOG_ERR("ERROR: duplicate const name: " << line.at(1).body);
+                        }
+                    } else if (line.size() > 1){
+                        std::string complaint = line.at(1).body;
+                        throwAFit(complaint);
+                    } else {
+                        LOG_ERR("ERROR: bad const declaration at line with tokens: " << line.size());
+                    }
+                } catch (std::out_of_range &e) {
+                    LOG_ERR("ERROR: bad const declaration");
+                }
             }
             else if (containsValue(stringToDataDirectives, firstTkn.type)) {
                 if (firstTkn.type == TokenType::STRING_DIR) {
@@ -871,53 +938,11 @@ namespace assembly {
             if (firstTknType == TokenType::EOL) {
                 continue; //blank line
             }
-            if (firstTknType == TokenType::LABEL) {
-                continue; //becuz we already placed the label!
-            }
-            if (firstTknType == TokenType::CONST) {
-                try {
-                    if (line.size() > 3 && line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
-                            && (line.at(3).type == TokenType::DECIMAL
-                            || line.at(3).type == TokenType::HEX
-                            || line.at(3).type == TokenType::BIN)
-                            || (line.at(3).type == TokenType::SING_QUOTE
-                                && line.at(4).type == TokenType::CHAR
-                                && line.at(5).type == TokenType::SING_QUOTE))
-                    {
-                        int value = 0;
-                        try {
-                            if (line.at(3).type == TokenType::DECIMAL) {
-                                value = std::stoi(line.at(3).body, nullptr, 10);
-                            } else if (line.at(3).type == TokenType::HEX) {
-                                value = std::stoi(line.at(3).body, nullptr, 16);
-                            } else if (line.at(3).type == TokenType::BIN) {
-                                const auto &body = line.at(3).body;
-                                if (body.rfind("0b", 0) == 0 && body.length() > 2)
-                                    value = std::stoi(body.substr(2), nullptr, 2);
-                                else
-                                    throw std::invalid_argument("Binary constant without 0b prefix");
-                            } else if (line.at(4).type == TokenType::CHAR) {
-                                value = static_cast<int>(line.at(4).body.at(0));
-                            }
-                        } catch (const std::exception &e) {
-                            LOG_ERR("ERROR: bad const value: " << line.at(3).body << " (" << e.what() << ")");
-                            throw;
-                        }
-                        if(auto [it, inserted] = constMap.emplace(line.at(1).body, value); !inserted) {
-                            LOG_ERR("ERROR: duplicate const name: " << line.at(1).body);
-                        }
-                    } else if (line.size() > 1){
-                        std::string complaint = line.at(1).body;
-                        throwAFit(complaint);
-                    } else {
-                        LOG_ERR("ERROR: bad const declaration at line with tokens: " << line.size());
-                    }
-                } catch (std::out_of_range &e) {
-                    LOG_ERR("ERROR: bad const declaration");
-                }
+            if (firstTknType == TokenType::LABEL || firstTknType == TokenType::CONST) {
+                continue; //becuz we already placed and saved these!
             }
             //INSTR -> lines that SHOULD get made into instructions
-            else if (firstTknType == TokenType::OPERATION) {
+            if (firstTknType == TokenType::OPERATION) {
                 byteIndex += 8;
                 TokenizedInstruction instrForThisLine = parseLineOfTokensIntoTokenizedInstruction(line, labelMap, constMap, byteIndex);
                 finalRomLines.emplace_back(instrForThisLine);
@@ -933,8 +958,9 @@ namespace assembly {
         }
         return finalRomLines;
     }
-    //Sub-methods
-    TokenizedInstruction Assembler::parseLineOfTokensIntoTokenizedInstruction(const std::vector<Token> &line,
+    //sub-methods
+    //.text-------------------------------------------------------------------------------------------------------------
+        TokenizedInstruction Assembler::parseLineOfTokensIntoTokenizedInstruction(const std::vector<Token> &line,
             const std::unordered_map<std::string, uint16_t> &labelMap,
             const std::unordered_map<std::string, uint16_t> &constMap,
             const int &byteIndex
@@ -1039,7 +1065,6 @@ namespace assembly {
         instrForThisLine.setOperandsAndAutocorrectImmediates(doNotAutoCorrectImmediates, operands);
         return instrForThisLine;
     }
-    //.text-------------------------------------------------------------------------------------------------------------
     std::vector<parts::Instruction> Assembler::getLiteralInstructions(const std::vector<TokenizedRomLine>& tknRomLines) {
         std::vector<parts::Instruction> literalInstructions {};
         literalInstructions.reserve(tknRomLines.size());

@@ -43,23 +43,24 @@ namespace assembly {
         //reading asm file
         [[nodiscard]] std::vector<uint8_t> assembleFromFile(const std::string &path) const;
     private:
-        static std::vector<Token> tokenizeAsmFirstPass(const std::string &filename);
+        static std::string preprocessAsmFile(const std::string &path); //make this into it's own header
+        static std::vector<Token> tokenizeAsmFirstPass(const std::string &filename); //make this take in the string from preprocessor
 
         static void writeToFile(const std::string& filename, const std::vector<uint8_t>& data);
         [[nodiscard]] std::vector<TokenizedRomLine> parseListOfTokensIntoTokenizedRomLines(
             const std::vector<Token> &tokens) const;
-        TokenizedInstruction parseLineOfTokensIntoTokenizedInstruction(const std::vector<Token> &line,
+        [[nodiscard]] TokenizedInstruction parseLineOfTokensIntoTokenizedInstruction(const std::vector<Token> &line,
                                             const std::unordered_map<std::string, uint16_t> &labelMap,
                                             const std::unordered_map<std::string, uint16_t> &constMap,
                                             const int &instructionIndex
                                             ) const;
-        TokenizedData parseLineOfTokensIntoTokenizedData(const std::vector<Token> &line,
+        [[nodiscard]] TokenizedData parseLineOfTokensIntoTokenizedData(const std::vector<Token> &line,
                                                          const std::unordered_map<std::string, uint16_t> &labelMap,
                                                          const std::unordered_map<std::string, uint16_t> &constMap, int byteIndex
         ) const;
         std::vector<uint8_t> parseTokenizedDataIntoByteVec(std::vector<TokenizedRomLine> &allTokenizedData) const;
-        std::vector<uint8_t> parseDataLineIntoBytes(const TokenizedData &dataLine) const;
-        std::vector<uint8_t> parsePieceOfDataIntoBytes(const Token &pieceOfData, const Token &directive) const;
+        [[nodiscard]] std::vector<uint8_t> parseDataLineIntoBytes(const TokenizedData &dataLine) const;
+        [[nodiscard]] std::vector<uint8_t> parsePieceOfDataIntoBytes(const Token &pieceOfData, const Token &directive) const;
         static std::vector<parts::Instruction> getLiteralInstructions(const std::vector<TokenizedRomLine>& tknRomLines);
         static void printLiteralInstruction(const parts::Instruction &litInstr); //debug
         static std::vector<uint8_t> buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction> &literalInstructions);
