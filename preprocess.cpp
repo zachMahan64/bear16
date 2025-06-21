@@ -19,13 +19,13 @@ namespace preprocess {
     void IncludeToken::buildContents() {
         //TODO
     }
-    void MacroToken::discernParametersFromBody() {
-        //TODO
-    }
     //Macro Token ------------------------------------------------------------------------------------------------------
     MacroToken::MacroToken(std::string name, std::string body)
     : name(std::move(name)), body(std::move(body)) {
         discernParametersFromBody();
+    }
+    void MacroToken::discernParametersFromBody() {
+        //TODO
     }
     //Preprocessor -----------------------------------------------------------------------------------------------------
     std::string Preprocessor::preprocessAsmFile(const std::string &path) {
@@ -47,7 +47,7 @@ namespace preprocess {
                 continue;
             }
         }
-
+        //TODO
         return revisedAsm;
     }
     void Preprocessor::addIncludeIfAbsent(const IncludeToken &tkn) {

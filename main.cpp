@@ -7,7 +7,7 @@ int main(int argc, char* argv[]) {
     //assembly::asmMnemonicSetGenerator();
 
     emu::Emulator emulator {};
-    std::string path = "../programs/asm_test.asm";
+    std::string path = "../projects/asm_test.asm";
     int exitCode = emulator.assembleAndRun(path);
     return exitCode;
 }

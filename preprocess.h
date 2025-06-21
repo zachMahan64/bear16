@@ -12,6 +12,12 @@
 #define LOG_ERR(x) std::cerr << std::dec << x << std::endl
 
 namespace preprocess {
+    enum class PreprocessTokenType {
+        INCLUDE,
+        MACRO_DEF,
+        MACRO_USE,
+        MISTAKE
+    };
     class IncludeToken {
         std::string path;
         std::string contents {};
@@ -39,7 +45,6 @@ namespace preprocess {
         explicit MacroToken(std::string name, std::string body);
     };
 }
-
 namespace std {
     template <>
     struct hash<preprocess::IncludeToken> {
@@ -51,20 +56,14 @@ namespace std {
     template <>
     struct hash<preprocess::MacroToken> {
         size_t operator()(const preprocess::MacroToken& token) const noexcept {
-            const size_t h1 = hash<std::string>{}(token.name);
-            const size_t h2 = hash<std::string>{}(token.body);
-            return h1 ^ (h2 << 1);
+            const size_t hashName = hash<std::string>{}(token.name);
+            const size_t hashBody = hash<std::string>{}(token.body);
+            return hashName ^ (hashBody << 1);
         }
     };
 }
-
 namespace preprocess {
     class Preprocessor {
-        enum class PreprocessTokenType {
-            INCLUDE,
-            MACRO,
-            MISTAKE
-        };
         std::unordered_set<IncludeToken> includes {};
         std::unordered_set<MacroToken> macros {};
     public:

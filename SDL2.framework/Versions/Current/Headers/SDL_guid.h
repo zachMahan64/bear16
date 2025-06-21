@@ -47,7 +47,7 @@ extern "C" {
  *
  * While a GUID can be used to assign a unique value to almost anything, in
  * SDL these are largely used to identify input devices across runs of SDL
- * programs on the same platform.If the device is detached and then
+ * projects on the same platform.If the device is detached and then
  * re-attached to a different port, or if the base system is rebooted, the
  * device should still report the same GUID.
  *

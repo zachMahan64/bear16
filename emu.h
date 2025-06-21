@@ -8,7 +8,7 @@ namespace emu {
     class Emulator {
         static constexpr std::string version = "0.0.1";
     public:
-        int assembleAndRun(const std::string &path = "../programs/asm_test.asm") const;
+        int assembleAndRun(const std::string &path = "../projects/asm_test.asm") const;
     };
 
 }
