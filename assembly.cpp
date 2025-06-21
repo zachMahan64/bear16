@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <utility>
 #include <vector>
 #include <iomanip>
 #include <algorithm>
@@ -13,12 +14,9 @@
 #include <regex>
 #include "core.h"
 #include "assembly.h"
-#define LOG(x) std::cout << std::dec << x << std::endl
-#define LOG_ERR(x) std::cerr << std::dec << x << std::endl
 // variant definition
 namespace assembly {
     using TokenizedRomLine = std::variant<TokenizedInstruction, TokenizedData>;
-
     //maps & sets ----------------------------------------------------------------------------------------------------------
     const std::unordered_map<char, char> escapeCharMap {
         {'n', '\n'},
@@ -535,7 +533,12 @@ namespace assembly {
     }
     //assembler class
     Assembler::Assembler(bool enableDebug, bool doNotAutoCorrectImmediates)
-        : isEnableDebug(enableDebug), doNotAutoCorrectImmediates(doNotAutoCorrectImmediates) {};
+        : isEnableDebug(enableDebug), doNotAutoCorrectImmediates(doNotAutoCorrectImmediates) {}
+    void Assembler::setProject(std::string projectPath, std::string entry) {
+        this->projectPath = std::move(projectPath);
+        this->entry = std::move(entry);
+        preprocessor.setProject(projectPath, entry);
+    }
     void Assembler::writeToFile(const std::string& filename, const std::vector<uint8_t>& data) {
         std::ofstream outFile(filename, std::ios::binary);
         if (!outFile) {
@@ -544,8 +547,9 @@ namespace assembly {
         outFile.write(reinterpret_cast<const char*>(data.data()), data.size());
         outFile.close();
     }
-    std::vector<uint8_t> Assembler::assembleFromFile(const std::string &path) const {
-        std::vector<Token> allTokens = tokenizeAsmFirstPass(path);
+    std::vector<uint8_t> Assembler::assembleProject() const {
+        std::string fullPath = std::filesystem::path(projectPath) / entry;
+        std::vector<Token> allTokens = tokenizeAsmFirstPass(fullPath);
         std::vector<TokenizedRomLine> allTokenizedInstructions = parseListOfTokensIntoTokenizedRomLines(allTokens);
         std::vector<parts::Instruction> literalInstructions = getLiteralInstructions(allTokenizedInstructions);
         std::vector<uint8_t> byteVec = buildByteVecFromLiteralInstructions(literalInstructions);

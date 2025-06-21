@@ -9,6 +9,7 @@
 
 #include "isa.h"
 #include "parts.h"
+#include "preprocess.h"
 
 namespace assembly {
     enum class TokenType;
@@ -41,8 +42,12 @@ namespace assembly {
         bool doNotAutoCorrectImmediates = false;
         Assembler(bool enableDebug, bool doNotAutoCorrectImmediates);
         //reading asm file
-        [[nodiscard]] std::vector<uint8_t> assembleFromFile(const std::string &path) const;
+        void setProject(std::string projectPath, std::string entry);
+        [[nodiscard]] std::vector<uint8_t> assembleProject() const;
     private:
+        preprocess::Preprocessor preprocessor {};
+        std::string projectPath {};
+        std::string entry {};
         static std::vector<Token> tokenizeAsmFirstPass(const std::string &filename); //make this take in the string from preprocessor
 
         static void writeToFile(const std::string& filename, const std::vector<uint8_t>& data);

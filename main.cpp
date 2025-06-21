@@ -1,13 +1,12 @@
 #include <iostream>
 #include "assembly.h"
 #include "emu.h"
-#include "SDL2/SDL.h"
 
 int main(int argc, char* argv[]) {
     //assembly::asmMnemonicSetGenerator();
-
     emu::Emulator emulator {};
-    std::string path = "../projects/asm_test.asm";
-    int exitCode = emulator.assembleAndRun(path);
+    std::string projectPath = "../projects/bear16_os/";
+    std::string entry = "main.asm";
+    int exitCode = emulator.assembleAndRun(projectPath, entry);
     return exitCode;
 }

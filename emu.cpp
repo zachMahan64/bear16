@@ -21,11 +21,13 @@
 #include "core.h"
 #include "emu.h"
 
-int emu::Emulator::assembleAndRun(const std::string& path) const {
+int emu::Emulator::assembleAndRun(const std::string &projectPath, const std::string& entry) const {
     //assemble
     assembly::Assembler testAssembler(false, false);
-    auto kernelRom = testAssembler.assembleFromFile("../projects/kernel_versions/kv_001.asm");
-    auto userRom = testAssembler.assembleFromFile(path);
+    testAssembler.setProject("../projects/kernel_versions/", "kv_001.asm");
+    auto kernelRom = testAssembler.assembleProject();
+    testAssembler.setProject(projectPath, entry);
+    auto userRom = testAssembler.assembleProject();
 
     //init emulated system
     Board board(false);
