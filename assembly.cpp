@@ -559,7 +559,6 @@ namespace assembly {
         return byteVec;
     }
 
-
     //main passes ----------------------------------------------------------------------------------------------------------
     //1st
     std::vector<Token> Assembler::tokenizeAsmFirstPass(const std::string &path) {
