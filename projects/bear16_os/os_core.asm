@@ -44,6 +44,27 @@ util_malloc:
     inc t0
     ult util_malloc_loop, t0, a1
     ret
+util_strcomp_ram_rom:
+    # a0 = char* in ram
+    # a1 = char* in rom
+    # -> rv = TRUE/FALSE
+    clr t2 # cnt
+    util_strcomp_ram_rom_loop:
+        lb t0, a0, t2 # load *char w/ cnt as offset
+        lbrom t1, a1, t2 # load *char w/ cnt as offset
+        neq util_strcomp_ram_rom_neq, t0, t1
+        util_strcomp_ram_rom_char_eq:
+           neq util_strcomp_ram_rom_char_eq_exit, t0, '\0'
+           neq util_strcomp_ram_rom_char_eq_exit, t1, '\0'
+           mov rv, TRUE
+           ret
+        util_strcomp_ram_rom_char_eq_exit:
+        inc t2
+        jmp util_strcomp_ram_rom_loop
+    util_strcomp_ram_rom_neq:
+        mov rv, FALSE
+        ret
+
 
 #OS CORE METHODS
 #CLOCK MEM_LOC CONSTANTS (ALL SUBJ TO CHANGE)

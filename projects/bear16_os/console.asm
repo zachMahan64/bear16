@@ -3,6 +3,9 @@
 @include "text_processing.asm"
 @include "os_core.asm"
 @include "text_editor_app.asm" #for booting up later
+
+@include "console_maps.asm"
+
 .data
 .const CON_STRT_LINE = 3
 .const CON_BUFFER_STRT = 18433
