@@ -93,11 +93,16 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     uint16_t startingAddr = 6100;
     uint16_t numBytes = 100;
     cpu.printSectionOfRam(startingAddr, numBytes, printMemAsChars);
-    startingAddr = 64000;
-    numBytes = isa::MAX_UINT_16BIT - startingAddr;
-    std::cout << "=====================" << std::endl;
+    //startingAddr = 64000;
+    //numBytes = isa::MAX_UINT_16BIT - startingAddr;
+    //std::cout << "=====================" << std::endl;
     //std::cout << "Bottom of stack: \n";
     //cpu.printSectionOfRam(startingAddr, numBytes, true);
+    std::cout << "=====================" << std::endl;
+    std::cout << "CONSOLE BUFFER" << std::endl;
+    startingAddr = 18433;
+    numBytes = 512;
+    cpu.printSectionOfRam(startingAddr, numBytes, true);
     std::cout << "Total cycles: " << clock.getCycles() << std::endl;
     std::cout << "=====================" << std::endl;
 }
@@ -874,9 +879,27 @@ void InputController::handleKeyboardPress(const SDL_Event &e) const {
         sram[isa::KEY_IO_MEM_LOC] = charVal;
         //std::cout << "DEBUG: key pressed: " << std::to_string(keycode) << "\n";
         HANDLE_KBD_INTERRUPT();
-    } else if (keycode == SDLK_LSHIFT || keycode == SDLK_RSHIFT) {
+        return;
+    }
+    if (keycode == SDLK_LSHIFT || keycode == SDLK_RSHIFT) {
         sram[isa::SHIFT_KEY_IO_MEM_LOC] = 0xFF;
         HANDLE_KBD_INTERRUPT();
+        return;
+    }
+    switch (keycode) {
+        case SDLK_UP:
+            sram[isa::ARROW_KEY_STATE] |= ARROW_UP_MASK;
+            break;
+        case SDLK_DOWN:
+            sram[isa::ARROW_KEY_STATE] |= ARROW_DOWN_MASK;
+            break;
+        case SDLK_LEFT:
+            sram[isa::ARROW_KEY_STATE] |= ARROW_LEFT_MASK;
+            break;
+        case SDLK_RIGHT:
+            sram[isa::ARROW_KEY_STATE] |= ARROW_RIGHT_MASK;
+            break;
+        default: break;
     }
 }
 void InputController::handleKeyboardRelease(const SDL_Event &e) const {
@@ -884,6 +907,22 @@ void InputController::handleKeyboardRelease(const SDL_Event &e) const {
     if (keycode == SDLK_LSHIFT || keycode == SDLK_RSHIFT) {
         sram[isa::SHIFT_KEY_IO_MEM_LOC] = 0x00;
         HANDLE_KBD_INTERRUPT();
+        return;
+    }
+    switch (keycode) {
+        case SDLK_UP:
+            sram[isa::ARROW_KEY_STATE] &= ~ARROW_UP_MASK;
+            break;
+        case SDLK_DOWN:
+            sram[isa::ARROW_KEY_STATE] &= ~ARROW_DOWN_MASK;
+            break;
+        case SDLK_LEFT:
+            sram[isa::ARROW_KEY_STATE] &= ~ARROW_LEFT_MASK;
+            break;
+        case SDLK_RIGHT:
+            sram[isa::ARROW_KEY_STATE] &= ~ARROW_LEFT_MASK;
+            break;
+        default: break;
     }
 }
 

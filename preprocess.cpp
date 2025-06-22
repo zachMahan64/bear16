@@ -36,6 +36,7 @@ namespace preprocess {
         contents = std::string((std::istreambuf_iterator<char>(file)),
                                std::istreambuf_iterator<char>());
         contents += '\n'; //for safety
+        LOG("Included contents: \n" + contents);
 
     }
     std::string IncludeToken::getFullPath() const {
@@ -86,10 +87,12 @@ namespace preprocess {
 
         bool inDirectiveDeclaration = false;
         bool inIncludeDirective = false;
+        //TODO -> Macros
         bool inMacroDef = false;
         bool inMacroBody = false;
         bool inMacroEndDef = false;
         bool inMacroUse = false;
+
         auto inPreprocessDirective = [&]() {
             return inDirectiveDeclaration || inIncludeDirective || inMacroDef || inMacroBody ||
                    inMacroEndDef || inMacroUse;
@@ -97,7 +100,7 @@ namespace preprocess {
         std::string revisedMainFile{};
         std::string currentStr{};
 
-        bool addedNewInclude = false;
+        int newIncludesInThisFile = 0;
         for (const char& c : buffer) {
             charsThisLine++;
             if (c == '\t' || c == ' ' || c == '\n') {
@@ -117,7 +120,8 @@ namespace preprocess {
                     std::string pathToInclude = currentStr;
                     LOG("pathToInclude = " + pathToInclude);
                     IncludeToken tkn(pathToInclude, projectPath);
-                    addedNewInclude = addedNewInclude || addIncludeIfAbsent(tkn);
+                    if (addIncludeIfAbsent(tkn)) newIncludesInThisFile++;
+                    LOG("NUM NEW INCLUDES IN THIS FILE: " << newIncludesInThisFile);
                     currentStr.clear();
                     inIncludeDirective = false;
                 }
@@ -139,23 +143,32 @@ namespace preprocess {
                 revisedMainFile += c;
             }
         }
+        revisedMainFile += '\n'; //for safety
         revisedAsm += revisedMainFile; //put this first so we end w/ PC = 0
-        if (!addedNewInclude) return revisedAsm;
+        if (newIncludesInThisFile == 0) return revisedAsm;
+        LOG("NUM INCLUDES: " << includes.size());
         for (const auto& includeTkn : includes) {
             std::string contents = preprocessAsmProject(includeTkn.getFileName());
             revisedAsm += contents;
-            LOG("Included contents: \n" + contents);
         }
         return revisedAsm;
     }
     bool Preprocessor::addIncludeIfAbsent(const IncludeToken& tkn) {
-        if (tkn.getFullPath() == projectPath + entry) {
-            return false; //don't add the entry
+        const std::string& fullPath = tkn.getFullPath();
+        const std::string entryPath = projectPath + entry;
+        if (fullPath == entryPath) {
+            LOG("DID NOT ADD " + fullPath + " SINCE IT IS THE ENTRY FILE.");
+            return false;
         }
-        if (const auto it = std::find(includes.begin(), includes.end(), tkn); it == includes.end()) {
-            includes.emplace_back(tkn);
+
+        if (std::find(includes.begin(), includes.end(), tkn) == includes.end()) {
+            includes.push_back(tkn);
+            LOG("Successfully added " + fullPath + " to includes");
+            return true;
+        } else {
+            LOG(fullPath + " already present in includes");
+            return false;
         }
-        return true;
     }
     void Preprocessor::addMacroDefIfAbsent(const MacroDefToken& tkn) {
         if (const auto it = std::find(macros.begin(), macros.end(), tkn); it == macros.end()) {

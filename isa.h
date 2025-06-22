@@ -15,15 +15,18 @@ namespace isa {
     static constexpr size_t STACK_FRAME_SIZE = 32; //bytes
     static constexpr size_t RA_INDEX = 0x000F;
 
-    static constexpr uint16_t KEY_IO_MEM_LOC = 6144;
-    static constexpr uint16_t SHIFT_KEY_IO_MEM_LOC = 6145;
-    static constexpr uint16_t FRAMES_MEM_LOC = 6146;
-    static constexpr uint16_t SECONDS_PTR_MEM_LOC = 6147;
-    static constexpr uint16_t MINUTES_PTR_MEM_LOC = 6148;
-    static constexpr uint16_t HOURS_PTR_MEM_LOC = 6149;
-    static constexpr uint16_t DAYS_PTR_MEM_LOC = 6150;
-    static constexpr uint16_t MONTHS_PTR_MEM_LOC = 6151;
-    static constexpr uint16_t YEARS_PTR_MEM_LOC = 6152;
+    static constexpr uint16_t MIO_STRT = 6144;
+    static constexpr uint16_t KEY_IO_MEM_LOC = MIO_STRT;
+    static constexpr uint16_t SHIFT_KEY_IO_MEM_LOC = MIO_STRT + 1;
+    static constexpr uint16_t ARROW_KEY_STATE = MIO_STRT + 2;
+    static constexpr uint16_t FRAMES_MEM_LOC = MIO_STRT + 3;
+    static constexpr uint16_t SECONDS_PTR_MEM_LOC = MIO_STRT + 4;
+    static constexpr uint16_t MINUTES_PTR_MEM_LOC = MIO_STRT + 5;
+    static constexpr uint16_t HOURS_PTR_MEM_LOC = MIO_STRT + 6;
+    static constexpr uint16_t DAYS_PTR_MEM_LOC = MIO_STRT + 7;
+    static constexpr uint16_t MONTHS_PTR_MEM_LOC = MIO_STRT + 8;
+    static constexpr uint16_t YEARS_PTR_MEM_LOC = MIO_STRT + 9;
+
 
 enum class Opcode_E : uint16_t {
         //Arith & Bitwise

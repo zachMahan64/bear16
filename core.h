@@ -109,6 +109,10 @@ public:
 };
 
 class InputController {
+    static constexpr uint8_t ARROW_UP_MASK    = 0x01;
+    static constexpr uint8_t ARROW_DOWN_MASK  = 0x02;
+    static constexpr uint8_t ARROW_LEFT_MASK  = 0x04;
+    static constexpr uint8_t ARROW_RIGHT_MASK = 0x08;
     std::array<uint8_t, isa::SRAM_SIZE>& sram;
 public:
     explicit InputController(std::array<uint8_t, isa::SRAM_SIZE>& sramRef);
