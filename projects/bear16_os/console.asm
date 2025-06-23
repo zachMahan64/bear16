@@ -81,6 +81,10 @@ con_get_line:
         subr_con_shift_exit:
         #BUFFER WRITE----------------#
         sb s3, a2 # store char
+
+        jmp subr_clamp_cursor
+        clamp_norm_char_exit:
+
         inc s3
         #----------------------------#
         call blit_cl # a0, a1, a2 used
@@ -114,6 +118,10 @@ con_get_line:
         subr_con_backspace:
             #BUFFER WRITE----------------#
             sb s3, '\0' # pop char
+
+            jmp subr_clamp_cursor
+            clamp_backspace_exit:
+
             dec s3
             #----------------------------#
             #clear @ current spot
@@ -141,27 +149,61 @@ con_get_line:
             mov a1, s0  # index ptr
             mov a2, ' ' # space to delete cursor
             call blit_cl
-            # rv should still point to the start of buffer from the malloc call
             lea t0, IO_LOC # ->
             sb t0, 0       # clear IO memory location
-            ret
+            # rv should still point to the start of buffer from the malloc call
+            ret # dip outta here
         subr_con_tab:
             #BUFFER WRITE----------------#
             sb s3, '\t' # store char
+
+            #jmp subr_clamp_cursor
+            clamp_tab_exit:
+
             inc s3
             #----------------------------#
             mov a0, s1  # line ptr
             mov a1, s0  # index ptr
             mov a2, ' ' # space for blank
             call blit_cl
-            add s0, s0, 3 # move forward 2 indices for tab + 1 for going to next char
+            add s0, s0, 2 # move forward 2 indices for tab
             lea t0, IO_LOC # ->
             sb t0, 0       # clear IO memory location
+            uge subr_con_go_on_newline, s0, LINE_WIDTH_B
             jmp con_get_line_loop
-        subfunc_clamp_cursor:
+        subr_clamp_cursor:
             #clamp to preserve cname and <2 lines
-            # a0 = buffer start
-            ret
+            lw t0, fp, BUFFER_START_PTR_OFFS # access local var BUFFER_START_PTR_OFFS
+            sub t0, s3, t0 # t0 = BUFFER TOP - BUFFER START
+            .const TOP_OF_BUFFER_CLAMP_VAL = 59 # = 64 - 5 = CON_BUFFER_SIZE - LENGTH OF CNAME
+            lt subr_clamp_cursor_underflow, t0, 0
+            uge subr_clamp_cursor_overflow, t0, TOP_OF_BUFFER_CLAMP_VAL
+            
+            lb t1, s3 # load char at top of buffer to determine subr exit
+                eq clamp_backspace_exit, t1, 0 # for backspace
+                eq clamp_tab_exit, t1, '9'       # for tab
+                jmp clamp_norm_char_exit
+            subr_clamp_cursor_underflow:
+                #clear buff
+                inc s3
+                jmp con_get_line_loop
+            subr_clamp_cursor_overflow:
+                #clear buff
+                lb t1, s3
+                eq clamp_tab, t1, 9       # for tab
+                dec s3
+                    mov a0, s1  # line ptr
+                    mov a1, s0  # index ptr
+                    mov a2, ' ' # space for blank
+                    call blit_cl
+                dec s1
+                mov s0, 31
+                jmp con_get_line_loop
+            clamp_tab:
+                dec s3
+                dec s1
+                mov s0, 31
+                jmp clamp_tab_exit
 #SCROLLING
 .const LINE_REACHED_TO_TRIGGER_SCROLL = 20
 #SCROLLING CHECKS
@@ -226,6 +268,15 @@ con_success:
     call check_to_scroll
     ret
 con_error:
+    call check_to_scroll
+    inc s1 # increment line
+    call con_print_cname
+    mov a0, s1 # line
+    mov a1, s0 # index
+    mov a2, con_err_str
+    mov s10, TRUE #update cursor
+    call blit_strl_rom #blitting a str
+    call check_to_scroll
     ret #WIP
 con_echo:
     # a0 = ptr to start of line buffer
