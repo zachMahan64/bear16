@@ -42,15 +42,17 @@ Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(sram, userRom, k
 int Board::run() {
     int exitCode = 0;
     //init clock & SDL2 timings
-    static constexpr int STEPS_PER_LOOP = 170; //This lets the emu hit just about 36 MHz exactly
+    static constexpr int LOOP_SPEED_HZ = 200000;           // estimated from SDL2 bottleneck, calibrated for 36 MHz
+    static constexpr int TARGET_CLOCK_SPEED_HZ = 36000000; // target clock speed overall
+    static constexpr int STEPS_PER_LOOP = TARGET_CLOCK_SPEED_HZ / LOOP_SPEED_HZ;
     SDL_Event e;
     clock.resetCycles(); //set clock cycles to zero @ the start of a new process
-    auto startTime = currentTimeMillis();
+    clock.initMemMappedTime();
 
+    auto startTime = currentTimeMillis(); //for calculating clock speed after running ends
     constexpr double TARGET_FRAME_TIME = 1.0 / 60.0; // 60 FPS,
     uint64_t lastFrameTime = SDL_GetPerformanceCounter();
     const uint64_t freq = SDL_GetPerformanceFrequency();
-    clock.initMemMappedTime();
     do {
         while (SDL_PollEvent(&e)) {
             switch (e.type) {
