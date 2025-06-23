@@ -3,7 +3,7 @@
 @include "text_processing.asm"
 @include "os_core.asm"
 @include "text_editor_app.asm" #for booting up later
-
+@include "console_dispatch.asm"
 
 
 .data

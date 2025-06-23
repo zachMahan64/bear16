@@ -1,7 +1,7 @@
 #WIP OS
 # REG CONV: Overload s10 to a3 & s9 to a4, {s0 = index ptr, s1 = line ptr} -> for cursor
 @include "text_processing.asm"
-
+@include "util_mem_manager.asm"
 
 .data
 month_str_array:
@@ -33,8 +33,8 @@ print_welcome_msg:
 #UTILS
 .const TRUE = 1
 .const FALSE = 0
-util_inf_loop:
-    jmp util_inf_loop
+util_stall:
+    jmp util_stall
     ret
 
 .text

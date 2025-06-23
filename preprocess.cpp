@@ -98,8 +98,8 @@ namespace preprocess {
                    inMacroEndDef || inMacroUse;
         };
         std::string revisedMainFile{};
+        std::string includedFilesContents{};
         std::string currentStr{};
-        int newIncludesInThisFile = 0;
         for (const char& c : buffer) {
             charsThisLine++;
             if (c == '\t' || c == ' ' || c == '\n') {
@@ -119,8 +119,9 @@ namespace preprocess {
                     std::string pathToInclude = currentStr;
                     LOG("pathToInclude = " + pathToInclude);
                     IncludeToken tkn(pathToInclude, projectPath);
-                    if (addIncludeIfAbsent(tkn)) newIncludesInThisFile++;
-                    LOG("NUM NEW INCLUDES IN THIS FILE: " << newIncludesInThisFile);
+                    if (addIncludeIfAbsent(tkn)) {
+                        includedFilesContents += preprocessAsmProject(tkn.getFileName());
+                    }
                     currentStr.clear();
                     inIncludeDirective = false;
                 }
@@ -143,13 +144,8 @@ namespace preprocess {
             }
         }
         revisedMainFile += '\n'; //for safety
-        revisedAsm += revisedMainFile; //put this first so we end w/ PC = 0
-        if (newIncludesInThisFile == 0) return revisedAsm;
-        LOG("NUM INCLUDES: " << includes.size());
-        for (const auto& includeTkn : includes) {
-            std::string contents = preprocessAsmProject(includeTkn.getFileName());
-            revisedAsm += contents;
-        }
+        revisedAsm = revisedMainFile; //put this first so we end w/ PC = 0
+        revisedAsm += includedFilesContents;
         return revisedAsm;
     }
     bool Preprocessor::addIncludeIfAbsent(const IncludeToken& tkn) {

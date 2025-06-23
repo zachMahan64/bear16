@@ -4,15 +4,14 @@
 @include "os_core.asm"
 @include "console.asm"
 @include "text_editor_app.asm"
-@include "util_mem_manager.asm"
-@include "cmd_dispatch.asm"
+
 
 .text
 start:
     call init_os
     call print_welcome_msg
     call console_main
-
+    call util_stall
     #go into straight text editor (WIP)
     #mov a0, s1 # move into s1 line ptr into line arg
     #call text_editor_main
