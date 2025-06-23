@@ -1,43 +1,55 @@
-#CONSOLE (WIP)
+#CONSOLE.ASM (WIP)
 # REG CONV: Overload s10 to a3 & s9 to a4, {s0 = index ptr, s1 = line ptr} -> for cursor
-@include "text_processing.asm"
 @include "os_core.asm"
-@include "text_editor_app.asm" #for booting up later
-@include "console_dispatch.asm"
-
+@include "text_editor_app.asm"    #WIP, for booting up later
+@include "console_dispatch.asm"   #WIP, not yet implemented
 
 .data
 .const CON_STRT_LINE = 3
 .const CON_BUFFER_STRT = 18433
-.const CON_BUFFER_SIZE = 512
+.const CON_BUFFER_SIZE = 64 # ~ two lines, not that safe -> increase later, currently overflow works fine just overwrites
+                            #   anything that goes over 64 after the next line is malloc'd
 con_name:
     .string "B16->"
 .text
 console_main:
-    #s3 = BUFFER PTR
+    #LOCAL REG CONV: s3 = PTR TO CHAR IN CURRENT BUFFER (virtual cursor)
+    .const FIRST_BUF_PTR_OFFS = -2     # (1st push)
+    .const NUM_BUFFERS_ALLOC_OFFS = -4 # (2nd push)
     call con_init
-    console_main_loop:
+    push rv # save FIRST_BUF_PTR
+    push 0  # init NUM_BUFFERS_ALLOC
+    con_main_loop:
         call os_update
         call con_get_line
-        #do somethin
-        jmp console_main_loop
-    # rv should still point to the start of buffer from the malloc call
+        lw t0, fp, NUM_BUFFERS_ALLOC_OFFS
+        inc t0
+        sw fp, NUM_BUFFERS_ALLOC_OFFS, t0
+        mov a0, rv # rv -> a0 = ptr to start of line buffer
+        call con_process_line #just echoes right now, no command resolution
+        jmp con_main_loop
     ret
 con_init:
-    #INIT BUFFER
-    mov a0, CON_BUFFER_SIZE # malloc num bytes
-    call util_malloc # reserve buffer memory
-    mov s3, rv #get the ptr to the buffer from good ol malloc
-    call con_print_cname
+    # rv = ptr to first buffer
+    #init starting line
+    mov s1, CON_STRT_LINE
+    mov a0, 0
+    call util_malloc #blank malloc call to get the ptr to first buffer
+    # reuse rv from the malloc call
     ret
 con_print_cname:
-    mov a0, CON_STRT_LINE # line
+    mov a0, s1 # line
     mov a1, 0             # index
     mov a2, con_name      # char*
     mov s10, TRUE         # bool updateCursor
     call blit_strl_rom
-ret
+    ret
 con_get_line:
+    # ALLOCS a new BUFFER
+    mov a0, CON_BUFFER_SIZE # malloc num bytes
+    call util_malloc # reserve buffer memory
+    mov s3, rv #get the ptr to the buffer from good ol malloc
+    call con_print_cname # WIP, later print username
     con_get_line_loop:
     call os_update
     mov a0, s1  # line ptr
@@ -113,19 +125,19 @@ con_get_line:
                     mov s0, 31 # set index ptr to end of last line
                     jmp ssubr_con_backline_exit
         subr_con_newline:
-            #BUFFER WRITE----------------# --> make this call something like "process_line"
-            sb s3, '\n' # store char
+        #BUFFER WRITE----------------#
+            sb s3, '\0' # ensure null termination
             inc s3
-            #----------------------------#
+        #----------------------------#
+            #clear @ current spot
             mov a0, s1  # line ptr
             mov a1, s0  # index ptr
-            mov a2, ' ' # space for blank
+            mov a2, ' ' # space to delete cursor
             call blit_cl
+            # rv should still point to the start of buffer from the malloc call
             lea t0, IO_LOC # ->
             sb t0, 0       # clear IO memory location
-            inc s1
-            clr s0
-            jmp con_get_line_loop
+            ret
         subr_con_tab:
             #BUFFER WRITE----------------#
             sb s3, '\t' # store char
@@ -139,3 +151,39 @@ con_get_line:
             lea t0, IO_LOC # ->
             sb t0, 0       # clear IO memory location
             jmp con_get_line_loop
+.data
+con_succ_str:
+    .string "CONSOLE SUCCESS"
+con_err_str:
+    .string "CONSOLE ERROR"
+.text
+con_process_line:
+    # a0 = ptr to start of line buffer
+    push a0 # save
+    # reuse
+    call con_success
+    pop a0 # use saved
+    call con_echo
+    ret
+con_success:
+    inc s1 # increment line
+    call con_print_cname
+    mov a0, s1 # line
+    mov a1, s0 # index
+    mov a2, con_succ_str
+    mov s10, TRUE #update cursor
+    call blit_strl_rom #blitting a str
+    inc s1
+    ret
+con_error:
+    ret #WIP
+con_echo:
+    # a0 = ptr to start of line buffer
+    push a0 # save that ptr
+    call con_print_cname
+    mov a0, s1 # line
+    mov a1, s0 # index
+    pop a2 # retrieve ptr
+    mov s10, TRUE #update cursor
+    call blit_strl_ram #blitting a str
+    ret

@@ -14,6 +14,8 @@ namespace isa {
     static constexpr size_t MAX_UINT_16BIT = 65535;
     static constexpr size_t RA_REGISTER_INDEX = 0x000F;
     static constexpr size_t TOP_OF_HEAP_PTR = 6656;
+    static constexpr size_t FREE_LIST_START_ADDRESS = 6558;
+    static constexpr size_t FREE_LIST_END_ADDRESS = FREE_LIST_START_ADDRESS + 512; //7070
     static constexpr size_t STARTING_HEAP_PTR_VALUE = 16384;
 
     static constexpr uint16_t MIO_STRT = 6144;

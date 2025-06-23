@@ -1,3 +1,5 @@
+# TEXT PROCESSNG & WHAT NOT
+# ADD baby_caps
 .data
 ctset_start: #Char Tile Set (ASCII)
 ctset_0:

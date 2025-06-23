@@ -129,6 +129,8 @@ class Board {
     //flags
     bool power = true;
     bool isEnableDebug = false;
+    //diagnostic
+    double clockSpeedHz {};
     //memory
     std::array<uint8_t, isa::SRAM_SIZE> sram {};
     std::array<uint8_t, isa::ROM_SIZE> userRom {};
@@ -155,9 +157,12 @@ public:
     void loadUserRomFromByteVector(std::vector<uint8_t>& rom);
     void loadKernelRomFromByteVector(std::vector<uint8_t>& rom);
     //DIAGNOSTICS
+    void calcClockSpeedHz(double elapsedMillis);
     void printDiagnostics(bool printMemAsChars) const;
     void printAllRegisterContents() const;
 };
+//helper
+uint64_t currentTimeMillis();
 
 
 #endif //CORE_H

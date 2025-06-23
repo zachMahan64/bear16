@@ -18,7 +18,7 @@ month_str_array:
     .string "NOV"
     .string "DEC"
 welcome_msg:
-    .string "Welcome to the Bear16 Console! \n    VERSION 0.0.1, 20250619"
+    .string "Welcome to the Bear16 Console! \n    VERSION 0.0.2, 20250623"
 
 .text
 #WELCOME
@@ -35,23 +35,6 @@ print_welcome_msg:
 .const FALSE = 0
 util_stall:
     jmp util_stall
-    ret
-
-.text
-# -> MEMORY MANAGEMENT
-.const TOP_OF_HEAP_PTR = 6656
-.const STARTING_HEAP_PTR_VALUE = 16384
-util_malloc:
-    # a0 = num bytes
-    lw t0, TOP_OF_HEAP_PTR
-    mov rv, t0 # this will be the base of the allocated memory -> return this!
-    add t1, t0, a0 # end loop val / new top of heap value
-    util_malloc_loop:
-    sb t0, 0 # write zero/clear memory
-    inc t0 # inc store location
-    ult util_malloc_loop, t0, t1
-    lea t2, TOP_OF_HEAP_PTR
-    sw t2, t1 # store new top of heap value
     ret
 
 util_strcomp_ram_rom:

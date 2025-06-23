@@ -40,22 +40,28 @@ Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(sram, userRom, k
 
 //Board and loading ROM stuff -------------------------------------------------------
 int Board::run() {
+    int exitCode = 0;
     //init clock & SDL2 timings
-    constexpr int DELAY = 0;
+    static constexpr int STEPS_PER_LOOP = 170; //This lets the emu hit just about 36 MHz exactly
     SDL_Event e;
     clock.resetCycles(); //set clock cycles to zero @ the start of a new process
+    auto startTime = currentTimeMillis();
+
     constexpr double TARGET_FRAME_TIME = 1.0 / 60.0; // 60 FPS,
     uint64_t lastFrameTime = SDL_GetPerformanceCounter();
     const uint64_t freq = SDL_GetPerformanceFrequency();
     clock.initMemMappedTime();
-
     do {
         while (SDL_PollEvent(&e)) {
             switch (e.type) {
                 case SDL_QUIT:
-                    return 130;
+                    exitCode = 130;
+                    cpu.isHalted = true;
                 case SDL_KEYDOWN:
-                    if (e.key.keysym.sym == SDLK_ESCAPE) return 131;
+                    if (e.key.keysym.sym == SDLK_ESCAPE) {
+                        exitCode = 131;
+                        cpu.isHalted = true;
+                    }
                     inputController.handleKeyboardPress(e);
                     break;
                 case SDL_KEYUP:
@@ -64,8 +70,10 @@ int Board::run() {
                 default: break;
             }
         }
-        clock.tick();
-        cpu.step();
+        for (int i = 0; i < STEPS_PER_LOOP; ++i) {
+            cpu.step();
+            clock.tick();
+        }
 
         const uint64_t now = SDL_GetPerformanceCounter();
         const double elapsed = static_cast<double>(now - lastFrameTime) / freq;
@@ -76,14 +84,16 @@ int Board::run() {
             lastFrameTime = now;
             clock.incMemMappedTime(); //updates VM real-time
         }
-
-
     } while (cpu.isHalted == false);
-    return 0;
+    auto endTime = currentTimeMillis();
+    auto elapsedMillis = static_cast<double>(endTime - startTime);
+    calcClockSpeedHz(elapsedMillis);
+    return exitCode;
 }
 void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << std::dec;
     std::cout << "RESULTS\n========" << std::endl;
+    std::cout << "=====================" << std::endl;
     printAllRegisterContents();
     std::cout << "=====================" << std::endl;
     std::cout << "First 64 bytes of RAM: \n";
@@ -104,7 +114,8 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     startingAddr = isa::STARTING_HEAP_PTR_VALUE;
     numBytes = 512;
     cpu.printSectionOfRam(startingAddr, numBytes, true);
-    std::cout << "Total cycles: " << clock.getCycles() << std::endl;
+    std::cout << std::dec << "Total cycles: " << clock.getCycles() << std::endl;
+    std::cout << std::dec << "Clock Speed = " << clockSpeedHz << " Hz" << std::endl;
     std::cout << "=====================" << std::endl;
 }
 void Board::printAllRegisterContents() const {
@@ -226,6 +237,10 @@ void Board::setUserRom(std::vector<uint8_t>& rom) {
 
 void Board::loadKernelRomFromByteVector(std::vector<uint8_t> &rom) {
     setUserRom(rom);
+}
+
+void Board::calcClockSpeedHz(double elapsedMillis) {
+    clockSpeedHz = static_cast<double>(clock.getCycles()) / (elapsedMillis / 1000);
 }
 
 void Board::setKernelRom(std::vector<uint8_t> &rom) {
@@ -927,9 +942,15 @@ void InputController::handleKeyboardRelease(const SDL_Event &e) const {
     }
 }
 
+//Interrupt Controller
 void InterruptController::handleKeyboardInterrupt() {
 
 }
-
-//Interrupt Controller
+//helper
+uint64_t currentTimeMillis() {
+    using namespace std::chrono;
+    auto now = system_clock::now();
+    auto ms = duration_cast<milliseconds>(now.time_since_epoch()).count();
+    return static_cast<uint64_t>(ms);
+}
 
