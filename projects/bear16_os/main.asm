@@ -4,6 +4,8 @@
 @include "os_core.asm"
 @include "console.asm"
 @include "text_editor_app.asm"
+@include "util_mem_manager.asm"
+@include "cmd_dispatch.asm"
 
 .text
 start:

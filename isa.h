@@ -12,8 +12,9 @@ namespace isa {
     static constexpr size_t GEN_REG_COUNT = 27;
     static constexpr size_t IO_COUNT = 2;
     static constexpr size_t MAX_UINT_16BIT = 65535;
-    static constexpr size_t STACK_FRAME_SIZE = 32; //bytes
-    static constexpr size_t RA_INDEX = 0x000F;
+    static constexpr size_t RA_REGISTER_INDEX = 0x000F;
+    static constexpr size_t TOP_OF_HEAP_PTR = 6656;
+    static constexpr size_t STARTING_HEAP_PTR_VALUE = 16384;
 
     static constexpr uint16_t MIO_STRT = 6144;
     static constexpr uint16_t KEY_IO_MEM_LOC = MIO_STRT;

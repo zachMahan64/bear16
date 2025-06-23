@@ -4,12 +4,11 @@
 @include "os_core.asm"
 @include "text_editor_app.asm" #for booting up later
 
-@include "console_maps.asm"
+
 
 .data
 .const CON_STRT_LINE = 3
 .const CON_BUFFER_STRT = 18433
-.const CON_BUFFER_END = 18944
 .const CON_BUFFER_SIZE = 512
 con_name:
     .string "B16->"
@@ -22,14 +21,13 @@ console_main:
         call con_get_line
         #do somethin
         jmp console_main_loop
+    # rv should still point to the start of buffer from the malloc call
     ret
 con_init:
     #INIT BUFFER
-    mov s3, CON_BUFFER_STRT
-
-    mov a0, s3
-    mov a1, CON_BUFFER_SIZE
+    mov a0, CON_BUFFER_SIZE # malloc num bytes
     call util_malloc # reserve buffer memory
+    mov s3, rv #get the ptr to the buffer from good ol malloc
     call con_print_cname
     ret
 con_print_cname:

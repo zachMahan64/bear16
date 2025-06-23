@@ -2,6 +2,7 @@
 # REG CONV: Overload s10 to a3 & s9 to a4, {s0 = index ptr, s1 = line ptr} -> for cursor
 @include "text_processing.asm"
 
+
 .data
 month_str_array:
     .string "JAN"
@@ -35,15 +36,24 @@ print_welcome_msg:
 util_inf_loop:
     jmp util_inf_loop
     ret
+
+.text
+# -> MEMORY MANAGEMENT
+.const TOP_OF_HEAP_PTR = 6656
+.const STARTING_HEAP_PTR_VALUE = 16384
 util_malloc:
-    # a0 = starting ptr
-    # a1 = num bytes
-    clr t0 # cnt
+    # a0 = num bytes
+    lw t0, TOP_OF_HEAP_PTR
+    mov rv, t0 # this will be the base of the allocated memory -> return this!
+    add t1, t0, a0 # end loop val / new top of heap value
     util_malloc_loop:
-    sb a0, t0, 0 # use cnt as offset
-    inc t0
-    ult util_malloc_loop, t0, a1
+    sb t0, 0 # write zero/clear memory
+    inc t0 # inc store location
+    ult util_malloc_loop, t0, t1
+    lea t2, TOP_OF_HEAP_PTR
+    sw t2, t1 # store new top of heap value
     ret
+
 util_strcomp_ram_rom:
     # a0 = char* in ram
     # a1 = char* in rom
@@ -52,16 +62,16 @@ util_strcomp_ram_rom:
     util_strcomp_ram_rom_loop:
         lb t0, a0, t2 # load *char w/ cnt as offset
         lbrom t1, a1, t2 # load *char w/ cnt as offset
-        neq util_strcomp_ram_rom_neq, t0, t1
+        ne util_strcomp_ram_rom_ne, t0, t1
         util_strcomp_ram_rom_char_eq:
-           neq util_strcomp_ram_rom_char_eq_exit, t0, '\0'
-           neq util_strcomp_ram_rom_char_eq_exit, t1, '\0'
+           ne util_strcomp_ram_rom_char_eq_exit, t0, '\0'
+           ne util_strcomp_ram_rom_char_eq_exit, t1, '\0'
            mov rv, TRUE
            ret
         util_strcomp_ram_rom_char_eq_exit:
         inc t2
         jmp util_strcomp_ram_rom_loop
-    util_strcomp_ram_rom_neq:
+    util_strcomp_ram_rom_ne:
         mov rv, FALSE
         ret
 
@@ -76,9 +86,14 @@ util_strcomp_ram_rom:
 .const MONTHS_PTR_MEM_LOC = 6152
 .const YEARS_PTR_MEM_LOC = 6153
     init_os:
+        call subr_init_heap
         call subr_init_os_draw_bottom_line # perhaps inline
         call subr_init_day_month_year      # initialize dates (static/non updated until restart) -> note: may cause inaccuracies
         ret
+        subr_init_heap:
+            lea t0, TOP_OF_HEAP_PTR
+            sw t0, STARTING_HEAP_PTR_VALUE
+            ret
         subr_init_os_draw_bottom_line:
             clr s2 # cnt & index
             subr_init_os_draw_bottom_line_loop:

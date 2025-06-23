@@ -31,7 +31,7 @@ namespace preprocess {
             LOG_ERR("ERROR: Could not open .asm file for preprocessing: " + fullPath);
             return;
         }
-        LOG("Successfully opened .asm file: " + fullPath + " for preprocessing");
+        LOG("Successfully opened .asm file: " + fullPath + " for building contents");
         std::ifstream file(fullPath, std::ios::in | std::ios::binary);
         contents = std::string((std::istreambuf_iterator<char>(file)),
                                std::istreambuf_iterator<char>());
@@ -77,7 +77,7 @@ namespace preprocess {
             LOG_ERR("ERROR: Could not open .asm file for preprocessing: " << path);
             return {};
         }
-        LOG("Successfully opened .asm file: " + path);
+        LOG("Successfully opened .asm file: " + path + " for preprocessing.");
 
         std::string buffer((std::istreambuf_iterator<char>(file)),
                            std::istreambuf_iterator<char>());
@@ -99,7 +99,6 @@ namespace preprocess {
         };
         std::string revisedMainFile{};
         std::string currentStr{};
-
         int newIncludesInThisFile = 0;
         for (const char& c : buffer) {
             charsThisLine++;
@@ -163,10 +162,10 @@ namespace preprocess {
 
         if (std::find(includes.begin(), includes.end(), tkn) == includes.end()) {
             includes.push_back(tkn);
-            LOG("Successfully added " + fullPath + " to includes");
+            LOG("ADDED " + fullPath + " to includes");
             return true;
         } else {
-            LOG(fullPath + " already present in includes");
+            LOG("DID NOT ADD " + fullPath + " -> already present in includes");
             return false;
         }
     }

@@ -19,6 +19,7 @@
 #include <SDL2/SDL.h>
 
 //macros
+//#define DEBUG_MODE
 #ifdef DEBUG_MODE
   #define LOG(x) std::cout << x << std::endl
 #else
@@ -99,8 +100,8 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     //std::cout << "Bottom of stack: \n";
     //cpu.printSectionOfRam(startingAddr, numBytes, true);
     std::cout << "=====================" << std::endl;
-    std::cout << "CONSOLE BUFFER" << std::endl;
-    startingAddr = 18433;
+    std::cout << "FIRST 512 BYTES OF HEAP" << std::endl;
+    startingAddr = isa::STARTING_HEAP_PTR_VALUE;
     numBytes = 512;
     cpu.printSectionOfRam(startingAddr, numBytes, true);
     std::cout << "Total cycles: " << clock.getCycles() << std::endl;
@@ -718,12 +719,12 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             break;
         }
         case(isa::Opcode_E::JAL): {
-            writeback(isa::RA_INDEX, pc + 8); //set ra to next instruction
+            writeback(isa::RA_REGISTER_INDEX, pc + 8); //set ra to next instruction
             jumpTo(dest);
             break;
             }
         case(isa::Opcode_E::RETL): {
-            jumpTo(genRegs[isa::RA_INDEX].val); //ra = r15
+            jumpTo(genRegs[isa::RA_REGISTER_INDEX].val); //ra = r15
             break;
         }
         default: {

@@ -762,7 +762,7 @@ namespace assembly {
                 if (inText) currentLine_TEXT.push_back(tkn);
                 if (inData) currentLine_DATA.push_back(tkn);
             } else {
-                LOG("IGNORED A TOKEN TYPE (2nd pass):" + toString(tkn.type));
+                //LOG("IGNORED A TOKEN TYPE (2nd pass):" + toString(tkn.type));
             }
         }
         //handle hanging lines
