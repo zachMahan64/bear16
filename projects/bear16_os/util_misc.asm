@@ -38,12 +38,12 @@ util_strcomp_ram_rom:
 util_strlen_ram:
     # a0 = char*
     # ~> rv = string length (not including '\0')
-    mov t0, a0
+    clr t0 # counter
     util_strlen_ram_loop:
-        lb t1, t0 # *currentChar
+        lb t1, a0, t0 # load *[currentChar + t0/counter]
         eq util_strlen_ram_hit_null_term, t1, '\0'
         inc t0
         jmp util_strlen_ram_loop
     util_strlen_ram_hit_null_term:
-        mov rv, t1
+        mov rv, t0
         ret

@@ -16,9 +16,7 @@ namespace isa {
     static constexpr size_t TOP_OF_HEAP_PTR = 6656;
     static constexpr size_t STARTING_HEAP_PTR_VALUE = 16384;
 
-    static constexpr size_t FREE_LIST_START_ADDRESS = 6558;
-    static constexpr size_t FREE_LIST_END_ADDRESS = FREE_LIST_START_ADDRESS + 1024;
-
+    static constexpr size_t FREE_LIST_HEAD_LOC = 6558;
 
     static constexpr uint16_t MIO_STRT = 6144;
     static constexpr uint16_t KEY_IO_MEM_LOC = MIO_STRT;
@@ -103,11 +101,6 @@ enum class Opcode_E : uint16_t {
         JAL       = 0x004B,   // Jump and link
         RETL      = 0x004C,   // Ret from link (in ra)
         RETT      = 0x004D,   // Ret from trap
-        //Video
-        CLRFB  = 0x0080,  // clear framebuffer
-        SETPX  = 0x0081,  // set pixel at (X,Y), dest = 0/1
-        BLIT   = 0x0082   // block image transfer: destAddr, srcAddr, byteCount
-        //add BLITCHAR support which reads from an ASCI based font ROM
     };
 };
 

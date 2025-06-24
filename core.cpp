@@ -309,7 +309,6 @@ void CPU16::performOp(const parts::Instruction &instr, uint16_t src1Val, uint16_
     bool const isCond  = op14 < 0x0020;
     bool const isDataTrans  = op14 < 0x0040;
     bool const isCtrlFlow = op14 < 0x0080;
-    bool const isVid = op14 < 0x0100;
     if (isArith) {
         doArith(op14, src1Val, src2Val, dest);
     } else if (isCond) {
@@ -319,8 +318,6 @@ void CPU16::performOp(const parts::Instruction &instr, uint16_t src1Val, uint16_
         doDataTrans(instr, src1Val, src2Val);
     } else if (isCtrlFlow) {
         doCtrlFlow(instr, src1Val, src2Val);
-    } else if (isVid) {
-        //fn
     } else {
         std::cout << "ERROR: Unknown op14, trace to performOp | op14: " << std::hex << std::setw(4) << std::setfill('0') << op14 << std::endl;
         std::cout << "op14: " << std::to_string(op14) << std::endl;

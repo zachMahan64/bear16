@@ -284,19 +284,7 @@ namespace assembly {
     "retl",
     "retli",
     "retli1",
-    "retli2",
-    "clrfb",
-    "clrfbi",
-    "clrfbi1",
-    "clrfbi2",
-    "setpx",
-    "setpxi",
-    "setpxi1",
-    "setpxi2",
-    "blit",
-    "bliti",
-    "bliti1",
-    "bliti2",};
+    "retli2",};
     const std::unordered_map<std::string, uint16_t> namedOperandToBinMap = {
         // temporaries (volatile)
         {"r0", 0}, {"t0", 0},
@@ -419,10 +407,8 @@ namespace assembly {
         {"jcond_neg", isa::Opcode_E::JCOND_NEG}, {"jcond_nneg", isa::Opcode_E::JCOND_NNEG},
         {"jcond_pos", isa::Opcode_E::JCOND_POS}, {"jcond_npos", isa::Opcode_E::JCOND_NPOS},
         {"nop", isa::Opcode_E::NOP}, {"hlt", isa::Opcode_E::HLT}, {"jal", isa::Opcode_E::JAL},
-        {"retl", isa::Opcode_E::RETL},
-
-        // Video
-        {"clrfb", isa::Opcode_E::CLRFB}, {"setpx", isa::Opcode_E::SETPX}, {"blit", isa::Opcode_E::BLIT}};
+        {"retl", isa::Opcode_E::RETL}
+};
     const std::unordered_map<isa::Opcode_E, int> opcodeToOperandMinimumCountMap = {
         // Arith & Bitwise
 {isa::Opcode_E::ADD, 3}, {isa::Opcode_E::SUB, 3}, {isa::Opcode_E::MULT, 3},
@@ -458,10 +444,7 @@ namespace assembly {
         {isa::Opcode_E::JCOND_NEG, 1}, {isa::Opcode_E::JCOND_NNEG, 1},
         {isa::Opcode_E::JCOND_POS, 1}, {isa::Opcode_E::JCOND_NPOS, 1},
         {isa::Opcode_E::NOP, 0}, {isa::Opcode_E::HLT, 0}, {isa::Opcode_E::JAL, 1},
-        {isa::Opcode_E::RETL, 0},
-
-        // Video
-        {isa::Opcode_E::CLRFB, 0}, {isa::Opcode_E::SETPX, 3}, {isa::Opcode_E::BLIT, 3}
+        {isa::Opcode_E::RETL, 0}
     };
     const std::unordered_set<isa::Opcode_E> opCodesWithOptionalSrc2OffsetArgument = {
         isa::Opcode_E::LW,
@@ -518,7 +501,6 @@ namespace assembly {
             {"call", 0x0040}, {"ret", 0x0041}, {"jmp", 0x0042}, {"jcond_z", 0x0043},
             {"jcond_nz", 0x0044}, {"jcond_neg", 0x0045}, {"jcond_nneg", 0x0046}, {"jcond_pos", 0x0047},
             {"jcond_npos", 0x0048}, {"nop", 0x0049}, {"hlt", 0x004A}, {"jal", 0x004B}, {"retl", 0x004C},
-            {"clrfb", 0x0080}, {"setpx", 0x0081}, {"blit", 0x0082},
         };
 
         std::vector<std::string> immSuffixes = {"", "i", "i1", "i2"};

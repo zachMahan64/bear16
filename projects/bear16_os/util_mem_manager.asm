@@ -5,20 +5,21 @@
 .text
 .const TOP_OF_HEAP_PTR = 6656
 .const STARTING_HEAP_PTR_VALUE = 16384
-.const FREE_LIST_START_ADDRESS = 6558
-.const FREE_LIST_END_ADDRESS   = 7582   # = FREE_LIST_START_ADDRESS + 1024
-.const FREE_LIST_SIZE = 1024
+.const FREE_LIST_HEAD_LOC = 6558
+
+.const NULL = 0
+
 util_init_free_list:
-    mov a0, FREE_LIST_START_ADDRESS
-    mov a1, FREE_LIST_SIZE
-    call util_ralloc
+    lea t0, FREE_LIST_HEAD_LOC
+    sw t0, NULL
     ret
 
 # HEAP ALLOCATION FUNCTIONS
-util_malloc:  #NOTE: VERY UNOPTIMIZED CURRENTLY, replace free list w/ linked list at some point
+util_malloc:  #LINKED FREE LIST NOT YET IMPLEMENTED
     # reserves a0 + 2 bytes and then store size in the base & return the ptr just above the base
     # a0 = num bytes
     lw t0, TOP_OF_HEAP_PTR
+    util_malloc_hit_in_free_list_exit:
     sw t0, a0 # save size to base of the allocated
     add t0, t0, 2 # move store ptr (t0) forward
     mov rv, t0 # base of the allocated memory + 2, where the allocated mem data starts -> return this!
@@ -30,23 +31,22 @@ util_malloc:  #NOTE: VERY UNOPTIMIZED CURRENTLY, replace free list w/ linked lis
     lea t2, TOP_OF_HEAP_PTR
     sw t2, t1 # store new top of heap value
     ret
-    subfunc_util_malloc_search_free_list:
+    util_malloc_traverse_free_list:
+        lea t0, FREE_LIST_HEAD_LOC
 
-
-util_free: #NOTE: VERY UNOPTIMIZED CURRENTLY, replace free list w/ linked list at some point
-    # a0 = ptr to memory chunk
-    lw t0, a0 #load memory size
-    mov t1, FREE_LIST_START_ADDRESS # cnt/ptr to addr in FREE LIST
-    util_free_loop:
-        lw t2, t1 # deference value in list
-        eq util_free_found_room_in_list, t2, 0 # jump if found an empty entry
-        add t1, t1, 2 #increment t0 by a word to cycle through the list cleanly & faster
-        lt util_free_loop, t1, FREE_LIST_END_ADDRESS
-        # MEMORY ERROR -> NO ROOM IN FREE LIST
-        ret
-        util_free_found_room_in_list:
-            sw a0, t0
-            ret
+util_free: # WIP, BUILD W/ LINKED FREE LIST (NO COALESENCE YET)
+    # a0 = pointer to memory data (from a malloc return)
+    # block layout:
+    #   [a0 - 2] = size
+    #   [a0    ] = data
+    # we insert [a0 - 2] into free list
+    # LINK STRUCT: {WORD: SIZE, WORD: NEXT*}
+    sub t0, a0, 2               # t0 = start of block (where header begins)
+    lw t1, FREE_LIST_HEAD_LOC   # t1 = old head of free list
+    sw t0, 2, t1                # store old head into new block’s NEXT*
+    lea t2, FREE_LIST_HEAD_LOC
+    sw t2, t0                   # set free list head to this block
+    ret
 
 util_ralloc:
     # !!! REGION ALLOC, does not adjust TOP_OF_HEAP_PTR -> this function is dangerous altough useful in priveledged...

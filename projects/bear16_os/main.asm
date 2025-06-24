@@ -10,6 +10,5 @@ start:
     call init_os
     call print_welcome_msg
     call console_main
-    #mov a0, s1 # move into s1 line ptr into line arg
     #call text_editor_main
     hlt

@@ -15,20 +15,17 @@ con_name:
 console_main:
     #LOCAL REG CONV: s3 = PTR TO CHAR IN CURRENT BUFFER (virtual cursor)
     .const FIRST_BUF_PTR_OFFS = -2     # (1st push)
-    .const NUM_BUFFERS_ALLOC_OFFS = -4 # (2nd push)
     call con_init
     push rv # save FIRST_BUF_PTR
-    push 0  # init NUM_BUFFERS_ALLOC
     con_main_loop:
         call os_update
         call con_get_line
-        lw t0, fp, NUM_BUFFERS_ALLOC_OFFS
-        inc t0
-        sw fp, NUM_BUFFERS_ALLOC_OFFS, t0
         mov a0, rv # rv -> a0 = ptr to start of line buffer
-        call con_process_line #just echoes right now, no command resolution
+        call con_process_line #just echoes right now, no command dispatch (yet)
+        # either free(line buffer*) or save it in some other data structure for basic archiving
         jmp con_main_loop
     ret
+
 con_init:
     # rv = ptr to first buffer
     #init starting line
@@ -37,6 +34,7 @@ con_init:
     call util_get_top_of_heap_ptr
     # reuse rv from the get call
     ret
+
 con_print_cname:
     call check_to_scroll
     mov a0, s1 # line
@@ -45,16 +43,15 @@ con_print_cname:
     mov s10, TRUE         # bool updateCursor
     call blit_strl_rom
     ret
+
 con_get_line:
     call check_to_scroll
-
     # ALLOCS a new BUFFER, save ptr as a local var and initialize s3 (virtual cursor) to it
     mov a0, CON_BUFFER_SIZE # malloc num bytes
     call util_malloc # reserve buffer memory
     mov s3, rv #get the ptr to the buffer from good ol malloc
     .const BUFFER_START_PTR_OFFS = -2
     push rv # push BUFFER_START_PTR_OFFS -> offset = -2
-
     call con_print_cname # WIP, later print username
     con_get_line_loop:
     call os_update

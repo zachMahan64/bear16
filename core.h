@@ -48,7 +48,6 @@ class CPU16 {
     void doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest);
     void doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val);
     void doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val);
-    void doVid(uint16_t op14, uint16_t src1Val, uint16_t src2Val);
     void writeback(uint16_t dest, uint16_t val);
     [[nodiscard]] uint16_t fetchByteAsWordFromRam(uint16_t addr) const;
     [[nodiscard]] uint8_t fetchByteFromRam(uint16_t addr) const;
