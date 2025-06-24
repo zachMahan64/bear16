@@ -1,4 +1,4 @@
-#CONSOLE.ASM (WIP)
+# CONSOLE.ASM (WIP)
 # REG CONV: Overload s10 to a3 & s9 to a4, {s0 = index ptr, s1 = line ptr} -> for cursor
 @include "os_core.asm"
 @include "text_editor_app.asm"    #WIP, for booting up later
@@ -7,7 +7,7 @@
 .data
 .const CON_STRT_LINE = 3
 .const CON_BUFFER_STRT = 18433
-.const CON_BUFFER_SIZE = 64 # ~ thisNum/32 = approx num lines not that safe -> increase later, currently overflow works fine just overwrites
+.const CON_BUFFER_SIZE = 62 # ~ thisNum/32 = approx num lines not that safe -> increase later, currently overflow works fine just overwrites
                             #   anything that goes over 64 after the next line is malloc'd
 con_name:
     .string "B16->"
@@ -33,9 +33,9 @@ con_init:
     # rv = ptr to first buffer
     #init starting line
     mov s1, CON_STRT_LINE
-    mov a0, 0
-    call util_malloc #blank malloc call to get the ptr to first buffer
-    # reuse rv from the malloc call
+    #mov a0, 0
+    call util_get_top_of_heap_ptr
+    # reuse rv from the get call
     ret
 con_print_cname:
     call check_to_scroll
@@ -106,7 +106,6 @@ con_get_line:
                     lea t7, nonalpha_shift_map
                 ssubr_con_nonalpha_shift_loop:
                     lbrom t8, t7
-                    mov s6, t7 # debug
                     eq ssubr_con_nonalpha_shift_hit, a2, t8
                     add t7, t7, 2
                     jmp ssubr_con_nonalpha_shift_loop
@@ -118,11 +117,9 @@ con_get_line:
         subr_con_backspace:
             #BUFFER WRITE----------------#
             sb s3, '\0' # pop char
-
+            dec s3
             jmp subr_clamp_cursor
             clamp_backspace_exit:
-
-            dec s3
             #----------------------------#
             #clear @ current spot
             mov a0, s1  # line ptr
@@ -157,7 +154,7 @@ con_get_line:
             #BUFFER WRITE----------------#
             sb s3, '\t' # store char
 
-            #jmp subr_clamp_cursor
+            jmp subr_clamp_cursor
             clamp_tab_exit:
 
             inc s3
@@ -180,26 +177,33 @@ con_get_line:
             uge subr_clamp_cursor_overflow, t0, TOP_OF_BUFFER_CLAMP_VAL
             
             lb t1, s3 # load char at top of buffer to determine subr exit
-                eq clamp_backspace_exit, t1, 0 # for backspace
-                eq clamp_tab_exit, t1, '9'       # for tab
+                eq clamp_backspace_exit, s2, 8 # for backspace, check last key press, not top of char buffer
+                eq clamp_tab_exit, t1, '9'     # for tab,
                 jmp clamp_norm_char_exit
             subr_clamp_cursor_underflow:
                 #clear buff
                 inc s3
+
                 jmp con_get_line_loop
             subr_clamp_cursor_overflow:
                 #clear buff
                 lb t1, s3
                 eq clamp_tab, t1, 9       # for tab
-                dec s3
+                    # clear cursor
                     mov a0, s1  # line ptr
                     mov a1, s0  # index ptr
                     mov a2, ' ' # space for blank
                     call blit_cl
+                dec s3
                 dec s1
                 mov s0, 31
                 jmp con_get_line_loop
             clamp_tab:
+                    #clear cursor
+                    mov a0, s1  # line ptr
+                    mov a1, s0  # index ptr
+                    mov a2, ' ' # space for blank
+                    call blit_cl
                 dec s3
                 dec s1
                 mov s0, 31

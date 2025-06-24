@@ -5,7 +5,6 @@
 @include "console.asm" # console (implements OS)
 @include "text_editor_app.asm" # application
 
-
 .text
 start:
     call init_os

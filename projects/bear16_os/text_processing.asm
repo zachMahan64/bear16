@@ -101,6 +101,7 @@ nonalpha_shift_map: # we use this for linear look ups
 
 #Framebuffer constants
 .const FB_LOC = 0
+.const FB_SIZE = 6144
 .const LINE_SIZE = 256
 .const TILE_MAP_SIZE = 256
 .const LINE_WIDTH_B = 32
