@@ -170,7 +170,7 @@ con_get_line:
             #clamp to preserve cname and <2 lines
             lw t0, fp, BUFFER_START_PTR_OFFS # access local var BUFFER_START_PTR_OFFS
             sub t0, s3, t0 # t0 = BUFFER TOP - BUFFER START
-            .const TOP_OF_BUFFER_CLAMP_VAL = 59 # = 64 - 5 = CON_BUFFER_SIZE - LENGTH OF CNAME
+            .const TOP_OF_BUFFER_CLAMP_VAL = 58 # = 64 - 5 = CON_BUFFER_SIZE - LENGTH OF CNAME
             lt subr_clamp_cursor_underflow, t0, 0
             uge subr_clamp_cursor_overflow, t0, TOP_OF_BUFFER_CLAMP_VAL
             
@@ -193,8 +193,7 @@ con_get_line:
                     mov a2, ' ' # space for blank
                     call blit_cl
                 dec s3
-                dec s1
-                mov s0, 31
+                mov s0, 30
                 jmp con_get_line_loop
             clamp_tab:
                     #clear cursor
@@ -253,7 +252,7 @@ con_err_str:
 con_process_line:
     # a0 = ptr to start of line buffer
     push a0 # save
-    #call con_success     # reuse a0 here
+    call con_success     # reuse a0 here
     inc s1
     pop a0 # use saved
     call con_echo
