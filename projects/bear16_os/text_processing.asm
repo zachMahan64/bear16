@@ -197,8 +197,8 @@ blit_strl_ram:
         add s1, a0, 1 # set line ptr to end of strl + 1
         clr s0        # set index ptr 0 (start of line)
         jmp bstrl_ram_do_update_cursor_exit
-# NUMBER BLITING
 
+# NUMBER BLITING
 blit_2dig_pint:
         # a0 = line, a1 = index, a2 = num
         div t0, a2, 10 # tens digit

@@ -2,11 +2,10 @@
 .data
 cmd_table:
     # char*, label to call
-    .word cmd_t_str_0, 1 #some label
-    .word cmd_t_str_1, 1 #some label
+    .word cmdt_echo, con_echo
+    .word cmdt_test, con_test
 cmd_table_strings:
-    cmd_t_str_0:
-        .string "Hi."
-    cmd_t_str_1:
-        .string "Hello!"
-
+    cmdt_echo:
+        .string "echo"
+    cmdt_test:
+        .string "test"

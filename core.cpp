@@ -44,7 +44,7 @@ int Board::run() {
     //init clock & SDL2 timings
     static constexpr int LOOP_SPEED_HZ = 200000;           // estimated from SDL2 bottleneck, calibrated for 36 MHz
     static constexpr long long TARGET_CLOCK_SPEED_HZ = 36000000; // overall target clock speed
-    static constexpr int STEPS_PER_LOOP = TARGET_CLOCK_SPEED_HZ / LOOP_SPEED_HZ;
+    static constexpr long STEPS_PER_LOOP = TARGET_CLOCK_SPEED_HZ / LOOP_SPEED_HZ;
     SDL_Event e;
     clock.resetCycles(); //set clock cycles to zero @ the start of a new process
     clock.initMemMappedTime();
@@ -103,7 +103,7 @@ void Board::printDiagnostics(bool printMemAsChars) const {
         std::cout << sram.at(i);
     }
     std::cout << "\n=====================" << std::endl;
-    uint16_t startingAddr = 6100;
+    uint16_t startingAddr = 0;
     uint16_t numBytes = 100;
     cpu.printSectionOfRam(startingAddr, numBytes, printMemAsChars);
     //startingAddr = 64000;

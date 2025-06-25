@@ -21,8 +21,10 @@ console_main:
         call os_update
         call con_get_line
         mov a0, rv # rv -> a0 = ptr to start of line buffer
+        push rv # save ptr to start of line buffer
         call con_process_line #just echoes right now, no command dispatch (yet)
-        # either free(line buffer*) or save it in some other data structure for basic archiving
+        pop a0 #retrieve  ptr to start of line buffer into a0
+        call util_free # maybe save this in some other data structure for basic archiving instead of freeing
         jmp con_main_loop
     ret
 
@@ -36,7 +38,6 @@ con_init:
     ret
 
 con_print_cname:
-    call check_to_scroll
     mov a0, s1 # line
     mov a1, 0             # index
     mov a2, con_name      # char*
@@ -291,4 +292,6 @@ con_echo:
     pop a2 # retrieve ptr
     mov s10, TRUE #update cursor
     call blit_strl_ram #blitting a str
+    ret
+con_test:
     ret
