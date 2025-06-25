@@ -41,7 +41,7 @@ class CPU16 {
     parts::GenRegister  stackPtr = parts::GenRegister(isa::MAX_UINT_16BIT); //sp stacks at end of RAM for downward growth
     parts::GenRegister  framePtr = parts::GenRegister(isa::MAX_UINT_16BIT);
     parts::GenRegister  trapRetAddr = parts::GenRegister(isa::MAX_UINT_16BIT);
-    uint64_t fetchInstruction() const;
+    [[nodiscard]] uint64_t fetchInstruction() const;
     void execute(parts::Instruction instr);
     void performOp(const parts::Instruction &instr, uint16_t src1Val, uint16_t src2Val);
     void doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest);

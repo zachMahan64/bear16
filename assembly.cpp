@@ -1305,7 +1305,7 @@ namespace assembly {
         } else if (operands.size() == 2) {
             dest = operands.at(0);
             src1 = operands.at(1);
-        } else if (operands.size() == 1 && opE == isa::Opcode_E::PUSH) {
+        } else if (operands.size() == 1 && (opE == isa::Opcode_E::PUSH || opE == isa::Opcode_E::CALL)) {
             src1 = operands.at(0);
         } else if (operands.size() == 1) {
             dest = operands.at(0);

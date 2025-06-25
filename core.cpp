@@ -53,6 +53,7 @@ int Board::run() {
     constexpr double TARGET_FRAME_TIME = 1.0 / 60.0; // 60 FPS,
     uint64_t lastFrameTime = SDL_GetPerformanceCounter();
     const uint64_t freq = SDL_GetPerformanceFrequency();
+
     do {
         while (SDL_PollEvent(&e)) {
             switch (e.type) {
@@ -87,9 +88,11 @@ int Board::run() {
             clock.incMemMappedTime(); //updates VM real-time
         }
     } while (cpu.isHalted == false);
+
     auto endTime = currentTimeMillis();
     auto elapsedMillis = static_cast<double>(endTime - startTime);
     calcClockSpeedHz(elapsedMillis);
+
     return exitCode;
 }
 void Board::printDiagnostics(bool printMemAsChars) const {
@@ -669,7 +672,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             // New FP points to old FP
             framePtr = stackPtr;
             // jump to function
-            jumpTo(dest);
+            jumpTo(src1Val);
             break;
         }
         case(isa::Opcode_E::RET): {

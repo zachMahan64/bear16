@@ -252,10 +252,12 @@ con_err_str:
 con_process_line:
     # a0 = ptr to start of line buffer
     push a0 # save
-    call con_success     # reuse a0 here
+    #call con_success     # reuse a0 here
     inc s1
     pop a0 # use saved
     call con_echo
+    #reuse a0
+    #call console_dispatch_main
     ret
 con_success:
     call check_to_scroll
@@ -282,7 +284,6 @@ con_error:
 con_echo:
     # a0 = ptr to start of line buffer
     push a0 # save that ptr
-    push a0
     # reuse a0
     call check_to_scroll_using_strlen
     call con_print_cname
