@@ -31,7 +31,7 @@ console_dispatch_main: # currently just echos
     console_dispatch_main_loop: # WIP
     ret
 .const CMD_MAX_SIZE = 17 # including '/0'
-.const CMD_MAX_SIZE_WO_NULL_TERM = 16
+.const CMD_MAX_SIZE_WO_NULL_TERM = 15
 cd_isolate_cmd:
     # a0 = char* to orig buffer
     # ~ rv = char* to cmd
@@ -44,15 +44,15 @@ cd_isolate_cmd:
     clr t3 # cnt, use as offset!
     cd_isolate_cmd_loop:
         lb t1, t0, t3 # load char into t1 w/ offset of t3
-
+        inc s7 # TODO
         eq cd_isolate_cmd_ret, t1, '\0' # break if we hit a null terminator
-        ge cd_isolate_cmd_ret, t3, CMD_MAX_SIZE_WO_NULL_TERM
+        uge cd_isolate_cmd_ret, t3, CMD_MAX_SIZE_WO_NULL_TERM
         sb t2, t3, t1 # save char in t1 into addr in t2 w/ offset of t3
         inc t3
         ne cd_isolate_cmd_loop, t1, ' ' #loop until we hit a space/' '
-    #reuse rv (ptr to start of cmd from malloc)
-    sb t2, t3, 0   # null terminate
     cd_isolate_cmd_ret:
+    sb t2, t3, 0   # null terminate
+    #reuse rv (ptr to start of cmd from malloc)
     ret
 
 cd_isolate_args:
