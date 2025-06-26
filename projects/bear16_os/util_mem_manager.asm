@@ -45,12 +45,14 @@ util_malloc:  #LINKED FREE LIST WIP, NONSPLITTING/COALESCING
         mov t4, NULL # prev*
         util_malloc_traverse_free_list_loop:
         lw t1, t0 # get curr*
+        eq ret_null, t1, NULL
         lw t2, t1 # get *curr (*curr = curr.size)
         ge util_malloc_traverse_free_list_suitable_size_found, t2, a0 # hit if curr.size >= desired size
         add t3, t2, 2 # move t3 to view curr->next
         lw t0, t3 # load addr of curr->next into t0
         mov t4, t1 # set prev* = this curr*
         ne util_malloc_traverse_free_list_loop, t1, NULL # loop if curr != NULL
+        ret_null:
         mov rv, 0 # else return NULL
         ret
         util_malloc_traverse_free_list_suitable_size_found:

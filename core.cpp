@@ -771,14 +771,14 @@ uint16_t CPU16::getValInReg(uint16_t reg) const {
     uint16_t regVal = 0;
     if (reg < NUM_GEN_REGS) {
         regVal = genRegs[reg].val;
-    } else if (reg < NUM_GEN_REGS + NUM_IO) {
-        regVal = inps[reg - NUM_GEN_REGS];
     } else if (reg == 0x001D) {
         regVal = stackPtr.val;
     } else if (reg == 0x001E) {
         regVal = framePtr.val;
     } else if (reg == 0x001F) {
         regVal = pc;
+    }  else if (reg < NUM_GEN_REGS + NUM_IO) {
+        regVal = inps[reg - NUM_GEN_REGS];
     } else {
         std::cout << "ERROR: Unknown dest when getValInReg:" << reg << std::endl;
     }
