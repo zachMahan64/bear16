@@ -16,8 +16,10 @@ util_malloc:  #LINKED FREE LIST WIP, NONSPLITTING/COALESCING
     # reserves a0 + 2 bytes and then store size in the base & return the ptr just above the base
     # a0 = num bytes
     call util_malloc_traverse_free_list # reuse a0
+    lt util_malloc_bump_top_of_heap, rv, 16384 # free list corruption -> do our best to not break everything
     ne util_malloc_hit_in_free_list, rv, 0 # return & reuse rv since it already points to the valid mem addr found in free list
     #------BRANCH DIVIDE------#
+    util_malloc_bump_top_of_heap:
     lw t0, TOP_OF_HEAP_PTR # <-- nothing suitable found in free list
     sw t0, a0 # save size to base of the allocated mem
     add t0, t0, 2 # move store ptr (t0) forward
@@ -48,10 +50,10 @@ util_malloc:  #LINKED FREE LIST WIP, NONSPLITTING/COALESCING
         eq ret_null, t1, NULL
         lw t2, t1 # get *curr (*curr = curr.size)
         ge util_malloc_traverse_free_list_suitable_size_found, t2, a0 # hit if curr.size >= desired size
-        add t3, t2, 2 # move t3 to view curr->next
+        add t3, t1, 2 # move t3 to view curr->next
         lw t0, t3 # load addr of curr->next into t0
         mov t4, t1 # set prev* = this curr*
-        ne util_malloc_traverse_free_list_loop, t1, NULL # loop if curr != NULL
+        ne util_malloc_traverse_free_list_loop, t0, NULL # loop if curr != NULL
         ret_null:
         mov rv, 0 # else return NULL
         ret
