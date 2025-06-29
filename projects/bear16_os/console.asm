@@ -251,10 +251,9 @@ con_err_str:
 .text
 con_process_line:
     # a0 = ptr to start of line buffer
-    #call con_success     # reuse a0 here
-    inc s1
     #reuse a0
     call console_dispatch_main
+        inc s1
     ret
 con_success:
     call check_to_scroll
@@ -277,18 +276,35 @@ con_error:
     mov s10, TRUE #update cursor
     call blit_strl_rom #blitting a str
     call check_to_scroll
-    ret #WIP
+    ret
 con_echo:
     # a0 = ptr to start of line buffer
     push a0 # save that ptr
     # reuse a0
     call check_to_scroll_using_strlen
+    inc s1
     call con_print_cname
     mov a0, s1 # line
     mov a1, s0 # index
     pop a2 # retrieve ptr
-    mov s10, TRUE #update cursor
+    mov s10, FALSE #update cursor
     call blit_strl_ram #blitting a str
     ret
 con_test:
+    call con_success
+    ret
+con_cmd_not_found:
+.data
+con_cmd_not_found_str:
+    .string "Error:command not found."
+.text
+    call check_to_scroll
+    inc s1 # increment line
+    call con_print_cname
+    mov a0, s1 # line
+    mov a1, s0 # index
+    mov a2, con_cmd_not_found_str
+    mov s10, TRUE #update cursor
+    call blit_strl_rom #blitting a str
+    call check_to_scroll
     ret

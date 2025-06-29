@@ -2,13 +2,16 @@
 @include "os_core.asm"
 @include "console.asm"
 .data
+.const CMD_TABLE_SIZE = 16
+.const CMD_TABLE_ERR_I_SIZE = 12
 cmd_table:
-    # char*, [label to call]
+    # char*, {label to call/fn ptr}
+    # [4 bytes per entry]
     .word cmdt_echo, con_echo
     .word cmdt_test, con_test
     .word cmdt_help, con_success
     #add more
-    .word NULL, con_error # throw an error if we read the table terminator
+    .word NULL, con_cmd_not_found # throw an error if we read the table terminator
 cmd_table_strings:
     cmdt_echo:
         .string "echo"
@@ -20,19 +23,37 @@ cmd_table_strings:
 # DISPATCHING FUNCTIONS
 console_dispatch_main: # currently just echos
     # a0 = ptr to start of line buffer
+    push a0 #save ptr to line buffer
     # reuse a0
     call cd_isolate_cmd
     push rv # save ptr to command
-    mov a0, rv
-    call con_echo
+    # scope-saved s-register usage
+    lea s5, cmd_table #ptr inside table
+    pop s6 # get ptr to command
+    clr s7 # cnt
+    console_dispatch_main_loop: # WIP
+        mov a0, s6
+        lwrom t1, s5, s7 # dest, srcAddr, srcOffset
+        mov a1, t1
+        ge console_dispatch_main_jumpt, s7, CMD_TABLE_ERR_I_SIZE # if reached null case at const idx -> jump
+        call util_strcomp_ram_rom
+        eq console_dispatch_main_jumpt, rv, TRUE # elif rv == true -> jump
+        add s7, s7, 4 #else jump to next entry
+        jmp console_dispatch_main_loop
+    console_dispatch_main_ret:
     pop a0 # get ptr to command
     call util_free
-
-    lea t0, cmd_table #ptr inside table
-    console_dispatch_main_loop: # WIP
     ret
-.const CMD_MAX_SIZE = 17 # including '/0'
-.const CMD_MAX_SIZE_WO_NULL_TERM = 16
+    console_dispatch_main_jumpt:
+        add t0, s5, 2  # load ptr to jump addr
+        add t0, t0, s7 # "
+        lwrom t3, t0      # deference jump addr ptr
+        pop a0 # get ptr from line buffer back
+        call t3 # call function
+        ret
+
+.const CMD_MAX_SIZE = 9 # including '/0'
+.const CMD_MAX_SIZE_WO_NULL_TERM = 8
 cd_isolate_cmd:
     # a0 = char* to orig buffer
     # ~ rv = char* to cmd

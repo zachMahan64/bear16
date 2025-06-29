@@ -478,7 +478,7 @@ namespace assembly {
                 {TokenType::QWORD_DIR, 4}
     };
     const std::unordered_set<TokenType> validDataTokenTypes {
-        TokenType::HEX, TokenType::BIN, TokenType::DECIMAL, TokenType::CHAR, TokenType::CHAR_SPACE
+        TokenType::HEX, TokenType::BIN, TokenType::DECIMAL, TokenType::CHAR, TokenType::CHAR_SPACE, TokenType::REF
     };
     //tools ----------------------------------------------------------------------------------------------------------------
     void asmMnemonicSetGenerator() {
@@ -779,7 +779,7 @@ namespace assembly {
                     LOG_ERR("WARNING: duplicate label: " + labelName);
                 }
                 labelMap.emplace(labelName, labelValue);
-                LOG("placed label " << labelName << " at " << std::hex << labelValue);
+                LOG("placed label " << labelName << " at " << std::dec << labelValue);
             } else if (firstTkn.type == TokenType::CONST) {
                 try {
                     if (line.size() > 3 && line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
@@ -861,7 +861,7 @@ namespace assembly {
                     int startingByteNum = byteNum;
                     for (const Token &tkn : line) {
                         if (validDataTokenTypes.contains(tkn.type)) {
-                            byteNum += static_cast<int>(dataDirectivesToSizeMap.at(firstTkn.type));
+                            byteNum += static_cast<uint16_t>(dataDirectivesToSizeMap.at(firstTkn.type));
                         }
                     }
                     int byteNumDiff = byteNum - startingByteNum;
@@ -1093,10 +1093,10 @@ namespace assembly {
                 if (tkn.type == TokenType::REF) {
                     if (labelMap.contains(tkn.body)) {
                         revisedDataTokens.emplace_back(std::to_string(labelMap.at(tkn.body)));
-                        LOG(".data: converted raw REF to label-mapped val: " + tkn.body);
+                        LOG(".data: converted raw REF to label-mapped val: " + tkn.body << "=" << labelMap.at(tkn.body));
                     } else if (constMap.contains(tkn.body)) {
                         revisedDataTokens.emplace_back(std::to_string(constMap.at(tkn.body)));
-                        LOG(".data: converted raw REF to const-mapped val: " + tkn.body);
+                        LOG(".data: converted raw REF to const-mapped val: " + tkn.body << "=" << constMap.at(tkn.body));
                     } else {
                         Token fixedStrTkn(tkn.body);
                         fixedStrTkn.type = TokenType::STRING;
