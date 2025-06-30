@@ -6,6 +6,25 @@
 util_stall:
     jmp util_stall
     ret
+util_iter_loop:
+    # a0 = function ptr
+    # a1 = times to execute
+    .const ITER_LOOP_FNPTR_OFFS = -2
+    .const ITER_LOOP_ENDVAL_OFFS = -4
+    .const ITER_LOOP_CNT_OFFS = -6
+    push a0
+    push a1
+    push 0 # reserve & bump sp
+    util_iter_loop_loop:
+        lwrom t0, fp, ITER_LOOP_FNPTR_OFFS
+        lwrom t1, fp, ITER_LOOP_ENDVAL_OFFS
+        lwrom t2, fp, ITER_LOOP_CNT_OFFS
+        uge util_iter_loop_ret, t2, t1
+        inc t2
+        sw fp, ITER_LOOP_CNT_OFFS, t2
+        call t0
+    util_iter_loop_ret:
+        ret
 # FRAMEBUFFER FUNCTIONS
 util_clr_fb:
     mov t0, FB_LOC # cnt/ptr
@@ -13,6 +32,16 @@ util_clr_fb:
         sb t0, 0
         inc t0
         lt util_clr_fb_loop, t0, FB_SIZE
+    ret
+util_clr_fb_by_line_idx:
+    # clear fb by line, up to a certain line index
+    # a0 = line index to stop at
+    mov t0, FB_LOC # cnt/ptr
+    mult t1, LINE_SIZE, a0
+    util_clr_fb_by_line_idx_loop:
+        sb t0, 0
+        inc t0
+        lt util_clr_fb_by_line_idx_loop, t0, t1
     ret
 # STRING FUNCTIONS
 util_strcomp_ram_rom:
@@ -45,5 +74,17 @@ util_strlen_ram:
         inc t0
         jmp util_strlen_ram_loop
     util_strlen_ram_hit_null_term:
+        mov rv, t0
+        ret
+util_strlen_rom:
+    # a0 = char* in rom
+    # ~> rv = string length (not including '\0')
+    clr t0 # counter
+    util_strlen_rom_loop:
+        lbrom t1, a0, t0 # load *[currentChar + t0/counter]
+        eq util_strlen_rom_hit_null_term, t1, '\0'
+        inc t0
+        jmp util_strlen_rom_loop
+    util_strlen_rom_hit_null_term:
         mov rv, t0
         ret

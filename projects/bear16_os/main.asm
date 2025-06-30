@@ -8,7 +8,6 @@
 .text
 start:
     call init_os
-    call print_welcome_msg
     call console_main
     #call text_editor_main
     hlt

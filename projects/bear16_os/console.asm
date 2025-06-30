@@ -29,7 +29,8 @@ console_main:
     ret
 
 con_init:
-    # rv = ptr to first buffer
+    # ~ rv = ptr to first buffer
+    call print_welcome_msg
     #init starting line
     mov s1, CON_STRT_LINE
     #mov a0, 0
@@ -215,13 +216,22 @@ check_to_scroll:
         call con_scroll_once_purely_visual
         dec s1
         ret
-check_to_scroll_using_strlen:
+check_to_scroll_using_strlen_ram:
     # a0 = char*
-    uge check_to_scroll_using_strlen_do_scroll, s1, LINE_REACHED_TO_TRIGGER_SCROLL #check current cursor line
+    uge check_to_scroll_using_strlen_ram_do_scroll, s1, LINE_REACHED_TO_TRIGGER_SCROLL #check current cursor line
     ret
-    check_to_scroll_using_strlen_do_scroll:
+    check_to_scroll_using_strlen_ram_do_scroll:
         #reuse a0
-        call con_scroll_purely_visual_using_strlen
+        call con_scroll_purely_visual_using_strlen_ram
+        dec s1
+        ret
+check_to_scroll_using_strlen_rom:
+    # a0 = char*
+    uge check_to_scroll_using_strlen_rom_do_scroll, s1, LINE_REACHED_TO_TRIGGER_SCROLL #check current cursor line
+    ret
+    check_to_scroll_using_strlen_rom_do_scroll:
+        #reuse a0
+        call con_scroll_purely_visual_using_strlen_rom
         dec s1
         ret
 #DIRECT SCROLLING FUNCTIONS
@@ -231,10 +241,22 @@ con_scroll_once_purely_visual:
     lea t0, FB_LOC
     memcpy FB_LOC, START_FIRST_LINE_IDX, NUM_BYTES_FROM_FIRST_LINE_TO_END_OF_21st
     ret
-con_scroll_purely_visual_using_strlen:
+con_scroll_purely_visual_using_strlen_ram:
     #a0 = char*
     # reuse a0
     call util_strlen_ram
+    mov t1, rv #get length of string!
+    div t1, t1, LINE_WIDTH_B     # LINE_WIDTH_B = 32
+    mult t1, t1, LINE_SIZE   # LINE_SIZE = 256
+    sub t1, NUM_BYTES_FROM_FIRST_LINE_TO_END_OF_21st, t1
+    lea t0, FB_LOC
+    memcpy FB_LOC, START_FIRST_LINE_IDX, t1
+    ret
+
+con_scroll_purely_visual_using_strlen_rom:
+    #a0 = char*
+    # reuse a0
+    call util_strlen_rom
     mov t1, rv #get length of string!
     div t1, t1, LINE_WIDTH_B     # LINE_WIDTH_B = 32
     mult t1, t1, LINE_SIZE   # LINE_SIZE = 256
@@ -281,7 +303,7 @@ con_echo:
     # a0 = ptr to start of line buffer
     push a0 # save that ptr
     # reuse a0
-    call check_to_scroll_using_strlen
+    call check_to_scroll_using_strlen_ram
     inc s1
     call con_print_cname
     mov a0, s1 # line
@@ -296,7 +318,7 @@ con_test:
 con_cmd_not_found:
 .data
 con_cmd_not_found_str:
-    .string "Error:command not found."
+    .string "Error: command not found."
 .text
     call check_to_scroll
     inc s1 # increment line
@@ -307,4 +329,45 @@ con_cmd_not_found_str:
     mov s10, TRUE #update cursor
     call blit_strl_rom #blitting a str
     call check_to_scroll
+    ret
+con_hello_world:
+.data
+con_hello_world_str:
+    .string "Hello, world!"
+.text
+    call check_to_scroll
+    inc s1 # increment line
+    call con_print_cname
+    mov a0, s1 # line
+    mov a1, s0 # index
+    mov a2, con_hello_world_str
+    mov s10, TRUE #update cursor
+    call blit_strl_rom #blitting a str
+    call check_to_scroll
+    ret
+con_help:
+.data
+con_help_str:
+    .string "This section is WIP."
+.text
+    mov a0, con_help_str
+    inc s1 # increment line
+    call con_print_cname
+    mov a0, s1 # line
+    mov a1, s0 # index
+    mov a2, con_help_str
+    mov s10, TRUE #update cursor
+    call blit_strl_rom
+    #.const CON_HELP_TIMES_TO_SCROLL = 3
+    #mov a0, CON_HELP_TIMES_TO_SCROLL
+    #mov a1, con_scroll_once_purely_visual
+    #call util_iter_loop
+    #sub s1, s1, CON_HELP_TIMES_TO_SCROLL
+
+    #call check_to_scroll
+    ret
+con_clear:
+    mov a0, 22
+    call util_clr_fb_by_line_idx # clear entire thing besides OS heads-up display at bottom
+    call con_init
     ret

@@ -2,14 +2,14 @@
 @include "os_core.asm"
 @include "console.asm"
 .data
-.const CMD_TABLE_SIZE = 16
-.const CMD_TABLE_ERR_I_SIZE = 12
 cmd_table:
     # char*, {label to call/fn ptr}
     # [4 bytes per entry]
     .word cmdt_echo, con_echo
     .word cmdt_test, con_test
-    .word cmdt_help, con_success
+    .word cmdt_help, con_help
+    .word cmdt_hello, con_hello_world
+    .word cmdt_clear, con_clear
     #add more
     .word NULL, con_cmd_not_found # throw an error if we read the table terminator
 cmd_table_strings:
@@ -19,6 +19,10 @@ cmd_table_strings:
         .string "test"
     cmdt_help:
         .string "help"
+    cmdt_hello:
+        .string "hello"
+    cmdt_clear:
+        .string "clear"
 .text
 # DISPATCHING FUNCTIONS
 console_dispatch_main: # currently just echos
@@ -35,7 +39,7 @@ console_dispatch_main: # currently just echos
         mov a0, s6
         lwrom t1, s5, s7 # dest, srcAddr, srcOffset
         mov a1, t1
-        ge console_dispatch_main_jumpt, s7, CMD_TABLE_ERR_I_SIZE # if reached null case at const idx -> jump
+        eq console_dispatch_main_jumpt, t1, NULL # if reached null case at const idx -> jump
         call util_strcomp_ram_rom
         eq console_dispatch_main_jumpt, rv, TRUE # elif rv == true -> jump
         add s7, s7, 4 #else jump to next entry
