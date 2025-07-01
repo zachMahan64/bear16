@@ -55,7 +55,7 @@ console_dispatch_main: # currently just echos
         pop a0 # get ptr from line buffer back
         call t3 # call function
         ret
-
+# CMD PARSING
 .const CMD_MAX_SIZE = 9 # including '/0'
 .const CMD_MAX_SIZE_WO_NULL_TERM = 8
 cd_isolate_cmd:
@@ -64,7 +64,6 @@ cd_isolate_cmd:
     push a0 # save char* to orig buffer to t0
     mov a0, CMD_MAX_SIZE # allocate
     call util_malloc
-    wrote_to_fb_exit:
     pop t0 #get char* to orig buffer back
     clr t1 # init curr char to zero
     mov t2, rv #ptr to start of cmd from malloc
@@ -81,9 +80,16 @@ cd_isolate_cmd:
     sb t2, t3, 0   # null terminate
     #reuse rv (ptr to start of cmd from malloc)
     ret
-    wrote_to_fb:
-        mov s7, 77 # flag
-        jmp wrote_to_fb_exit
 cd_isolate_args:
-    #WIP
+.const ARGS_MAX_SIZE = 60
+    # a0 = ptr to start of cmd buffer
+    # ~ rv = ptr to start of newly isolated args buffer
+    push a0 # save char* to orig buffer to t0
+    mov a0, ARGS_MAX_SIZE # allocate
+    call util_malloc
+    pop t0 #get char* to orig buffer back
+    clr t1 # init curr char to zero
+    mov t2, rv #ptr to start of cmd from malloc
+    clr t3 # cnt, use as offset!
+
     ret

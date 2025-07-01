@@ -1,7 +1,6 @@
 #include <iostream>
 #include "assembly.h"
 #include "emu.h"
-
 int main(int argc, char* argv[]) {
     //assembly::asmMnemonicSetGenerator();
     emu::Emulator emulator {};

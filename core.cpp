@@ -841,7 +841,7 @@ Screen::Screen() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cerr << "SDL Init Error: " << SDL_GetError() << std::endl;
     }
-    window.reset(SDL_CreateWindow("CPU16 Display",
+    window.reset(SDL_CreateWindow("Bear16 Display",
                                   SDL_WINDOWPOS_CENTERED,
                                   SDL_WINDOWPOS_CENTERED,
                                   WIDTH * SCALE,

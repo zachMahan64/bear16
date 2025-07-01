@@ -19,6 +19,7 @@ add_executable(cpu_emulator_take_1
         emu.h
         preprocess.cpp
         preprocess.h
+        fixpt_16.h
 )
 
 # Correctly includes SDL headers (e.g., <SDL2/SDL.h> will now work)

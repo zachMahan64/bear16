@@ -1,0 +1,92 @@
+//
+// Created by Zachary Mahan on 7/1/25.
+//
+
+#ifndef FIXED_POINT_16_H
+#define FIXED_POINT_16_H
+
+#include <cstdint>
+#include <type_traits>
+#include <cmath>
+
+struct fixpt8_8_t {
+    int16_t val = 0;
+    //CONSTRUCTORS
+    fixpt8_8_t() = default;
+    fixpt8_8_t(const fixpt8_8_t&) = default;
+    template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+    explicit fixpt8_8_t(T input) {
+        val = static_cast<int16_t>(std::round(input * 256.0));
+    }
+    //OPERATORS
+    fixpt8_8_t& operator=(const fixpt8_8_t&) = default;
+
+    template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+    fixpt8_8_t& operator=(T input) {
+        val = static_cast<int16_t>(std::round(input * 256.0));
+        return *this;
+    }
+
+    template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+    fixpt8_8_t operator*(T rhs) const {
+        // promote to int32_t for multiplication
+        const int32_t temp = static_cast<int32_t>(val) * static_cast<int32_t>(rhs * 256.0);
+        return fixpt8_8_t(static_cast<int16_t>(temp >> 8));
+    }
+
+    fixpt8_8_t operator*(const fixpt8_8_t& rhs) const {
+        const int32_t temp = static_cast<int32_t>(val) * rhs.val;
+        return fixpt8_8_t(static_cast<int16_t>(temp >> 8));
+    }
+
+    template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+    fixpt8_8_t operator/(T rhs) const {
+        const int32_t temp = (static_cast<int32_t>(val) << 8) / static_cast<int32_t>(rhs * 256.0);
+        return fixpt8_8_t(static_cast<int16_t>(temp));
+    }
+
+    fixpt8_8_t operator/(const fixpt8_8_t& rhs) const {
+        const int32_t temp = (static_cast<int32_t>(val) << 8) / rhs.val;
+        return fixpt8_8_t(static_cast<int16_t>(temp));
+    }
+
+    template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+    fixpt8_8_t operator+(T rhs) const {
+        return fixpt8_8_t(val + static_cast<int16_t>(rhs * 256.0));
+    }
+
+    fixpt8_8_t operator+(const fixpt8_8_t& rhs) const {
+        return fixpt8_8_t(val + rhs.val);
+    }
+
+    template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+    fixpt8_8_t operator-(T rhs) const {
+        return fixpt8_8_t(val - static_cast<int16_t>(rhs * 256.0));
+    }
+
+    fixpt8_8_t operator-(const fixpt8_8_t& rhs) const {
+        return fixpt8_8_t(val - rhs.val);
+    }
+
+    fixpt8_8_t operator-() const {
+        return fixpt8_8_t(-val);
+    }
+
+    explicit operator float() const {
+        return static_cast<float>(val) / 256.0f;
+    }
+
+    explicit operator uint16_t() const {
+        return val;
+    }
+
+    bool operator==(const fixpt8_8_t& rhs) const { return val == rhs.val; }
+    bool operator!=(const fixpt8_8_t& rhs) const { return val != rhs.val; }
+    bool operator<(const fixpt8_8_t& rhs)  const { return val < rhs.val; }
+    bool operator<=(const fixpt8_8_t& rhs) const { return val <= rhs.val; }
+    bool operator>(const fixpt8_8_t& rhs)  const { return val > rhs.val; }
+    bool operator>=(const fixpt8_8_t& rhs) const { return val >= rhs.val; }
+
+};
+
+#endif //FIXED_POINT_16_H
