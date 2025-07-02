@@ -15,15 +15,15 @@ struct fixpt8_8_t {
     fixpt8_8_t() = default;
     fixpt8_8_t(const fixpt8_8_t&) = default;
     template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-    explicit fixpt8_8_t(T input) {
-        val = static_cast<int16_t>(std::round(input * 256.0));
+    explicit fixpt8_8_t(T inp) {
+        val = static_cast<int16_t>(std::round(inp * 256.0));
     }
     //OPERATORS
     fixpt8_8_t& operator=(const fixpt8_8_t&) = default;
 
     template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
-    fixpt8_8_t& operator=(T input) {
-        val = static_cast<int16_t>(std::round(input * 256.0));
+    fixpt8_8_t& operator=(T inp) {
+        val = static_cast<int16_t>(std::round(inp * 256.0));
         return *this;
     }
 

@@ -5,6 +5,7 @@
 @include "util_misc.asm"
 
 .data
+
 month_str_array:
     .string "JAN"
     .string "FEB"

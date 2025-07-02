@@ -478,7 +478,7 @@ namespace assembly {
                 {TokenType::QWORD_DIR, 4}
     };
     const std::unordered_set<TokenType> validDataTokenTypes {
-        TokenType::HEX, TokenType::BIN, TokenType::DECIMAL, TokenType::CHAR, TokenType::CHAR_SPACE, TokenType::REF
+        TokenType::HEX, TokenType::BIN, TokenType::DECIMAL, TokenType::CHAR, TokenType::CHAR_SPACE, TokenType::REF, TokenType::FIXED_PT
     };
     //tools ----------------------------------------------------------------------------------------------------------------
     void asmMnemonicSetGenerator() {
@@ -561,8 +561,30 @@ namespace assembly {
         bool inString = false;
         bool inChar = false;
         bool inEscapeStr = false;
+        int expressionDepth = 0;
 
         for (char c : buffer) {
+            if (expressionDepth > 0) {
+                if (c == ')') {
+                    currentStr += c;
+                    expressionDepth -= 1;
+                } else if (c == '(') {
+                    currentStr += c;
+                    expressionDepth += 1;
+                } else if (c =='\n') {
+                    LOG_ERR("ERROR: invalid expression (no closing parentheses)");
+                    expressionDepth = 0; //terminate expression
+                } else {
+                    currentStr += c;
+                    continue;
+                }
+                if (expressionDepth == 0) {
+                    Token expressionTkn(currentStr);
+                    expressionTkn.type = TokenType::EXPRESSION;
+                    firstPassTokens.emplace_back(expressionTkn);
+                    currentStr.clear();
+                }
+            }
             if (inEscapeStr) {
                 if (escapeCharMap.contains(c)) {
                     inEscapeStr = false;
@@ -630,6 +652,11 @@ namespace assembly {
                 firstPassTokens.emplace_back(c);
                 continue;
             }
+            if (c == '(') {
+                expressionDepth += 1;
+                currentStr += c;
+                continue;
+            }
             if (c == ' ' || c == '\t' || c == '\n') {
                 if (!currentStr.empty()) {
                     firstPassTokens.emplace_back(currentStr);
@@ -666,6 +693,9 @@ namespace assembly {
         if (!currentStr.empty()) {
             firstPassTokens.emplace_back(currentStr);
         }
+        if (expressionDepth > 0) {
+            LOG_ERR("ERROR: invalid expression (no closing parentheses) at end of asm file");
+        }
 
         std::cout << "First pass tokens:\n";
         for (auto& token : firstPassTokens) {
@@ -692,6 +722,9 @@ namespace assembly {
         bool inData = false;
         int byteIndex  = 0;
         for (const Token &tkn: tokens) {
+            if (tkn.type == TokenType::EXPRESSION) {
+
+            }
             if (tkn.type == TokenType::TEXT) {
                 inText = true;
                 inData = false;
@@ -1185,6 +1218,10 @@ namespace assembly {
             auto hexVal = static_cast<uint16_t>(std::stoi(strBody, nullptr, 10));
             byteVec = convertWordToBytePair(hexVal);
         }
+        else if (tknT == TokenType::FIXED_PT) {
+            fixpt8_8_t fixPt(std::stof(strBody));
+            byteVec = convertWordToBytePair(fixPt.val);
+        }
         else if (tknT == TokenType::BIN) {
             uint16_t hexVal = static_cast<uint16_t>(std::stoi(strBody.substr(2), nullptr, 2));
             byteVec = convertWordToBytePair(hexVal);
@@ -1231,6 +1268,7 @@ namespace assembly {
         else if (std::regex_match(text, std::regex("^0x[0-9A-Fa-f]+$"))) type = TokenType::HEX;
         else if (std::regex_match(text, std::regex("^0b[01]+$"))) type = TokenType::BIN;
         else if (std::regex_match(text, std::regex("^[-+]?[0-9]+$"))) type = TokenType::DECIMAL;
+        else if (std::regex_match(text, std::regex(R"(^[-+]?(\d+(\.\d*)?|\.\d+)$)"))) type = TokenType::FIXED_PT;
         else if (text[0] == '#') type = TokenType::COMMENT;
         else if (text[0] == '\n') type = TokenType::EOL;
         else if (text.length() == 1 && (std::isalpha(text[0]) || std::__format_spec::__is_ascii(text[0]))) type = TokenType::CHAR;
@@ -1253,6 +1291,14 @@ namespace assembly {
             body = "";
             body += '\0';
         }
+    }
+
+    void Token::resolveExpression() {
+        if (type != TokenType::EXPRESSION) {
+            LOG_ERR("ERROR: MISMARKED EXPRESSION: " << body);
+            return;
+        }
+
     }
 
     std::pair<std::string, std::string> splitOpcodeStr(std::string opcodeStr) {
@@ -1385,7 +1431,8 @@ namespace assembly {
             || significantToken.type == TokenType::BIN
             || significantToken.type == TokenType::DECIMAL
             || significantToken.type == TokenType::CHAR
-            || significantToken.type == TokenType::CHAR_SPACE)
+            || significantToken.type == TokenType::CHAR_SPACE
+            || significantToken.type == TokenType::FIXED_PT)
         {
             valueType = ValueType::IMM;
         } else {
@@ -1407,6 +1454,10 @@ namespace assembly {
         }
         if (significantToken.type == TokenType::DECIMAL) {
             return std::stoi(significantBody, nullptr, 10);
+        }
+        if (significantToken.type == TokenType::FIXED_PT) {
+            const fixpt8_8_t fixPt(std::stof(significantBody));
+            return fixPt.val;
         }
         if (significantToken.type == TokenType::BIN) {
             return std::stoi(significantBody.substr(2), nullptr, 2);

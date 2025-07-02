@@ -7,9 +7,11 @@
 #include <unordered_set>
 #include <vector>
 
+#include "assembly.h"
 #include "isa.h"
 #include "parts.h"
 #include "preprocess.h"
+#include "fixpt_16.h"
 
 namespace assembly {
     enum class TokenType;
@@ -98,9 +100,12 @@ namespace assembly {
 
         OPERATION, // mov, add, etc.
 
+        EXPRESSION,
+
         COMMA, // ,
         COLON, //
         DECIMAL, // 10
+        FIXED_PT, // 10.10
         HEX, // 0x1000
         BIN, // 0b1000
         EOL, // end of line
@@ -138,10 +143,12 @@ namespace assembly {
             case TokenType::OPERATION:      return "OPERATION";
             case TokenType::COMMA:          return "COMMA";
             case TokenType::COLON:          return "COLON";
+            case TokenType::EXPRESSION:     return "EXPRESSION";
             case TokenType::DECIMAL:        return "DECIMAL";
             case TokenType::CHAR:           return "CHAR";
             case TokenType::CHAR_SPACE:     return "CHAR_SPACE";
             case TokenType::HEX:            return "HEX";
+            case TokenType::FIXED_PT:       return "FIXED_PT";
             case TokenType::BIN:            return "BIN";
             case TokenType::EOL:            return "EOL";
             case TokenType::COMMENT:        return "COMMENT";
@@ -162,7 +169,7 @@ namespace assembly {
     inline const std::unordered_set<TokenType> validOperandArguments = {
         TokenType::REF, TokenType::STRING, TokenType::GEN_REG, TokenType::SPEC_REG,
         TokenType::IO_PSEUDO_REG, TokenType::DECIMAL, TokenType::HEX, TokenType::BIN,
-        TokenType::CHAR, TokenType::CHAR_SPACE
+        TokenType::CHAR, TokenType::CHAR_SPACE, TokenType::FIXED_PT
     };
 
     class Token{
@@ -179,6 +186,7 @@ namespace assembly {
         }
         static TokenType deduceTokenType(const std::string &text);
         void correctNullChar();
+        void resolveExpression();
     };
     //string to TokenType Map
     inline const std::unordered_map<std::string, TokenType> symbolToTokenMap = {
