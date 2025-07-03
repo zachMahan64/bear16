@@ -11,7 +11,7 @@
 #include "isa.h"
 #include "parts.h"
 #include "preprocess.h"
-#include "fixpt_16.h"
+#include "fixpt8_8_t.h"
 
 namespace assembly {
     enum class TokenType;
