@@ -722,9 +722,6 @@ namespace assembly {
         bool inData = false;
         int byteIndex  = 0;
         for (const Token &tkn: tokens) {
-            if (tkn.type == TokenType::EXPRESSION) {
-
-            }
             if (tkn.type == TokenType::TEXT) {
                 inText = true;
                 inData = false;
@@ -801,6 +798,10 @@ namespace assembly {
         //IMP: MUST UPDATE HERE W/ LABEL RES FOR DATA DIR
         int byteNum  = 0;
         for (std::vector<Token> &line: tokenLines_TEXT_and_DATA) {
+            //nested loop to resolve expressions
+            // if (tkn.type == TokenType::EXPRESSION) {
+            //     //TODO
+            // }
             Token firstTkn = line.at(0);
             if (firstTkn.type == TokenType::OPERATION) {
                 byteNum += 8;

@@ -4,12 +4,3 @@
 
 #include "expr_resolver.h"
 
-void ExprResolver::solve() {
-
-}
-
-void Term::solve() {
-}
-
-void Factor::solve() {
-}

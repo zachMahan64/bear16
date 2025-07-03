@@ -938,7 +938,7 @@ void InputController::handleKeyboardRelease(const SDL_Event &e) const {
             sram[isa::ARROW_KEY_STATE] &= ~ARROW_LEFT_MASK;
             break;
         case SDLK_RIGHT:
-            sram[isa::ARROW_KEY_STATE] &= ~ARROW_LEFT_MASK;
+            sram[isa::ARROW_KEY_STATE] &= ~ARROW_RIGHT_MASK;
             break;
         default: break;
     }
