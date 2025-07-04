@@ -795,13 +795,9 @@ namespace assembly {
             tokenLines_TEXT_and_DATA.push_back(line);
         }
 
-        //IMP: MUST UPDATE HERE W/ LABEL RES FOR DATA DIR
+        //resolve labels
         int byteNum  = 0;
         for (std::vector<Token> &line: tokenLines_TEXT_and_DATA) {
-            //nested loop to resolve expressions
-            // if (tkn.type == TokenType::EXPRESSION) {
-            //     //TODO
-            // }
             Token firstTkn = line.at(0);
             if (firstTkn.type == TokenType::OPERATION) {
                 byteNum += 8;
@@ -814,49 +810,7 @@ namespace assembly {
                 }
                 labelMap.emplace(labelName, labelValue);
                 LOG("placed label " << labelName << " at " << std::dec << labelValue);
-            } else if (firstTkn.type == TokenType::CONST) {
-                try {
-                    if (line.size() > 3 && line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
-                            && (line.at(3).type == TokenType::DECIMAL
-                            || line.at(3).type == TokenType::HEX
-                            || line.at(3).type == TokenType::BIN)
-                            || (line.at(3).type == TokenType::SING_QUOTE
-                                && line.at(4).type == TokenType::CHAR
-                                && line.at(5).type == TokenType::SING_QUOTE))
-                    {
-                        int value = 0;
-                        try {
-                            if (line.at(3).type == TokenType::DECIMAL) {
-                                value = std::stoi(line.at(3).body, nullptr, 10);
-                            } else if (line.at(3).type == TokenType::HEX) {
-                                value = std::stoi(line.at(3).body, nullptr, 16);
-                            } else if (line.at(3).type == TokenType::BIN) {
-                                const auto &body = line.at(3).body;
-                                if (body.rfind("0b", 0) == 0 && body.length() > 2)
-                                    value = std::stoi(body.substr(2), nullptr, 2);
-                                else
-                                    throw std::invalid_argument("Binary constant without 0b prefix");
-                            } else if (line.at(4).type == TokenType::CHAR) {
-                                value = static_cast<int>(line.at(4).body.at(0));
-                            }
-                        } catch (const std::exception &e) {
-                            LOG_ERR("ERROR: bad const value: " << line.at(3).body << " (" << e.what() << ")");
-                            throw;
-                        }
-                        if(auto [it, inserted] = constMap.emplace(line.at(1).body, value); !inserted) {
-                            LOG_ERR("ERROR: duplicate const name: " << line.at(1).body);
-                        }
-                    } else if (line.size() > 1){
-                        std::string complaint = line.at(1).body;
-                        throwAFit(complaint);
-                    } else {
-                        LOG_ERR("ERROR: bad const declaration at line with tokens: " << line.size());
-                    }
-                } catch (std::out_of_range &e) {
-                    LOG_ERR("ERROR: bad const declaration");
-                }
-            }
-            else if (containsValue(stringToDataDirectives, firstTkn.type)) {
+            } else if (containsValue(stringToDataDirectives, firstTkn.type)) {
                 if (firstTkn.type == TokenType::STRING_DIR) {
                     try {
                         if (line.at(1).type == TokenType::DOUB_QUOTE && line.at(line.size()-1).type == TokenType::DOUB_QUOTE) {
@@ -903,6 +857,54 @@ namespace assembly {
                 }
             }
         }
+        //resolve constants and expressions
+        for (std::vector<Token> &line: tokenLines_TEXT_and_DATA) {
+            if (line.at(0).type == TokenType::CONST) {
+                for (const Token &tkn : line) {
+                    //TODO: Scan for expressions to resolve
+                }
+                try {
+                    if (line.size() > 3 && line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
+                            && (line.at(3).type == TokenType::DECIMAL
+                            || line.at(3).type == TokenType::HEX
+                            || line.at(3).type == TokenType::BIN)
+                            || (line.at(3).type == TokenType::SING_QUOTE
+                                && line.at(4).type == TokenType::CHAR
+                                && line.at(5).type == TokenType::SING_QUOTE))
+                    {
+                        int value = 0;
+                        try {
+                            if (line.at(3).type == TokenType::DECIMAL) {
+                                value = std::stoi(line.at(3).body, nullptr, 10);
+                            } else if (line.at(3).type == TokenType::HEX) {
+                                value = std::stoi(line.at(3).body, nullptr, 16);
+                            } else if (line.at(3).type == TokenType::BIN) {
+                                const auto &body = line.at(3).body;
+                                if (body.rfind("0b", 0) == 0 && body.length() > 2)
+                                    value = std::stoi(body.substr(2), nullptr, 2);
+                                else
+                                    throw std::invalid_argument("Binary constant without 0b prefix");
+                            } else if (line.at(4).type == TokenType::CHAR) {
+                                value = static_cast<int>(line.at(4).body.at(0));
+                            }
+                        } catch (const std::exception &e) {
+                            LOG_ERR("ERROR: bad const value: " << line.at(3).body << " (" << e.what() << ")");
+                            throw;
+                        }
+                        if(auto [it, inserted] = constMap.emplace(line.at(1).body, value); !inserted) {
+                            LOG_ERR("ERROR: duplicate const name: " << line.at(1).body);
+                        }
+                    } else if (line.size() > 1){
+                        std::string complaint = line.at(1).body;
+                        throwAFit(complaint);
+                    } else {
+                        LOG_ERR("ERROR: bad const declaration at line with tokens: " << line.size());
+                    }
+                } catch (std::out_of_range &e) {
+                    LOG_ERR("ERROR: bad const declaration");
+                }
+            }
+        }
 
         //debug
         int numLinesInSecondPass = 0;
@@ -918,13 +920,16 @@ namespace assembly {
         }
 
         std::vector<TokenizedRomLine> finalRomLines {};
-        //form instructions or some shit, resolve references
+        //form instructions, resolve references
         int numLines = 0;
         byteIndex  = 0;
         for (const std::vector<Token> &line : tokenLines_TEXT_and_DATA) {
             numLines++;
+            for (const Token &tkn : line) {
+                //TODO: Scan for embedded expressions to resolve
+            }
             if (line.empty()) {
-                continue; //just ignore dat hoe
+                continue; //just ignore
             }
             TokenType firstTknType =  line.at(0).type;
             //lines that should NOT get made into instructions
