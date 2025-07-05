@@ -71,7 +71,7 @@ namespace expr_res {
             }
         }
         result.str = std::to_string(result.raw);
-        LOG_ERR("!!! DEBUG: " << result.raw); //TODO, not working
+        LOG_ERR("!!! DEBUG: " << result.raw); //TODO, not working (probably trace to the exprRes func)
         return result;
     }
 
