@@ -4,6 +4,7 @@
 
 #include "expr_resolver.h"
 
+#include <any>
 #include <iostream>
 #include <__ostream/basic_ostream.h>
 
@@ -14,7 +15,7 @@ namespace expr_res {
     const std::unordered_set<char> monoChars {
         '(', ')', '+', '-', '*', '/'
     };
-    ResolutionResult resolve(const std::string &input, const std::unordered_map<std::string, uint16_t> &labelMap,
+    ResolutionResult resolveStrExpr(const std::string &input, const std::unordered_map<std::string, uint16_t> &labelMap,
         const std::unordered_map<std::string, uint16_t> &constMap) {
 
         std::vector<Token> tokenizedInput {};
@@ -41,13 +42,37 @@ namespace expr_res {
         emplaceToken(curr);
         for (const auto& tkn : tokenizedInput) {
             if (tkn.getType() == TokenType::MISTAKE) {
-                std::cerr << "MISTAKE declared in expression: " << input << std::endl;
+                std::cerr << "MISTAKE declared in expression: " << tkn.getStr() << " | " << input << " " << std::endl;
+                return {"0"};
             }
         }
         //break up tokenized input expressions recursively based on parens -> each of those into terms and factors -> solve
         Expression fullExpr(tokenizedInput, labelMap, constMap);
-        ResolutionResult res {};
-        return res;
+        Token tokenizedResult = fullExpr.solve();
+        ResolutionResult result {};
+        if (tokenizedResult.getType() == TokenType::REAL) {
+            fixpt8_8_t fixptRep(tokenizedResult.asFloat());
+            result.raw = static_cast<uint16_t>(fixptRep);
+            if (std::get<float>(*tokenizedResult.getValue()) > 127.996 || std::get<float>(*tokenizedResult.getValue()) < -128.000) {
+                std::cerr << "WARNING: result of expression " << input << " is outside of 8.8-bit fixpt range (-128.000 to 127.996)" << std::endl;
+            }
+        } else if (tokenizedResult.getType() == TokenType::INTEGER) {
+            if (std::get<int>(*tokenizedResult.getValue()) < 0) {
+                result.raw = static_cast<uint16_t>(static_cast<int16_t>(std::get<int>(*tokenizedResult.getValue())));
+                if (std::get<int>(*tokenizedResult.getValue()) > 32767 || std::get<int>(*tokenizedResult.getValue()) < -32768) {
+                    std::cerr << "WARNING: result of expression " << input << " is outside of signed 16-bit range (-32768 to 32767)" << std::endl;
+                }
+            }
+            else {
+                result.raw = static_cast<uint16_t>(tokenizedResult.asInt());
+                if (std::get<int>(*tokenizedResult.getValue()) > 65356 || std::get<int>(*tokenizedResult.getValue()) < 0) {
+                    std::cerr << "WARNING: result of expression " << input << " is outside of unsigned 16-bit range (0 to 65536)" << std::endl;
+                }
+            }
+        }
+        result.str = std::to_string(result.raw);
+        LOG_ERR("!!! DEBUG: " << result.raw); //TODO
+        return result;
     }
 
     std::optional<Value> deduceValue(const std::string_view inp) {
@@ -81,9 +106,23 @@ namespace expr_res {
         if (str == "/") return TokenType::DIV;
         if (str == "(") return TokenType::LPAREN;
         if (str == ")") return TokenType::RPAREN;
-        if (labelMap.contains(std::string(str))) return TokenType::LABEL;
-        if (constMap.contains(std::string(str))) return TokenType::CONSTANT;
+        if (labelMap->contains(str)) return TokenType::LABEL;
+        if (constMap->contains(str)) return TokenType::CONSTANT;
+        Value testVal = *deduceValue(str);
+        if (std::holds_alternative<float>(testVal)) return TokenType::REAL;
+        if (std::holds_alternative<int>(testVal)) return TokenType::INTEGER;
         return TokenType::MISTAKE;
+    }
+
+    Token::Token(Value valInp, TokenType typeInp) {
+        value = valInp;
+        type = typeInp;
+        if (type == TokenType::INTEGER) {
+            str = std::to_string(std::get<int>(*value));
+        }
+        else if (type == TokenType::REAL) {
+            str = std::to_string(std::get<float>(*value));
+        }
     }
 
     Token::Token(std::string_view inp) {
@@ -100,12 +139,12 @@ namespace expr_res {
         type = deduceTokenType();
 
         if (type == TokenType::LABEL) {
-            const auto it = labelMap.find(std::string(str));
+            const auto it = labelMap.find(str);
             value = Value(it->second);
             type = TokenType::INTEGER;
         }
         else if (type == TokenType::CONSTANT) {
-            const auto it = constMap.find(std::string(str));
+            const auto it = constMap.find(str);
             value = Value(it->second);
             type = std::holds_alternative<float>(*value) ? TokenType::REAL : TokenType::INTEGER;
         }
@@ -135,7 +174,14 @@ namespace expr_res {
                 currFactors.emplace_back(tkn);
             }
         }
+        if (!currFactors.empty()) {
+            terms.emplace_back(startingTermTokenType, currFactors);
+        }
+        bool resultIsReal = false;
         for (auto& term : terms) {
+            if (term.tokens.size() == 1) {
+                return term.tokens.at(0);
+            }
             if (term.tokens.size() != 3) {
                 std::cerr << "ERROR: malformed term in expression. " << std::endl;
                 return {"0"};
@@ -147,11 +193,73 @@ namespace expr_res {
 
             const TokenType firstFactorType = term.tokens.at(0).getType();
             const TokenType secondFactorType = term.tokens.at(2).getType();
-            const Value firstFactorValue = (firstFactorType == TokenType::INTEGER ? term.tokens.at(0).asInt() : term.tokens.at(0).asFloat());
-            const Value secondFactorValue = (firstFactorType == TokenType::INTEGER ? term.tokens.at(2).asInt() : term.tokens.at(2).asFloat());
-
-
+            if (firstFactorType == TokenType::REAL || secondFactorType == TokenType::REAL) {
+                resultIsReal = true;
+            }
+            if (term.tokens.at(1).getType() == TokenType::MULT) {
+                if (firstFactorType == TokenType::INTEGER && secondFactorType == TokenType::INTEGER) {
+                    term.value = term.tokens.at(0).asInt() * term.tokens.at(2).asInt();
+                } else if (firstFactorType == TokenType::REAL && secondFactorType == TokenType::INTEGER) {
+                    term.value = term.tokens.at(0).asFloat() * term.tokens.at(2).asInt();
+                } else if (firstFactorType == TokenType::INTEGER && secondFactorType == TokenType::REAL) {
+                    term.value = term.tokens.at(0).asInt() * term.tokens.at(2).asFloat();
+                } else if (firstFactorType == TokenType::REAL && secondFactorType == TokenType::REAL) {
+                    term.value = term.tokens.at(0).asFloat() * term.tokens.at(2).asFloat();
+                } else {
+                    std::cerr << "ERROR: malformed term (operations on non-number) in expression. " << std::endl;
+                    return {"0"};
+                }
+            }
+            else if (term.tokens.at(1).getType() == TokenType::DIV) {
+                if (firstFactorType == TokenType::INTEGER && secondFactorType == TokenType::INTEGER) {
+                    term.value = term.tokens.at(0).asInt() / term.tokens.at(2).asInt();
+                } else if (firstFactorType == TokenType::REAL && secondFactorType == TokenType::INTEGER) {
+                    term.value = term.tokens.at(0).asFloat() / term.tokens.at(2).asInt();
+                } else if (firstFactorType == TokenType::INTEGER && secondFactorType == TokenType::REAL) {
+                    term.value = term.tokens.at(0).asInt() / term.tokens.at(2).asFloat();
+                } else if (firstFactorType == TokenType::REAL && secondFactorType == TokenType::REAL) {
+                    term.value = term.tokens.at(0).asFloat() / term.tokens.at(2).asFloat();
+                } else {
+                    std::cerr << "ERROR: malformed term (operations on non-number) in expression. " << std::endl;
+                    return {"0"};
+                }
+            }
+            else {
+                std::cerr << "ERROR: malformed term (invalid operation) in expression. " << std::endl;
+                return {"0"};
+            }
         }
-        return {{}, {}, {}};
+        Value resultVal;
+        TokenType resultType;
+        if (resultIsReal) {
+            resultVal = 0.0f;
+            resultType = TokenType::REAL;
+        } else {
+            resultVal = 0;
+            resultType = TokenType::INTEGER;
+        }
+        for (const auto& term : terms) {
+            Value termVal = term.value;
+            if (term.sign == TokenType::PLUS) {
+                if (std::holds_alternative<float>(termVal)) {
+                    resultVal = std::get<float>(resultVal) + std::get<float>(termVal);
+                } else if (std::holds_alternative<int>(termVal) && resultIsReal) {
+                    resultVal = std::get<float>(resultVal) + static_cast<float>(std::get<int>(termVal));
+                }
+                else if (std::holds_alternative<int>(termVal)) {
+                    resultVal = std::get<int>(resultVal) + std::get<int>(termVal);
+                }
+            } else if (term.sign == TokenType::MIN) {
+                if (std::holds_alternative<float>(termVal)) {
+                    resultVal = std::get<float>(resultVal) - std::get<float>(termVal);
+                } else if (std::holds_alternative<int>(termVal) && resultIsReal) {
+                    resultVal = std::get<float>(resultVal) - static_cast<float>(std::get<int>(termVal));
+                }
+                else if (std::holds_alternative<int>(termVal)) {
+                    resultVal = std::get<int>(resultVal) - std::get<int>(termVal);
+                }
+            }
+        }
+        return {resultVal, resultType};
     }
 }

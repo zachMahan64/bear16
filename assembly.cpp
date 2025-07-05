@@ -14,6 +14,8 @@
 #include <regex>
 #include "core.h"
 #include "assembly.h"
+
+#include "expr_resolver.h"
 #include "preprocess.h"
 // variant definition
 namespace assembly {
@@ -583,6 +585,7 @@ namespace assembly {
                     expressionTkn.type = TokenType::EXPRESSION;
                     firstPassTokens.emplace_back(expressionTkn);
                     currentStr.clear();
+                    continue;
                 }
             }
             if (inEscapeStr) {
@@ -860,8 +863,10 @@ namespace assembly {
         //resolve constants and expressions
         for (std::vector<Token> &line: tokenLines_TEXT_and_DATA) {
             if (line.at(0).type == TokenType::CONST) {
-                for (const Token &tkn : line) {
-                    //TODO: Scan for expressions to resolve
+                for (Token &tkn : line) {
+                    if (tkn.type == TokenType::EXPRESSION) {
+                        tkn.resolveExpression(labelMap, constMap);
+                    }
                 }
                 try {
                     if (line.size() > 3 && line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
@@ -923,10 +928,12 @@ namespace assembly {
         //form instructions, resolve references
         int numLines = 0;
         byteIndex  = 0;
-        for (const std::vector<Token> &line : tokenLines_TEXT_and_DATA) {
+        for (std::vector<Token> &line : tokenLines_TEXT_and_DATA) {
             numLines++;
-            for (const Token &tkn : line) {
-                //TODO: Scan for embedded expressions to resolve
+            for (Token &tkn : line) {
+                if (tkn.type == TokenType::EXPRESSION) {
+                    tkn.resolveExpression(labelMap, constMap);
+                }
             }
             if (line.empty()) {
                 continue; //just ignore
@@ -1299,12 +1306,15 @@ namespace assembly {
         }
     }
 
-    void Token::resolveExpression() {
+    void Token::resolveExpression(const std::unordered_map<std::string, uint16_t>& labelMap,
+            const std::unordered_map<std::string, uint16_t>& constMap) {
         if (type != TokenType::EXPRESSION) {
             LOG_ERR("ERROR: MISMARKED EXPRESSION: " << body);
             return;
         }
-
+        auto [str, raw] = expr_res::resolveStrExpr(body, labelMap, constMap);
+        body = str;
+        type = deduceTokenType(body);
     }
 
     std::pair<std::string, std::string> splitOpcodeStr(std::string opcodeStr) {

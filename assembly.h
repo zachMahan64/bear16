@@ -186,7 +186,8 @@ namespace assembly {
         }
         static TokenType deduceTokenType(const std::string &text);
         void correctNullChar();
-        void resolveExpression();
+        void resolveExpression(const std::unordered_map<std::string, uint16_t>& labelMap,
+            const std::unordered_map<std::string, uint16_t>& constMap);
     };
     //string to TokenType Map
     inline const std::unordered_map<std::string, TokenType> symbolToTokenMap = {

@@ -17,7 +17,7 @@ namespace expr_res {
         uint16_t raw;
     };
     extern const std::unordered_set<char> monoChars;
-    ResolutionResult resolve(const std::string &input, const std::unordered_map<std::string, uint16_t>& labelMap,
+    ResolutionResult resolveStrExpr(const std::string &input, const std::unordered_map<std::string, uint16_t>& labelMap,
                         const std::unordered_map<std::string, uint16_t>& constMap);
     //Tokens
     //helpers
@@ -37,13 +37,14 @@ namespace expr_res {
     std::optional<Value> deduceValue();
     //main class
     class Token {
-        std::string_view str;
+        std::string str {};
         TokenType type = TokenType::MISTAKE;
         std::optional<Value> value;
-        const std::unordered_map<std::string, uint16_t>& labelMap{};
-        const std::unordered_map<std::string, uint16_t>& constMap{};
+        std::optional<const std::unordered_map<std::string, uint16_t>> labelMap {};
+        std::optional<const std::unordered_map<std::string, uint16_t>>  constMap {};
         [[nodiscard]] TokenType deduceTokenType() const;
     public:
+        Token(Value valInp, TokenType typeInp);
         Token(std::string_view inp);
         Token(std::string_view inp, const std::unordered_map<std::string, uint16_t>& labelMap,
               const std::unordered_map<std::string, uint16_t>& constMap);
@@ -58,6 +59,8 @@ namespace expr_res {
             return std::get<int>(*value);
         }
         [[nodiscard]] TokenType getType() const { return type; }
+        [[nodiscard]] std::string getStr() const {return str; }
+        std::optional<Value> getValue() { return value; }
     };
     //Expressions
     struct Expression {
