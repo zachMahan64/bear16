@@ -75,7 +75,6 @@ namespace expr_res {
         return result;
     }
 
-
     std::optional<Value> deduceValue(const std::string_view inp) {
         //check if float
         try {
