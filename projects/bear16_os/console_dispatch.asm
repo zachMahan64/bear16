@@ -91,5 +91,17 @@ cd_isolate_args:
     clr t1 # init curr char to zero
     mov t2, rv #ptr to start of cmd from malloc
     clr t3 # cnt, use as offset!
+    cd_isolate_args_loop:
+        lb t1, t0, t3 # load char into t1 w/ offset of t3
+        eq cd_isolate_args_loop_ret_null, t1, '\0' # return null if we hit a null terminator before a space (no args)
+        eq cd_isolate_args_hit_space, t1, ' '  # jump to isolate the args if we hit a space/' '
+        inc t3
+        cd_isolate_args_hit_space:
+            inc t3
+            cd_isolate_args_hit_space_loop:
+
 
     ret
+    cd_isolate_args_loop_ret_null:
+        mov rv, NULL
+        ret

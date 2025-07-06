@@ -8,8 +8,14 @@
 #include <unordered_set>
 
 // Logging macros
-#define LOG(x) std::cout << std::dec << x << std::endl
-#define LOG_ERR(x) std::cerr << std::dec << x << std::endl
+//macros
+//#define DEBUG_MODE
+#ifdef DEBUG_MODE
+  #define LOG(x) std::cout << x << std::endl
+#else
+  #define LOG(x)
+#endif
+#define LOG_ERR(x) std::cerr << x << std::endl
 
 //token defs
 namespace preprocess {

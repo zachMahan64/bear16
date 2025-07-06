@@ -25,10 +25,10 @@ add_executable(cpu_emulator_take_1
         expr_resolver.h
 )
 
-# Correctly includes SDL headers (e.g., <SDL2/SDL.h> will now work)
-target_include_directories(cpu_emulator_take_1 PRIVATE "${CMAKE_SOURCE_DIR}/SDL2.framework")
+# includes SDL headers
+target_include_directories(cpu_emulator_take_1 PRIVATE "${CMAKE_SOURCE_DIR}/libs/SDL2.framework")
 
-# This explicitly tells the linker where to find frameworks (the directory containing SDL2.framework).
-target_link_directories(cpu_emulator_take_1 PRIVATE "${CMAKE_SOURCE_DIR}")
+# tells the linker where to find frameworks (the directory containing SDL2.framework)
+target_link_directories(cpu_emulator_take_1 PRIVATE "${CMAKE_SOURCE_DIR}/libs")
 
-target_link_libraries(cpu_emulator_take_1 "${CMAKE_SOURCE_DIR}/SDL2.framework/Versions/A/SDL2")
+target_link_libraries(cpu_emulator_take_1 "${CMAKE_SOURCE_DIR}/libs/SDL2.framework/Versions/A/SDL2")

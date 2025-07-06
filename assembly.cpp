@@ -30,7 +30,7 @@ namespace assembly {
         {'\'', '\''},
         {'#', '#'}
     };
-    const std::unordered_set<std::string> validOpcodeMnemonics = {
+const std::unordered_set<std::string> validOpcodeMnemonics = {
     "add",
     "addi",
     "addi1",
@@ -235,6 +235,14 @@ namespace assembly {
     "modsi",
     "modsi1",
     "modsi2",
+    "mult_fpt",
+    "mult_fpti",
+    "mult_fpti1",
+    "mult_fpti2",
+    "div_fpt",
+    "div_fpti",
+    "div_fpti1",
+    "div_fpti2",
     "call",
     "calli",
     "calli1",
@@ -401,7 +409,7 @@ namespace assembly {
         {"dec", isa::Opcode_E::DEC}, {"memcpy", isa::Opcode_E::MEMCPY}, {"sw", isa::Opcode_E::SW},
         {"sb", isa::Opcode_E::SB}, {"lbrom", isa::Opcode_E::LBROM}, {"lwrom", isa::Opcode_E::LWROM},
         {"romcpy", isa::Opcode_E::ROMCPY}, {"mults", isa::Opcode_E::MULTS}, {"divs", isa::Opcode_E::DIVS},
-        {"mods", isa::Opcode_E::MODS},
+        {"mods", isa::Opcode_E::MODS}, {"mult_fpt", isa::Opcode_E::MULT_FPT}, {"div_fpt", isa::Opcode_E::DIV_FPT},
 
         // Ctrl Flow
         {"call", isa::Opcode_E::CALL}, {"ret", isa::Opcode_E::RET}, {"jmp", isa::Opcode_E::JMP},
@@ -419,7 +427,7 @@ namespace assembly {
         {isa::Opcode_E::NAND, 3}, {isa::Opcode_E::NOR, 3}, {isa::Opcode_E::NEG, 2},
         {isa::Opcode_E::LSH, 3}, {isa::Opcode_E::RSH, 3}, {isa::Opcode_E::ROL, 3},
         {isa::Opcode_E::ROR, 3}, {isa::Opcode_E::MULTS, 3}, {isa::Opcode_E::DIVS, 3},
-        {isa::Opcode_E::MODS, 3},
+        {isa::Opcode_E::MODS, 3}, {isa::Opcode_E::MULT_FPT, 3}, {isa::Opcode_E::DIV_FPT, 3},
 
         // Cond
         {isa::Opcode_E::EQ, 3}, {isa::Opcode_E::NE, 3}, {isa::Opcode_E::LT, 3},
@@ -499,7 +507,7 @@ namespace assembly {
             {"comp", 0x0023}, {"lea", 0x0024}, {"push", 0x0025}, {"pop", 0x0026}, {"clr", 0x0027},
             {"inc", 0x0028}, {"dec", 0x0029}, {"memcpy", 0x002A}, {"sw", 0x002B}, {"sb", 0x002C},
             {"lbrom", 0x002D}, {"lwrom", 0x002E}, {"romcpy", 0x002F}, {"mults", 0x0030}, {"divs", 0x0031},
-            {"mods", 0x0032},
+            {"mods", 0x0032}, {"mult_fpt", 0x0033}, {"div_fpt", 0x0034},
             {"call", 0x0040}, {"ret", 0x0041}, {"jmp", 0x0042}, {"jcond_z", 0x0043},
             {"jcond_nz", 0x0044}, {"jcond_neg", 0x0045}, {"jcond_nneg", 0x0046}, {"jcond_pos", 0x0047},
             {"jcond_npos", 0x0048}, {"nop", 0x0049}, {"hlt", 0x004A}, {"jal", 0x004B}, {"retl", 0x004C},
@@ -545,7 +553,7 @@ namespace assembly {
         std::vector<uint8_t> byteVec = buildByteVecFromLiteralInstructions(literalInstructions);
         std::vector<uint8_t> dataByteVec = parseTokenizedDataIntoByteVec(allTokenizedInstructions);
         byteVec.insert(byteVec.end(), dataByteVec.begin(), dataByteVec.end());
-        LOG("Final ROM Size (bytes): " << std::dec << byteVec.size());
+        LOG_ERR("Final ROM Size (bytes): " << std::dec << byteVec.size());
         return byteVec;
     }
 
@@ -556,7 +564,7 @@ namespace assembly {
 
         std::string buffer = processedAsm;
 
-        std::cout << "Orig asm (debug):\n" << buffer << std::endl;
+        LOG("Orig asm (debug):\n" << buffer << std::endl);
 
         std::string currentStr {};
         bool inComment = false;
@@ -700,11 +708,11 @@ namespace assembly {
             LOG_ERR("ERROR: invalid expression (no closing parentheses) at end of asm file");
         }
 
-        std::cout << "First pass tokens:\n";
+        LOG("First pass tokens:\n");
         for (auto& token : firstPassTokens) {
-            std::cout << toString(token.type) + "-" << token.body << " ";
+            LOG(toString(token.type) + "-" << token.body << " ");
         }
-        std::cout << std::endl;
+        LOG(std::endl);
 
         return firstPassTokens;
     }
@@ -831,21 +839,21 @@ namespace assembly {
                             line = fixedStrLine;
                             LOG ("REVISING STRING");
                             for (const Token &tkn : line) {
-                                std::cout << toString(tkn.type) << "-" << tkn.body << " | ";
+                                LOG(toString(tkn.type) << "-" << tkn.body << " | ");
                             }
-                            std::cout << std::endl;
+                            LOG(std::endl);
                             byteNum += static_cast<int>(newStrTkn.body.length()) + 1; //+1 for null terminator
                         }
                         else {
                             LOG_ERR("ERROR: invalid string declaration at byte index: " << byteNum <<  std::endl);
                             for (const Token &tkn : line) {
-                                std::cout << tkn.body << " | ";
+                                LOG(tkn.body << " | ");
                             }
                         }
                     } catch (std::out_of_range &e) {
                         LOG_ERR("ERROR: invalid string declaration at byte index: ") << byteNum << " | " <<  std::endl;
                         for (const Token &tkn : line) {
-                            std::cout << tkn.body << " | ";
+                            LOG(tkn.body << " | ");
                         }
                     }
                 } else {
@@ -856,11 +864,12 @@ namespace assembly {
                         }
                     }
                     int byteNumDiff = byteNum - startingByteNum;
-                    std::cout << byteNumDiff << " bytes added for " << toString(firstTkn.type) << " directive \n";
+                    LOG(byteNumDiff << " bytes added for " << toString(firstTkn.type) << " directive \n");
                 }
             }
         }
         //resolve constants and expressions
+        bool issuedFixPtConstWarning = false;
         for (std::vector<Token> &line: tokenLines_TEXT_and_DATA) {
             if (line.at(0).type == TokenType::CONST) {
                 for (Token &tkn : line) {
@@ -872,7 +881,8 @@ namespace assembly {
                     if (line.size() > 3 && line.at(1).type == TokenType::REF && line.at(2).type == TokenType::EQUALS
                             && (line.at(3).type == TokenType::DECIMAL
                             || line.at(3).type == TokenType::HEX
-                            || line.at(3).type == TokenType::BIN)
+                            || line.at(3).type == TokenType::BIN
+                            || line.at(3).type == TokenType::FIXED_PT)
                             || (line.at(3).type == TokenType::SING_QUOTE
                                 && line.at(4).type == TokenType::CHAR
                                 && line.at(5).type == TokenType::SING_QUOTE))
@@ -889,6 +899,12 @@ namespace assembly {
                                     value = std::stoi(body.substr(2), nullptr, 2);
                                 else
                                     throw std::invalid_argument("Binary constant without 0b prefix");
+                            } else if (line.at(3).type == TokenType::FIXED_PT) {
+                                value = fixpt8_8_t(std::stof(line.at(3).body)).val;
+                                if (!issuedFixPtConstWarning) {
+                                    LOG_ERR("CAUTION: fixed point constant will not be supported in expressions");
+                                    issuedFixPtConstWarning = true;
+                                }
                             } else if (line.at(4).type == TokenType::CHAR) {
                                 value = static_cast<int>(line.at(4).body.at(0));
                             }
@@ -913,15 +929,15 @@ namespace assembly {
 
         //debug
         int numLinesInSecondPass = 0;
-        std::cout << "\nTokenized lines (second pass):\n";
+        LOG("\nTokenized lines (second pass):\n");
         for (const std::vector<Token> &line : tokenLines_TEXT_and_DATA) {
             numLinesInSecondPass++;
-            std::cout << "Line " << numLinesInSecondPass << ":" ;
+            LOG("Line " << numLinesInSecondPass << ":");
             for (const Token &tkn : line) {
-                std::cout << " " << toString(tkn.type) << "-";
-                std::cout << tkn.body;
+                LOG(" " << toString(tkn.type) << "-");
+                LOG(tkn.body);
             }
-            std::cout << std::endl;
+            LOG(std::endl);
         }
 
         std::vector<TokenizedRomLine> finalRomLines {};
@@ -1106,12 +1122,10 @@ namespace assembly {
     }
     std::vector<uint8_t> Assembler::build8ByteVecFromSingleLiteralInstruction(const parts::Instruction& literalInstruction) {
         const uint64_t raw = literalInstruction.toRaw();
-        //std::cout << "Raw Instr (debug): " << std::hex << std::setw(16) << std::setfill('0') << raw << "\n";
         std::vector<uint8_t> byteVec {};
         byteVec.reserve(8);
         for (int i = 7; i >= 0; --i) {
             uint8_t byte = (raw >> (8 * i)) & 0xFF;
-            //std::cout << "Raw Byte (debug): " << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte) << "\n";
             byteVec.emplace_back(byte);
         }
         return byteVec;
@@ -1191,11 +1205,11 @@ namespace assembly {
                 }
             }
         }
-        std::cout << "DEBUG, serialized data section: \n";
+        LOG("DEBUG, serialized data section: \n");
         for (const auto& byte : byteVec) {
-            std::cout << byte;
+            LOG(byte);
         }
-        std::cout << std::endl;
+        LOG(std::endl);
 
         return byteVec;
     }
@@ -1315,6 +1329,7 @@ namespace assembly {
         auto [str, raw] = expr_res::resolveStrExpr(body, labelMap, constMap);
         body = str;
         type = deduceTokenType(body);
+        LOG("DEBUG: resolved expression token body -> " << str << " - " << toString(type));
     }
 
     std::pair<std::string, std::string> splitOpcodeStr(std::string opcodeStr) {

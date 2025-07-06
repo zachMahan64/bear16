@@ -26,6 +26,8 @@
   #define LOG(x)
 #endif
 
+#define LOG_ERR(x) std::cerr << x << std::endl
+
 //#define ENABLE_KEYBOARD_INTERRUPT
 #ifdef ENABLE_KEYBOARD_INTERRUPT
     #define HANDLE_KBD_INTERRUPT() interruptController.handleKeyboardInterrupt()
@@ -322,8 +324,8 @@ void CPU16::performOp(const parts::Instruction &instr, uint16_t src1Val, uint16_
     } else if (isCtrlFlow) {
         doCtrlFlow(instr, src1Val, src2Val);
     } else {
-        std::cout << "ERROR: Unknown op14, trace to performOp | op14: " << std::hex << std::setw(4) << std::setfill('0') << op14 << std::endl;
-        std::cout << "op14: " << std::to_string(op14) << std::endl;
+        LOG_ERR("ERROR: Unknown op14, trace to performOp | op14: " << std::hex << std::setw(4) << std::setfill('0') << op14 << std::endl);
+        LOG_ERR("op14: " << std::to_string(op14) << std::endl);
     }
 }
 void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest) {
@@ -413,7 +415,7 @@ void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t 
             break;
         }
         default: {
-            std::cout << "ERROR: Unknown op14" << std::endl;
+            LOG_ERR("ERROR: Unknown op14" << std::endl);
             break;
         }
     }
@@ -465,7 +467,7 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
                 break;
             }
             default: {
-                std::cout << "ERROR: Unknown op14" << std::endl;
+                LOG_ERR("ERROR: Unknown op14" << std::endl);
                 break;
             }
         }
@@ -494,7 +496,7 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
                 flagReg.setNegative(false);
                 break;
             default:
-                std::cout << "ERROR: Unknown op14" << std::endl;
+                LOG_ERR("ERROR: Unknown op14" << std::endl);
                 break;
         }
     }
@@ -635,19 +637,36 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             break;
         }
         case (isa::Opcode_E::DIVS): {
-            if (src2Val == 0) src2Val = 1; //prevent divide by zero
+            if (src2Val == 0) src2Val = isa::MAX_UINT16_T; //prevent divide by zero
             const uint16_t val = static_cast<int16_t>(src1Val) / static_cast<int16_t>(src2Val);
             writeback(dest, val);
             break;
         }
         case (isa::Opcode_E::MODS):{
-            if (src2Val == 0) src2Val = 1; //prevent divide by zero
+            if (src2Val == 0) src2Val = isa::MAX_UINT16_T; //prevent divide by zero
             const uint16_t val = static_cast<int16_t>(src1Val) % static_cast<int16_t>(src2Val);
             writeback(dest, val);
             break;
         }
+        case (isa::Opcode_E::MULT_FPT): {
+            const fixpt8_8_t fact1(src1Val);
+            const fixpt8_8_t fact2(src2Val);
+            const int32_t temp = static_cast<int32_t>(fact1.val) * fact2.val;
+            const auto val = static_cast<uint16_t>(temp >> 8);
+            writeback(dest, val);
+            break;
+        }
+        case (isa::Opcode_E::DIV_FPT): {
+            if (src2Val == 0) src2Val = isa::MAX_UINT16_T; //prevent divide by zero
+            const fixpt8_8_t numer(src1Val);
+            const fixpt8_8_t denom(src2Val);
+            const int32_t temp = (static_cast<int32_t>(numer.val) << 8) / denom.val;
+            const auto val = static_cast<uint16_t>(temp);
+            writeback(dest, val);
+            break;
+        }
         default: {
-            std::cout << "ERROR: Unknown op14" << std::endl;
+            LOG_ERR("ERROR: Unknown op14" << std::endl);
         }
     }
 }
@@ -745,7 +764,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             break;
         }
         default: {
-            std::cout << "ERROR: Unknown op14" << std::endl;
+            LOG_ERR("ERROR: Unknown op14" << std::endl);
         }
     }
 }
@@ -764,7 +783,7 @@ void CPU16::writeback(uint16_t dest, uint16_t val) {
     } else if (dest == 0x001F) {
         pc = val;
     } else {
-        std::cout << "ERROR: Unknown dest when writing back: " << std::hex << std::setw(4) << std::setfill('0') << dest << std::endl;
+        LOG_ERR("ERROR: Unknown dest when writing back: " << std::hex << std::setw(4) << std::setfill('0') << dest << std::endl);
     }
 }
 uint16_t CPU16::getValInReg(uint16_t reg) const {
@@ -780,7 +799,7 @@ uint16_t CPU16::getValInReg(uint16_t reg) const {
     }  else if (reg < NUM_GEN_REGS + NUM_IO) {
         regVal = inps[reg - NUM_GEN_REGS];
     } else {
-        std::cout << "ERROR: Unknown dest when getValInReg:" << reg << std::endl;
+        LOG_ERR("ERROR: Unknown dest when getValInReg:" << reg << std::endl);
     }
     return regVal;
 }
@@ -814,9 +833,10 @@ void CPU16::printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool a
     std::cout << "Starting Address: " << startingAddr << " | # bytes read: " << numBytes << std::endl;
     std::cout << "Leading word @ starting addr: " << (int16_t) fetchWordFromRam(startingAddr) << "\n";
     for (uint16_t i = 0; i < numBytes; i++) {
-        if (asChar) std::cout << "Index: " << i << " = " << sram.at(startingAddr + i) << "\n";
-        else std::cout << "Index: " << startingAddr + i << " = " << static_cast<int>(sram.at(startingAddr + i)) << "\n";
-       }
+        if (asChar) std::cout << sram.at(startingAddr + i);
+        else std::cout << static_cast<int>(sram.at(startingAddr + i));
+    }
+    std::cout << std::endl;
 }
 
 

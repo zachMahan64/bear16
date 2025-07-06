@@ -11,7 +11,7 @@ namespace isa {
     static constexpr size_t ROM_SIZE = 64 * 1024; //bytes
     static constexpr size_t GEN_REG_COUNT = 27;
     static constexpr size_t IO_COUNT = 2;
-    static constexpr size_t MAX_UINT_16BIT = 65535;
+    static constexpr size_t MAX_UINT16_T = 65535;
     static constexpr size_t RA_REGISTER_INDEX = 0x000F;
     static constexpr size_t TOP_OF_HEAP_PTR = 6656;
     static constexpr size_t STARTING_HEAP_PTR_VALUE = 16384;
@@ -86,6 +86,8 @@ enum class Opcode_E : uint16_t {
         MULTS  = 0x0030,
         DIVS   = 0x0031,
         MODS   = 0x0032,
+        MULT_FPT  = 0x0033,
+        DIV_FPT   = 0x0034,
         //CTRL Flow
         CALL      = 0x0040,   // call sub-routine  (dest = target PC)
         RET       = 0x0041,   // return from CALL

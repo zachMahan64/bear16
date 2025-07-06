@@ -32,7 +32,7 @@ endmacro()
 set(SDL2_FOUND TRUE)
 
 # Compute the installation prefix relative to this file.
-set(SDL2_FRAMEWORK_PATH "${CMAKE_CURRENT_LIST_DIR}")                                # > /SDL2.framework/Resources/CMake/
+set(SDL2_FRAMEWORK_PATH ".")                                # > /SDL2.framework/Resources/CMake/
 get_filename_component(SDL2_FRAMEWORK_PATH "${SDL2_FRAMEWORK_PATH}" REALPATH)       # > /SDL2.framework/Versions/Current/Resources/CMake
 get_filename_component(SDL2_FRAMEWORK_PATH "${SDL2_FRAMEWORK_PATH}" REALPATH)       # > /SDL2.framework/Versions/A/Resources/CMake/
 get_filename_component(SDL2_FRAMEWORK_PATH "${SDL2_FRAMEWORK_PATH}" PATH)           # > /SDL2.framework/Versions/A/Resources/

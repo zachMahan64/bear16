@@ -13,6 +13,8 @@ struct fixpt8_8_t {
     int16_t val = 0;
     //CONSTRUCTORS
     fixpt8_8_t() = default;
+    explicit fixpt8_8_t(uint16_t inp);
+
     fixpt8_8_t(const fixpt8_8_t&) = default;
     template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
     explicit fixpt8_8_t(T inp) {
@@ -29,10 +31,12 @@ struct fixpt8_8_t {
 
     template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
     fixpt8_8_t operator*(T rhs) const {
-        // promote to int32_t for multiplication
-        const int32_t temp = static_cast<int32_t>(val) * static_cast<int32_t>(rhs * 256.0);
+        int32_t scaled_rhs = std::is_floating_point_v<T> ?
+                             static_cast<int32_t>(rhs * 256.0) : static_cast<int32_t>(rhs) << 8;
+        int32_t temp = static_cast<int32_t>(val) * scaled_rhs;
         return fixpt8_8_t(static_cast<int16_t>(temp >> 8));
     }
+
 
     fixpt8_8_t operator*(const fixpt8_8_t& rhs) const {
         const int32_t temp = static_cast<int32_t>(val) * rhs.val;
@@ -41,9 +45,12 @@ struct fixpt8_8_t {
 
     template <typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
     fixpt8_8_t operator/(T rhs) const {
-        const int32_t temp = (static_cast<int32_t>(val) << 8) / static_cast<int32_t>(rhs * 256.0);
+        int32_t scaled_rhs = std::is_floating_point_v<T> ?
+                             static_cast<int32_t>(rhs * 256.0) : static_cast<int32_t>(rhs) << 8;
+        int32_t temp = (static_cast<int32_t>(val) << 8) / scaled_rhs;
         return fixpt8_8_t(static_cast<int16_t>(temp));
     }
+
 
     fixpt8_8_t operator/(const fixpt8_8_t& rhs) const {
         const int32_t temp = (static_cast<int32_t>(val) << 8) / rhs.val;
@@ -88,5 +95,7 @@ struct fixpt8_8_t {
     bool operator>=(const fixpt8_8_t& rhs) const { return val >= rhs.val; }
 
 };
+
+inline fixpt8_8_t::fixpt8_8_t(const uint16_t inp): val(std::bit_cast<int16_t>(inp)) {}
 
 #endif //FIXED_POINT_16_H

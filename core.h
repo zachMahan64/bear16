@@ -38,9 +38,9 @@ class CPU16 {
     //REG
     std::array<parts::GenRegister, isa::GEN_REG_COUNT> genRegs{};
     parts::FlagRegister flagReg = parts::FlagRegister();
-    parts::GenRegister  stackPtr = parts::GenRegister(isa::MAX_UINT_16BIT); //sp stacks at end of RAM for downward growth
-    parts::GenRegister  framePtr = parts::GenRegister(isa::MAX_UINT_16BIT);
-    parts::GenRegister  trapRetAddr = parts::GenRegister(isa::MAX_UINT_16BIT);
+    parts::GenRegister  stackPtr = parts::GenRegister(isa::MAX_UINT16_T); //sp stacks at end of RAM for downward growth
+    parts::GenRegister  framePtr = parts::GenRegister(isa::MAX_UINT16_T);
+    parts::GenRegister  trapRetAddr = parts::GenRegister(isa::MAX_UINT16_T);
     [[nodiscard]] uint64_t fetchInstruction() const;
     void execute(parts::Instruction instr);
     void performOp(const parts::Instruction &instr, uint16_t src1Val, uint16_t src2Val);
