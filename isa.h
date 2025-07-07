@@ -88,6 +88,7 @@ enum class Opcode_E : uint16_t {
         MODS   = 0x0032,
         MULT_FPT  = 0x0033,
         DIV_FPT   = 0x0034,
+        MOD_FPT   = 0x0035,
         //CTRL Flow
         CALL      = 0x0040,   // call sub-routine  (dest = target PC)
         RET       = 0x0041,   // return from CALL

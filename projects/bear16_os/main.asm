@@ -7,7 +7,7 @@
 
 .text
 start:
-    call util_stall
+    call math_test
     call init_os
     call console_main
     #call text_editor_main

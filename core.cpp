@@ -665,6 +665,22 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
             writeback(dest, val);
             break;
         }
+        case (isa::Opcode_E::MOD_FPT): {
+            const int32_t dividend = static_cast<int16_t>(src1Val); // 8.8 fixed-point
+            const int32_t divisor  = static_cast<int16_t>(src2Val); // 8.8 fixed-point
+
+            int32_t quotient = dividend / divisor;      // integer division (floor)
+            int32_t remainder = dividend - quotient * divisor;
+
+            // Adjust remainder to be positive mod result
+            if ((remainder < 0 && divisor > 0) || (remainder > 0 && divisor < 0))
+                remainder += divisor;
+
+            const auto val = static_cast<uint16_t>(remainder);
+            writeback(dest, val);
+            break;
+        }
+
         default: {
             LOG_ERR("ERROR: Unknown op14" << std::endl);
         }

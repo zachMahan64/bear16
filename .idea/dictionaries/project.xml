@@ -3,10 +3,12 @@
     <words>
       <w>cbegin</w>
       <w>cend</w>
+      <w>denom</w>
       <w>immediates</w>
       <w>lbrom</w>
       <w>lwrom</w>
       <w>memcpy</w>
+      <w>mults</w>
       <w>octbyte</w>
       <w>operandsandautocorrectimmediates</w>
       <w>romcpy</w>
