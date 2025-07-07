@@ -58,7 +58,7 @@ console_dispatch_main: # currently just echos
 # CMD PARSING
 .const CMD_MAX_SIZE = 9 # including '/0'
 .const CMD_MAX_SIZE_WO_NULL_TERM = 8
-cd_isolate_cmd:
+cd_isolate_cmd: #nf
     # a0 = char* to orig buffer
     # ~ rv = char* to cmd
     push a0 # save char* to orig buffer to t0
@@ -80,7 +80,7 @@ cd_isolate_cmd:
     sb t2, t3, 0   # null terminate
     #reuse rv (ptr to start of cmd from malloc)
     ret
-cd_isolate_args:
+cd_isolate_args: #nf
 .const ARGS_MAX_SIZE = 60
     # a0 = ptr to start of cmd buffer
     # ~ rv = ptr to start of newly isolated args buffer
@@ -96,11 +96,21 @@ cd_isolate_args:
         eq cd_isolate_args_loop_ret_null, t1, '\0' # return null if we hit a null terminator before a space (no args)
         eq cd_isolate_args_hit_space, t1, ' '  # jump to isolate the args if we hit a space/' '
         inc t3
+        jmp cd_isolate_args_loop
         cd_isolate_args_hit_space:
             inc t3
+            clr t4
             cd_isolate_args_hit_space_loop:
-
-
+                lb t1, t0, t3 # t1 <- [t0 + t3] / load char into t1 w/ offset of t3
+                sb t2, t4, t1 # [t2 + t4] <- t1
+                eq cd_isolate_args_ret, t1, '\0' # return cmd ptr, we done
+                ge cd_isolate_args_ret, t3, ARGS_MAX_SIZE # if we overflow for whatev reason, ret args
+                inc t3
+                inc t4
+                jmp cd_isolate_args_hit_space_loop
+    cd_isolate_args_ret:
+    mov rv, t2 # char* to start of cmd -> rv
+    mov s7, t3
     ret
     cd_isolate_args_loop_ret_null:
         mov rv, NULL

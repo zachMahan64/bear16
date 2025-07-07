@@ -301,16 +301,21 @@ con_error:
     ret
 con_echo:
     # a0 = ptr to start of line buffer
-    push a0 # save that ptr
+    call cd_isolate_args
+    push rv # save ptr to arg
+    push rv # save again
     # reuse a0
     call check_to_scroll_using_strlen_ram
     inc s1
     call con_print_cname
     mov a0, s1 # line
     mov a1, s0 # index
-    pop a2 # retrieve ptr
-    mov s10, FALSE #update cursor
+    pop a2 # retrieve ptr to arg
+    mov s10, TRUE #update cursor
     call blit_strl_ram #blitting a str
+    pop a0
+    call util_free # free args
+    dec s1
     ret
 con_test:
     call con_success
@@ -367,7 +372,7 @@ con_help_str:
     #call check_to_scroll
     ret
 con_clear:
-    mov a0, 22
+    mov a0, 22 # all but bottom two lines
     call util_clr_fb_by_line_idx # clear entire thing besides OS heads-up display at bottom
     call con_init
     ret

@@ -14,8 +14,8 @@
 # FUNCTIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .text
 math_test:
-    mov a0, (3.5 * 3.14)
-    call math_sin
+    mov a0, (.25 * 3.14)
+    call math_cos
     call util_stall
     ret
 math_sin:
@@ -23,11 +23,9 @@ math_sin:
     # a0 = x rad, rv = result rad
 .const MATH_SIN_3_FACTORIAL = 6.0
 .const MATH_SIN_5_FACTORIAL = 120.0
-
     # t_sign = t3
     jmp math_sin_clamp_inp
     math_sin_clamp_inp_exit:
-
     mov t0, a0      # x -> t0
     mult_fpt t1, t0, t0 # x^2
     mult_fpt t1, t1, t0 # x^3 -> t1
@@ -58,19 +56,23 @@ math_sin:
 math_cos:
     # cos(a0) -> rv
     # a0 = x rad, rv = result rad
-.const MATH_SIN_2_FACTORIAL = 2.0
-.const MATH_SIN_4_FACTORIAL = 24.0
-
+.const MATH_COS_2_FACTORIAL = 2.0
+.const MATH_COS_4_FACTORIAL = 24.0
     # t_sign = t3
     jmp math_cos_clamp_inp
     math_cos_clamp_inp_exit:
-
     mov t0, a0      # x -> t0
     mult_fpt t1, t0, t0 # x^2 -> t1
     mult_fpt t2, t1, t1 # x^4 -> t2
-    div_fpt t1, t1, MATH_SIN_2_FACTORIAL # (x^2)/(2!)
-    div_fpt t2, t2, MATH_SIN_4_FACTORIAL # (x^4)/(4!)
+    div_fpt t1, t1, MATH_COS_2_FACTORIAL # (x^2)/(2!)
+    div_fpt t2, t2, MATH_COS_4_FACTORIAL # (x^4)/(4!)
     sub t0, 1.0, t1
     add rv, t0, t2 # 1 - (x^2/2!) + (x^4/4!) -> rv
     ret
     math_cos_clamp_inp:
+        mod_fpt a0, a0, MATH_2PI # clamp to [0, 2pi]
+        gt math_cos_clamp_inp_gt_pi, a0, MATH_PI
+        jmp math_cos_clamp_inp_exit
+        math_cos_clamp_inp_gt_pi:
+            sub a0, a0, MATH_2PI
+            jmp math_cos_clamp_inp_exit
