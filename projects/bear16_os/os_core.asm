@@ -45,6 +45,7 @@ print_welcome_msg:
 .const DAYS_PTR_MEM_LOC = 6151
 .const MONTHS_PTR_MEM_LOC = 6152
 .const YEARS_PTR_MEM_LOC = 6153
+
 init_os:
     call os_init_heap
     call subr_init_os_draw_bottom_line # perhaps inline

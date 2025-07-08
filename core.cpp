@@ -63,10 +63,6 @@ int Board::run() {
                     exitCode = 130;
                     cpu.isHalted = true;
                 case SDL_KEYDOWN:
-                    if (e.key.keysym.sym == SDLK_ESCAPE) {
-                        exitCode = 131;
-                        cpu.isHalted = true;
-                    }
                     inputController.handleKeyboardPress(e);
                     break;
                 case SDL_KEYUP:

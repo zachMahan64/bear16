@@ -20,7 +20,6 @@ add_executable(cpu_emulator_take_1
         preprocess.cpp
         preprocess.h
         fixpt8_8_t.h
-        expr_resolver.h
         expr_resolver.cpp
         expr_resolver.h
 )

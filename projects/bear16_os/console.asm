@@ -2,7 +2,8 @@
 # REG CONV: Overload s10 to a3 & s9 to a4, {s0 = index ptr, s1 = line ptr} -> for cursor
 @include "os_core.asm"
 @include "text_editor_app.asm"    #WIP, for booting up later
-@include "console_dispatch.asm"   #WIP, not yet implemented
+@include "console_dispatch.asm"
+@include "app_dispatch.asm"
 
 .data
 .const CON_STRT_LINE = 3
@@ -66,6 +67,7 @@ con_get_line:
     eq subr_con_backspace, s2, 8 # for backspace
     eq subr_con_newline, s2, 13  # for newline
     eq subr_con_tab, s2, 9       # for tab
+    eq con_get_line_loop, s2, 27 # ignore escape
     # ~~~~~~~~~~~~~~~~~~~~~~ # branch divide
     ugt subr_con_print_new_char, s2, 0
     jmp con_get_line_loop
@@ -375,4 +377,16 @@ con_clear:
     mov a0, 22 # all but bottom two lines
     call util_clr_fb_by_line_idx # clear entire thing besides OS heads-up display at bottom
     call con_init
+    ret
+
+con_open:
+    # a0 = ptr to start of line buffer
+    dec s1
+    call cd_isolate_args
+    push rv # save ptr to arg
+    mov a0, rv
+    call app_dis_main
+    # reuse a0
+    pop a0
+    call util_free # free args
     ret
