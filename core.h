@@ -140,6 +140,8 @@ class DiskController {
     //disk flags
     static constexpr uint8_t OVERFLOW_ERROR = 0x01;
     static constexpr uint8_t UNKNOWN_OP_ERROR = 0x02;
+    static constexpr uint8_t READ_DONE = 0x04;
+    static constexpr uint8_t WRITE_DONE = 0x08;
 public:
     explicit DiskController(std::array<uint8_t, isa::SRAM_SIZE>& sramRef,
                             const std::unique_ptr<std::array<uint8_t, isa::DISK_SIZE>>& disk
@@ -183,13 +185,14 @@ public:
     void loadKernelRomFromByteVector(std::vector<uint8_t>& rom);
     //DISK LOADING
     void loadDiskFromBinFile(const std::string &path);
+    void saveDiskToBinFile(const std::string &path) const;
     //DIAGNOSTICS
     void calcClockSpeedHz(double elapsedMillis);
     void printDiagnostics(bool printMemAsChars) const;
     void printAllRegisterContents() const;
 };
 //helper
-void writeToFile(const std::string& filename, const std::vector<uint8_t>& data);
+void writeToFile(const std::string& filename, const std::array<uint8_t, isa::DISK_SIZE> &data);
 uint64_t currentTimeMillis();
 
 

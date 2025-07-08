@@ -152,7 +152,7 @@ void Board::printAllRegisterContents() const {
     }
 }
 
-void writeToFile(const std::string& filename, const std::vector<uint8_t>& data) {
+void writeToFile(const std::string& filename, const std::array<uint8_t, isa::DISK_SIZE> &data) {
     std::ofstream outFile(filename, std::ios::binary);
     if (!outFile) {
         throw std::runtime_error("Failed to open file for writing: " + filename);
@@ -284,6 +284,10 @@ void Board::loadDiskFromBinFile(const std::string &path) {
 
     // Copy into disk array
     std::ranges::copy(buffer, disk->begin());
+}
+
+void Board::saveDiskToBinFile(const std::string &path) const {
+    writeToFile(path, *disk);
 }
 
 
@@ -1034,7 +1038,10 @@ void DiskController::handleDiskOperation() {
     if (sram[isa::DISK_OP] == NO_OP) {
         return;
     }
-    addrPtr = sram[isa::DISK_ADDR_LO] | (sram[isa::DISK_ADDR_HI] << 16);
+    addrPtr = static_cast<uint32_t>(sram[isa::DISK_ADDR_LO])
+            | (static_cast<uint32_t>(sram[isa::DISK_ADDR_MID]) << 8)
+            | (static_cast<uint32_t>(sram[isa::DISK_ADDR_HI]) << 16);
+
     if (addrPtr >= isa::DISK_SIZE) {
         LOG_ERR("ERROR: Disk address out of bounds: " << addrPtr << std::endl);
         sram[isa::DISK_STATUS] |= OVERFLOW_ERROR;
@@ -1042,10 +1049,10 @@ void DiskController::handleDiskOperation() {
     }
     if (sram[isa::DISK_OP] == READ_BYTE_OP) {
         sram[isa::DISK_DATA] = disk[addrPtr];
-        sram[isa::DISK_STATUS] = 0; //reset
+        sram[isa::DISK_STATUS] |= READ_DONE;
     } else if (sram[isa::DISK_OP] == WRITE_BYTE_OP) {
         disk[addrPtr] = sram[isa::DISK_DATA];
-        sram[isa::DISK_STATUS] = 0; //reset
+        sram[isa::DISK_STATUS] |= WRITE_DONE;
     } else if (sram[isa::DISK_OP] == READ_WORD_OP) {
         if (addrPtr + 1 >= isa::DISK_SIZE) {
             LOG_ERR("ERROR: Disk word access out of bounds: " << addrPtr << std::endl);
@@ -1054,7 +1061,7 @@ void DiskController::handleDiskOperation() {
         }
         sram[isa::DISK_DATA] = disk[addrPtr];
         sram[isa::DISK_DATA + 1] = disk[addrPtr + 1];
-        sram[isa::DISK_STATUS] = 0; //reset
+        sram[isa::DISK_STATUS] = READ_DONE;
     } else if (sram[isa::DISK_OP] == WRITE_WORD_OP) {
         if (addrPtr + 1 >= isa::DISK_SIZE) {
             LOG_ERR("ERROR: Disk word access out of bounds: " << addrPtr << std::endl);
@@ -1063,7 +1070,7 @@ void DiskController::handleDiskOperation() {
         }
         disk[addrPtr] = sram[isa::DISK_DATA];
         disk[addrPtr + 1] = sram[isa::DISK_DATA + 1];
-        sram[isa::DISK_STATUS] = 0; //reset
+        sram[isa::DISK_STATUS] = WRITE_DONE;
     } else if (sram[isa::DISK_OP] == RESET_STATUS_OP) {
         disk[isa::DISK_STATUS] = 0;
     } else {

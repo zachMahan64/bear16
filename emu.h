@@ -8,8 +8,9 @@ namespace emu {
     class Emulator {
         static constexpr std::string version = "0.0.1";
     public:
-        [[nodiscard]] int assembleAndRun(const std::string &projectPath, const std::string &entry) const;
-        void binFileIntoDisk(const std::string& binPath);
+        [[nodiscard]] int assembleAndRun(const std::string &projectPath, const std::string &entry,
+            const std::string& diskDataPath) const;
+
     };
 
 }

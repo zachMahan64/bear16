@@ -21,7 +21,8 @@
 #include "core.h"
 #include "emu.h"
 
-int emu::Emulator::assembleAndRun(const std::string &projectPath, const std::string& entry) const {
+int emu::Emulator::assembleAndRun(const std::string &projectPath, const std::string& entry,
+            const std::string& diskDataPath) const {
     //assemble
     assembly::Assembler testAssembler(false, false);
     //testAssembler.openProject("../projects/kernel_versions/", "kv_001.asm");
@@ -34,9 +35,12 @@ int emu::Emulator::assembleAndRun(const std::string &projectPath, const std::str
     Board board(false);
     board.loadKernelRomFromByteVector(kernelRom);
     board.loadUserRomFromByteVector(userRom);
-
+    board.loadDiskFromBinFile(diskDataPath);
     //run
     int exitCode = board.run();
+
+    //save disk state
+    board.saveDiskToBinFile(diskDataPath);
 
     //display diagnostics
     board.printDiagnostics(false);
@@ -45,6 +49,3 @@ int emu::Emulator::assembleAndRun(const std::string &projectPath, const std::str
     return exitCode;
 }
 
-void emu::Emulator::binFileIntoDisk(const std::string &binPath) {
-
-}
