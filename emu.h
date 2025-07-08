@@ -9,6 +9,7 @@ namespace emu {
         static constexpr std::string version = "0.0.1";
     public:
         [[nodiscard]] int assembleAndRun(const std::string &projectPath, const std::string &entry) const;
+        void binFileIntoDisk(const std::string& binPath);
     };
 
 }

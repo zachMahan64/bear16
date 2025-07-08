@@ -44,3 +44,7 @@ int emu::Emulator::assembleAndRun(const std::string &projectPath, const std::str
     std::cout << std::endl;
     return exitCode;
 }
+
+void emu::Emulator::binFileIntoDisk(const std::string &binPath) {
+
+}

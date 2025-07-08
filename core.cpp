@@ -36,16 +36,16 @@
 #endif
 
 
-Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(sram, userRom, kernelRom, enableDebug),
-                                inputController(sram), clock(sram) {
+Board::Board(bool enableDebug): isEnableDebug(enableDebug), cpu(sram, userRom, kernelRom, disk, enableDebug),
+                                inputController(sram), clock(sram), diskController(sram, disk) {
 }
 
 //Board and loading ROM stuff -------------------------------------------------------
 int Board::run() {
     int exitCode = 0;
     //init clock & SDL2 timings
-    static constexpr int LOOP_SPEED_HZ = 200000;           // estimated from SDL2 bottleneck, calibrated for 36 MHz
-    static constexpr long long TARGET_CLOCK_SPEED_HZ = 36000000; // overall target clock speed
+    static constexpr int LOOP_SPEED_HZ = 200'000;           // estimated from SDL2 bottleneck, calibrated for 36 MHz
+    static constexpr long long TARGET_CLOCK_SPEED_HZ = 36'000'000; // overall target clock speed
     static constexpr long STEPS_PER_LOOP = TARGET_CLOCK_SPEED_HZ / LOOP_SPEED_HZ;
     SDL_Event e;
     clock.resetCycles(); //set clock cycles to zero @ the start of a new process
@@ -75,6 +75,8 @@ int Board::run() {
             cpu.step();
             clock.tick();
         }
+
+        diskController.handleDiskOperation();
 
         const uint64_t now = SDL_GetPerformanceCounter();
         const double elapsed = static_cast<double>(now - lastFrameTime) / freq;
@@ -120,6 +122,14 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << std::dec << "Total cycles: " << clock.getCycles() << std::endl;
     std::cout << std::dec << "Clock Speed = " << clockSpeedHz << " Hz" << std::endl;
     std::cout << "=====================" << std::endl;
+    std::cout << "Disk contents: \n";
+    for (int i = 0; i < 1024; i++) {
+        std::cout << disk->at(i);
+        if (i % 128 == 127) {
+            std::cout << std::endl;
+        }
+    }
+    std::cout << "=====================" << std::endl;
 }
 void Board::printAllRegisterContents() const {
     int cnt = 0;
@@ -141,6 +151,16 @@ void Board::printAllRegisterContents() const {
         std::cout << printBuffer << std::endl;
     }
 }
+
+void writeToFile(const std::string& filename, const std::vector<uint8_t>& data) {
+    std::ofstream outFile(filename, std::ios::binary);
+    if (!outFile) {
+        throw std::runtime_error("Failed to open file for writing: " + filename);
+    }
+    outFile.write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(data.size()));
+    outFile.close();
+}
+
 void Board::loadUserRomFromBinInTxtFile(const std::string &path) {
     std::ifstream file(path);
     std::vector<uint8_t> byteRom{};
@@ -242,6 +262,31 @@ void Board::loadKernelRomFromByteVector(std::vector<uint8_t> &rom) {
     setUserRom(rom);
 }
 
+void Board::loadDiskFromBinFile(const std::string &path) {
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file) {
+        std::cout << "ERROR: Could not open file" << std::endl;
+        return;
+    }
+
+    std::streamsize size = file.tellg();
+    if (size > isa::DISK_SIZE) {
+        LOG_ERR("ERROR: File size exceeds disk capacity.");
+        return;
+    }
+    file.seekg(0, std::ios::beg);
+
+    std::vector<uint8_t> buffer(size);
+    if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+        LOG_ERR("ERROR: Failed to read entire file.");
+        return;
+    }
+
+    // Copy into disk array
+    std::ranges::copy(buffer, disk->begin());
+}
+
+
 void Board::calcClockSpeedHz(double elapsedMillis) {
     clockSpeedHz = static_cast<double>(clock.getCycles()) / (elapsedMillis / 1000);
 }
@@ -256,8 +301,8 @@ void Board::setKernelRom(std::vector<uint8_t> &rom) {
 
 //CPU ----------------------------------------------------------------------------
 CPU16::CPU16(std::array<uint8_t, isa::SRAM_SIZE>& sram, std::array<uint8_t, isa::ROM_SIZE>& userRom,
-    std::array<uint8_t, isa::ROM_SIZE>& kernelRom, bool enableDebug)
-    : isEnableDebug(enableDebug), sram(sram), userRom(userRom), kernelRom(kernelRom), activeRom(this->userRom) {
+    std::array<uint8_t, isa::ROM_SIZE>& kernelRom, std::unique_ptr<std::array<uint8_t, isa::DISK_SIZE>>& disk, bool enableDebug)
+    : isEnableDebug(enableDebug), sram(sram), userRom(userRom), kernelRom(kernelRom), activeRom(this->userRom), disk(disk->data(), isa::DISK_SIZE) {
 }
 
 //CPU16 flow of execution
@@ -980,6 +1025,53 @@ void InputController::handleKeyboardRelease(const SDL_Event &e) const {
 void InterruptController::handleKeyboardInterrupt() {
 
 }
+//Disk Controller
+DiskController::DiskController(std::array<uint8_t, isa::SRAM_SIZE>& sramRef, const std::unique_ptr<std::array<uint8_t, isa::DISK_SIZE>>& disk)
+    : disk(disk->data(), isa::DISK_SIZE), sram(sramRef) {
+}
+
+void DiskController::handleDiskOperation() {
+    if (sram[isa::DISK_OP] == NO_OP) {
+        return;
+    }
+    addrPtr = sram[isa::DISK_ADDR_LO] | (sram[isa::DISK_ADDR_HI] << 16);
+    if (addrPtr >= isa::DISK_SIZE) {
+        LOG_ERR("ERROR: Disk address out of bounds: " << addrPtr << std::endl);
+        sram[isa::DISK_STATUS] |= OVERFLOW_ERROR;
+        return;
+    }
+    if (sram[isa::DISK_OP] == READ_BYTE_OP) {
+        sram[isa::DISK_DATA] = disk[addrPtr];
+        sram[isa::DISK_STATUS] = 0; //reset
+    } else if (sram[isa::DISK_OP] == WRITE_BYTE_OP) {
+        disk[addrPtr] = sram[isa::DISK_DATA];
+        sram[isa::DISK_STATUS] = 0; //reset
+    } else if (sram[isa::DISK_OP] == READ_WORD_OP) {
+        if (addrPtr + 1 >= isa::DISK_SIZE) {
+            LOG_ERR("ERROR: Disk word access out of bounds: " << addrPtr << std::endl);
+            sram[isa::DISK_STATUS] |= OVERFLOW_ERROR;
+            return;
+        }
+        sram[isa::DISK_DATA] = disk[addrPtr];
+        sram[isa::DISK_DATA + 1] = disk[addrPtr + 1];
+        sram[isa::DISK_STATUS] = 0; //reset
+    } else if (sram[isa::DISK_OP] == WRITE_WORD_OP) {
+        if (addrPtr + 1 >= isa::DISK_SIZE) {
+            LOG_ERR("ERROR: Disk word access out of bounds: " << addrPtr << std::endl);
+            sram[isa::DISK_STATUS] |= OVERFLOW_ERROR;
+            return;
+        }
+        disk[addrPtr] = sram[isa::DISK_DATA];
+        disk[addrPtr + 1] = sram[isa::DISK_DATA + 1];
+        sram[isa::DISK_STATUS] = 0; //reset
+    } else if (sram[isa::DISK_OP] == RESET_STATUS_OP) {
+        disk[isa::DISK_STATUS] = 0;
+    } else {
+        LOG_ERR("ERROR: Unknown disk operation: " << sram[isa::DISK_OP] << std::endl);
+        sram[isa::DISK_STATUS] |= UNKNOWN_OP_ERROR;
+    }
+}
+
 //helper
 uint64_t currentTimeMillis() {
     using namespace std::chrono;

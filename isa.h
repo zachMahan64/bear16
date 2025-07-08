@@ -9,15 +9,21 @@
 namespace isa {
     static constexpr size_t SRAM_SIZE = 64 * 1024; //bytes
     static constexpr size_t ROM_SIZE = 64 * 1024; //bytes
+    static constexpr size_t DISK_SIZE = 16384 * 1024;
     static constexpr size_t GEN_REG_COUNT = 27;
     static constexpr size_t IO_COUNT = 2;
     static constexpr size_t MAX_UINT16_T = 65535;
     static constexpr size_t RA_REGISTER_INDEX = 0x000F;
     static constexpr size_t TOP_OF_HEAP_PTR = 6656;
     static constexpr size_t STARTING_HEAP_PTR_VALUE = 16384;
-
+    //RESERVED MEMORY REGIONS FOR MEMORY ALLOC/MANAGEMENT
     static constexpr size_t FREE_LIST_HEAD_LOC = 6558;
-
+    static constexpr size_t DISK_ADDR_HI = 6559;
+    static constexpr size_t DISK_ADDR_LO = 6560;
+    static constexpr size_t DISK_DATA = 6561;
+    static constexpr size_t DISK_OP = 6563;
+    static constexpr size_t DISK_STATUS = 6564;
+    //RESERVED MEMORY FOR I/O
     static constexpr uint16_t MIO_STRT = 6144;
     static constexpr uint16_t KEY_IO_MEM_LOC = MIO_STRT;
     static constexpr uint16_t SHIFT_KEY_IO_MEM_LOC = MIO_STRT + 1;

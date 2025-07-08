@@ -27,6 +27,8 @@ class CPU16 {
     std::array<uint8_t, isa::ROM_SIZE>& userRom;
     std::array<uint8_t, isa::ROM_SIZE>& kernelRom;
     std::span<uint8_t, isa::ROM_SIZE> activeRom;
+    //DISK
+    std::span<uint8_t, isa::DISK_SIZE> disk;
     //CTRL FLOW (primitive registers)
     uint16_t tickWaitCnt = 0; //for multicycle operations
     uint16_t tickWaitStopPt = 0;
@@ -66,7 +68,7 @@ public:
     uint16_t pc = 0;
     //CONSTRUCTOR
     CPU16(std::array<uint8_t, isa::SRAM_SIZE>& sram, std::array<uint8_t, isa::ROM_SIZE>& userRom,
-    std::array<uint8_t, isa::ROM_SIZE>& kernelRom, bool enableDebug);
+    std::array<uint8_t, isa::ROM_SIZE>& kernelRom, std::unique_ptr<std::array<uint8_t, isa::DISK_SIZE>>& disk, bool enableDebug);
     //EXECUTION
     void step();
     //INTERRUPT COMMUNICATION INTERFACE
@@ -124,6 +126,27 @@ public:
     void handleKeyboardInterrupt();
 };
 
+class DiskController {
+    uint32_t addrPtr = 0;
+    std::span<uint8_t, isa::DISK_SIZE> disk;
+    std::array<uint8_t, isa::SRAM_SIZE>& sram;
+    //disk operations
+    static constexpr uint8_t NO_OP = 0x00;
+    static constexpr uint8_t READ_BYTE_OP = 0x01;
+    static constexpr uint8_t WRITE_BYTE_OP = 0x02;
+    static constexpr uint8_t READ_WORD_OP = 0x03;
+    static constexpr uint8_t WRITE_WORD_OP = 0x04;
+    static constexpr uint8_t RESET_STATUS_OP = 0x05;
+    //disk flags
+    static constexpr uint8_t OVERFLOW_ERROR = 0x01;
+    static constexpr uint8_t UNKNOWN_OP_ERROR = 0x02;
+public:
+    explicit DiskController(std::array<uint8_t, isa::SRAM_SIZE>& sramRef,
+                            const std::unique_ptr<std::array<uint8_t, isa::DISK_SIZE>>& disk
+                            );
+    void handleDiskOperation();
+};
+
 class Board {
     //flags
     bool power = true;
@@ -134,6 +157,8 @@ class Board {
     std::array<uint8_t, isa::SRAM_SIZE> sram {};
     std::array<uint8_t, isa::ROM_SIZE> userRom {};
     std::array<uint8_t, isa::ROM_SIZE> kernelRom {};
+    //disk
+    std::unique_ptr<std::array<uint8_t, isa::DISK_SIZE>> disk = std::make_unique<std::array<uint8_t, isa::DISK_SIZE>>();
     //IO (WIP)
     uint64_t input  = 0;
     uint64_t output = 0;
@@ -143,6 +168,7 @@ class Board {
     parts::Clock clock;
     InterruptController interruptController {};
     InputController inputController;
+    DiskController diskController;
     void setKernelRom(std::vector<uint8_t>& rom);
     void setUserRom(std::vector<uint8_t>& rom);
 public:
@@ -155,12 +181,15 @@ public:
     void loadUserRomFromHexInTxtFile(const std::string &path);
     void loadUserRomFromByteVector(std::vector<uint8_t>& rom);
     void loadKernelRomFromByteVector(std::vector<uint8_t>& rom);
+    //DISK LOADING
+    void loadDiskFromBinFile(const std::string &path);
     //DIAGNOSTICS
     void calcClockSpeedHz(double elapsedMillis);
     void printDiagnostics(bool printMemAsChars) const;
     void printAllRegisterContents() const;
 };
 //helper
+void writeToFile(const std::string& filename, const std::vector<uint8_t>& data);
 uint64_t currentTimeMillis();
 
 
