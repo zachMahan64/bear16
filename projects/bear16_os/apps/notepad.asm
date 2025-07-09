@@ -1,4 +1,4 @@
-# TEXT_EDITOR_APP.ASM
+# NOTEPAD.ASM
 
 # REWORK this to have a dynamic cursor, and write purely to buffer & do page blits
 

@@ -1,7 +1,10 @@
 # APP_DISPATCH.ASM
 
-@include "os_core.asm"
-@include "text_editor_app.asm" # application
+@include "os_core.asm" #implements interface
+# APPS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+@include "apps/notepad.asm"
+@include "apps/tictactoe.asm"
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 .data
 app_dist:
@@ -13,7 +16,7 @@ app_dist_start:
     .word NULL, app_not_found # throw an error if we read the table terminator
 app_dist_strings:
     app_dist_text_editor:
-        .string "texteditor"
+        .string "notepad"
     app_dist_tic_tac_toe:
         .string "tictactoe"
 .text

@@ -23,7 +23,7 @@ namespace isa {
     static constexpr size_t DISK_ADDR_HI = 6561;
     static constexpr size_t DISK_DATA = 6562;
     static constexpr size_t DISK_OP = 6563;
-    static constexpr size_t DISK_STATUS = 6565;
+    static constexpr size_t DISK_STATUS = 6564;
     //RESERVED MEMORY FOR I/O
     static constexpr uint16_t MIO_STRT = 6144;
     static constexpr uint16_t KEY_IO_MEM_LOC = MIO_STRT;

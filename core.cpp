@@ -1050,9 +1050,11 @@ void DiskController::handleDiskOperation() {
     if (sram[isa::DISK_OP] == READ_BYTE_OP) {
         sram[isa::DISK_DATA] = disk[addrPtr];
         sram[isa::DISK_STATUS] |= READ_DONE;
+        sram[isa::DISK_OP] = NO_OP; //reset/clear operation mem LOC
     } else if (sram[isa::DISK_OP] == WRITE_BYTE_OP) {
         disk[addrPtr] = sram[isa::DISK_DATA];
         sram[isa::DISK_STATUS] |= WRITE_DONE;
+        sram[isa::DISK_OP] = NO_OP; //reset/clear operation mem LOC
     } else if (sram[isa::DISK_OP] == READ_WORD_OP) {
         if (addrPtr + 1 >= isa::DISK_SIZE) {
             LOG_ERR("ERROR: Disk word access out of bounds: " << addrPtr << std::endl);
@@ -1060,8 +1062,9 @@ void DiskController::handleDiskOperation() {
             return;
         }
         sram[isa::DISK_DATA] = disk[addrPtr];
-        sram[isa::DISK_DATA + 1] = disk[addrPtr + 1];
-        sram[isa::DISK_STATUS] = READ_DONE;
+        sram[isa::DISK_DATA + 1] = disk[addrPtr + 1]; //complete word
+        sram[isa::DISK_STATUS] |= READ_DONE;
+        sram[isa::DISK_OP] = NO_OP; //reset/clear operation mem LOC
     } else if (sram[isa::DISK_OP] == WRITE_WORD_OP) {
         if (addrPtr + 1 >= isa::DISK_SIZE) {
             LOG_ERR("ERROR: Disk word access out of bounds: " << addrPtr << std::endl);
@@ -1069,10 +1072,11 @@ void DiskController::handleDiskOperation() {
             return;
         }
         disk[addrPtr] = sram[isa::DISK_DATA];
-        disk[addrPtr + 1] = sram[isa::DISK_DATA + 1];
+        disk[addrPtr + 1] = sram[isa::DISK_DATA + 1]; //complete word
         sram[isa::DISK_STATUS] = WRITE_DONE;
+        sram[isa::DISK_OP] = NO_OP; //reset/clear operation mem LOC
     } else if (sram[isa::DISK_OP] == RESET_STATUS_OP) {
-        disk[isa::DISK_STATUS] = 0;
+        sram[isa::DISK_STATUS] = 0; //reset
     } else {
         LOG_ERR("ERROR: Unknown disk operation: " << sram[isa::DISK_OP] << std::endl);
         sram[isa::DISK_STATUS] |= UNKNOWN_OP_ERROR;

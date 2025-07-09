@@ -3,6 +3,7 @@
 @include "text_processing.asm"
 @include "util_mem_manager.asm"
 @include "util_misc.asm"
+@include "util_disk_io.asm"
 @include "math.asm"
 
 .data
