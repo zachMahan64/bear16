@@ -9,7 +9,7 @@
 namespace isa {
     static constexpr size_t SRAM_SIZE = 64 * 1024; //bytes
     static constexpr size_t ROM_SIZE = 64 * 1024; //bytes
-    static constexpr size_t DISK_SIZE = 16384 * 1024;
+    static constexpr size_t DISK_SIZE = 256 * 65536;
     static constexpr size_t GEN_REG_COUNT = 27;
     static constexpr size_t IO_COUNT = 2;
     static constexpr size_t MAX_UINT16_T = 65535;

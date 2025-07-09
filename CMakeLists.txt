@@ -27,7 +27,6 @@ add_executable(cpu_emulator_take_1
 # includes SDL headers
 target_include_directories(cpu_emulator_take_1 PRIVATE "${CMAKE_SOURCE_DIR}/libs/SDL2.framework")
 
-# tells the linker where to find frameworks (the directory containing SDL2.framework)
 target_link_directories(cpu_emulator_take_1 PRIVATE "${CMAKE_SOURCE_DIR}/libs")
 
 target_link_libraries(cpu_emulator_take_1 "${CMAKE_SOURCE_DIR}/libs/SDL2.framework/Versions/A/SDL2")
