@@ -36,6 +36,9 @@ namespace isa {
     static constexpr uint16_t DAYS_PTR_MEM_LOC = MIO_STRT + 7;
     static constexpr uint16_t MONTHS_PTR_MEM_LOC = MIO_STRT + 8;
     static constexpr uint16_t YEARS_PTR_MEM_LOC = MIO_STRT + 9;
+    static constexpr uint16_t CONT_FRAMES_MEM_LOC_LO = MIO_STRT + 11;
+    static constexpr uint16_t CONT_FRAMES_MEM_LOC_HI = MIO_STRT + 12;
+
 
 
 enum class Opcode_E : uint16_t {

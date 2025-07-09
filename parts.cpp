@@ -37,6 +37,10 @@ void Clock::initMemMappedTime() {
 void Clock::incMemMappedTime() {
     ++frames;
     sram[isa::FRAMES_MEM_LOC] = frames;
+    ++continuous_frames;
+    sram[isa::CONT_FRAMES_MEM_LOC_HI] = (continuous_frames >> 8);
+    sram[isa::CONT_FRAMES_MEM_LOC_LO] = continuous_frames;
+
     if (frames == 60) {
         ++seconds;
         frames = 0;

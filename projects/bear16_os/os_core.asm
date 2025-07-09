@@ -1,9 +1,10 @@
 # OS_CORE.ASM
 # REG CONV: Overload s10 to a3 & s9 to a4, {s0 = index ptr, s1 = line ptr} -> for cursor
 @include "text_processing.asm"
+@include "util_chrono.asm"
+@include "util_disk_io.asm"
 @include "util_mem_manager.asm"
 @include "util_misc.asm"
-@include "util_disk_io.asm"
 @include "math.asm"
 
 .data
@@ -38,20 +39,15 @@ print_welcome_msg:
 # UNIV CONSTANTS
 .const TRUE = 1
 .const FALSE = 0
-#CLOCK MEM_LOC CONSTANTS (ALL SUBJ TO CHANGE)
-.const FRAMES_MEM_LOC = 6147
-.const SECONDS_PTR_MEM_LOC = 6148
-.const MINUTES_PTR_MEM_LOC = 6149
-.const HOURS_PTR_MEM_LOC = 6150
-.const DAYS_PTR_MEM_LOC = 6151
-.const MONTHS_PTR_MEM_LOC = 6152
-.const YEARS_PTR_MEM_LOC = 6153
 
 init_os:
     call os_init_heap
-    call subr_init_os_draw_bottom_line # perhaps inline
-    call subr_init_month_year      # initialize dates (static/non updated until restart) -> note: may cause inaccuracies
+    call os_init_taskbar
     call os_update
+    ret
+os_init_taskbar:
+    call subr_init_os_draw_bottom_line
+    call subr_init_month_year      # initialize dates (static/non updated until restart) -> note: may cause inaccuracies
     ret
     subr_init_os_draw_bottom_line:
         clr s2 # cnt & index

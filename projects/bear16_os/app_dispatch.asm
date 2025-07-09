@@ -11,12 +11,12 @@ app_dist:
 app_dist_start:
     # char*, {label to call/fn ptr}
     # [4 bytes per entry]
-    .word app_dist_text_editor, text_editor_main
-    .word app_dist_tic_tac_toe, tictactoe_main
+    .word app_dist_notepad, notepad_main
+    .word app_dist_tic_tac_toe, tictactoe_start
     #add more
     .word NULL, app_not_found # throw an error if we read the table terminator
 app_dist_strings:
-    app_dist_text_editor:
+    app_dist_notepad:
         .string "notepad"
     app_dist_tic_tac_toe:
         .string "tictactoe"

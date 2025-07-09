@@ -99,12 +99,13 @@ nonalpha_shift_map: # we use this for linear look ups
 .const MONTH_STR_ARRAY_ENTRY_SIZE = 4
 .const MONTH_STR_ARRAY_SIZE = 48
 
-#Framebuffer constants
+# FRAMEBUFFER CONSTANTS
 .const FB_LOC = 0
 .const FB_SIZE = 6144
 .const LINE_SIZE = 256
 .const TILE_MAP_SIZE = 256
 .const LINE_WIDTH_B = 32
+# IO CONSTANTS
 .const IO_LOC = 6144 # SUBJ TO CHANGE
 .const SHIFT_LOC = 6145 # SUBJ TO CHANGE
 .const ARROW_KEY_STATE_LOC = 6146 #SUBJ TO CHANGE
@@ -113,6 +114,11 @@ nonalpha_shift_map: # we use this for linear look ups
 .const ARROW_DOWN_MASK  = 0x02
 .const ARROW_LEFT_MASK  = 0x04
 .const ARROW_RIGHT_MASK = 0x08
+# KEY CONSTANTS
+.const K_BACKSPACE = 8
+.const K_TAB       = 9
+.const K_ENTER     = 13
+.const K_ESC       = 27
 
 blit_cl:
     #a0 = line, a1 = index, a2 = desired char

@@ -6,6 +6,14 @@
 util_stall:
     jmp util_stall
     ret
+
+util_stall_esc:
+    lb t0, IO_LOC
+    ne util_stall_esc, t0, K_ESC # check if esc is pressed
+    lea t0, IO_LOC
+    sb t0, 0 # clear IO byte
+    ret
+
 util_iter_loop:
     # a0 = function ptr
     # a1 = times to execute
@@ -42,6 +50,21 @@ util_clr_fb_by_line_idx:
         sb t0, 0
         inc t0
         lt util_clr_fb_by_line_idx_loop, t0, t1
+    ret
+util_clr_bottom_left_os_bar:
+    .const CLR_BOTTOM_LEFT_OS_BAR_OFFS = -2 # cnt/idx
+    push 0 #init CLR_BOTTOM_LEFT_OS_BAR_OFFS
+    clr t0
+    util_clr_bottom_left_os_bar_loop:
+        mov a0, 23 # last line
+        mov a1, t0
+        mov a2, ' ' # clear char
+        call blit_cl
+        lb t0, fp, CLR_BOTTOM_LEFT_OS_BAR_OFFS # ->
+        inc t0                                 # ->
+        sb fp, CLR_BOTTOM_LEFT_OS_BAR_OFFS, t0 # -> do cnt ops
+        .const CLR_BOTTOM_LEFT_OS_BAR_IDX_RANGE_TO_CLEAR = 12
+        ult util_clr_bottom_left_os_bar_loop, t0, CLR_BOTTOM_LEFT_OS_BAR_IDX_RANGE_TO_CLEAR # num idx to clear
     ret
 # STRING FUNCTIONS
 util_strcomp_ram_rom:
