@@ -19,3 +19,6 @@
 .const DISK_DATA = 6562
 .const DISK_OP = 6563
 .const DISK_STATUS = 6564
+
+util_busy_disk_write:
+    # a0 =

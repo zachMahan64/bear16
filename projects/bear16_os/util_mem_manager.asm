@@ -12,7 +12,8 @@ util_init_free_list:
     ret
 
 # HEAP ALLOCATION FUNCTIONS
-util_malloc:  #LINKED FREE LIST WIP, NONSPLITTING/COALESCING
+util_malloc: # zeroes memory
+    #LINKED FREE LIST WIP, NONSPLITTING/COALESCING
     # reserves a0 + 2 bytes and then store size in the base & return the ptr just above the base
     # a0 = num bytes
     call util_malloc_traverse_free_list # reuse a0
@@ -90,7 +91,7 @@ util_free: # WIP, BUILD W/ LINKED FREE LIST (NO SORTING OR COALESENCE YET)
     sw t2, t0                   # set free list head to this block
     ret
 
-util_ralloc:
+util_ralloc: # zeros memory
     # !!! REGION ALLOC, does not adjust TOP_OF_HEAP_PTR -> this function is dangerous altough useful in priveledged...
     # ...memory space
     # a0 = ptr to start of region
