@@ -149,7 +149,7 @@ namespace preprocess {
     }
     bool Preprocessor::addIncludeIfAbsent(const IncludeToken& tkn) {
         const std::string& fullPath = tkn.getFullPath();
-        const std::string entryPath = projectPath + entry;
+        const std::string entryPath = std::filesystem::path(projectPath) / entry;
         if (fullPath == entryPath) {
             LOG("DID NOT ADD " + fullPath + " SINCE IT IS THE ENTRY FILE.");
             return false;

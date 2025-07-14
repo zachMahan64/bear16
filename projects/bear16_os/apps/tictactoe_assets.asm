@@ -1,7 +1,9 @@
 # TICTACTOE_ASSETS.ASM
 
 .data
-
+.const TTT_VLINE = 0
+.const TTT_HLINE = 1
+.const TTT_ILINE = 2
 ttt_tset_map_start:
 ttt_tset_map_0:
 .byte 0b00011000
@@ -96,6 +98,7 @@ ttt_x_map_tright:
 .byte 0b01110000
 .byte 0b11100000
 .byte 0b11000000
+
 
 ttt_o_map_start:
 ttt_o_map_0:

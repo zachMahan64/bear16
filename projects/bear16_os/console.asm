@@ -351,10 +351,42 @@ con_hello_world_str:
     call blit_strl_rom #blitting a str
     call check_to_scroll
     ret
+
+con_hi:
+.data
+con_hi_str:
+    .string "Hey!"
+.text
+    call check_to_scroll
+    inc s1 # increment line
+    call con_print_cname
+    mov a0, s1 # line
+    mov a1, s0 # index
+    mov a2, con_hi_str
+    mov s10, TRUE #update cursor
+    call blit_strl_rom #blitting a str
+    call check_to_scroll
+    ret
+con_hey:
+.data
+con_hey_str:
+    .string "Wassup?"
+.text
+    call check_to_scroll
+    inc s1 # increment line
+    call con_print_cname
+    mov a0, s1 # line
+    mov a1, s0 # index
+    mov a2, con_hey_str
+    mov s10, TRUE #update cursor
+    call blit_strl_rom #blitting a str
+    call check_to_scroll
+    ret
+
 con_help:
 .data
 con_help_str:
-    .string "This section is WIP."
+    .string "You're on your own for now, good luck."
 .text
     mov a0, con_help_str
     inc s1 # increment line
