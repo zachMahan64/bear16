@@ -84,18 +84,25 @@ tictactoe_play:
     # init board
     call tictactoe_blit_board
     # struct Board -> char[9] where each byte can either be 0 (empty), 1 (X), or 2 (O)
-    mov a0, 9
-    call util_sallocz
     .const TTT_PLAY_BOARD_ARR_OFFS = -9
+    .const TTT_PLAY_BOARD_ARR_SIZE = 9
+    .const TTT_PLAY_BOARD_ARR_EMPTY = 0
+    .const TTT_PLAY_BOARD_ARR_X = 1
+    .const TTT_PLAY_BOARD_ARR_O = 2
+    mov a0, 9
+    mov a1, tictactoe_play_sallocz_for_board_exit
+    call util_sallocz
+    tictactoe_play_sallocz_for_board_exit:
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
     # --> main loop should go here
 
     # TESTING/WIP ~~~~~~~~~~~#
-    mov a0, 7
-    call blit_ttt_x
-    mov a0, 8
-    call blit_ttt_o
+    add t0, fp, TTT_PLAY_BOARD_ARR_OFFS
+    sb t0, 8, 1 # board[src1] = X
+    sb t0, 4, 2
+    add a0, fp, TTT_PLAY_BOARD_ARR_OFFS # a0 <- &board
+    call ttt_blit_game_state
     #~~~~~~~~~~~~~~~~~~~~~~~~#
 
 
@@ -130,8 +137,8 @@ tictactoe_blit_board:
             inc t0
             push t0
             ult tictactoe_blit_board_hlines_loop, t0, TTT_BOARD_LINE_LEN
-    pop t0
-    push 0
+    pop t0 # ->
+    push 0 # clear cnt
     tictactoe_blit_board_vlines:
         mov a0, TTT_BOARD_LINE_START
         add a1, TTT_BOARD_IDX_START, TTT_BOARD_TILE_THICKNESS
@@ -149,6 +156,37 @@ tictactoe_blit_board:
             push t0
             ult tictactoe_blit_board_vlines_loop, t0, TTT_BOARD_LINE_LEN
     ret
+
+ttt_blit_game_state:
+    # a0 = ptr to board arr
+    sub sp, sp, 4 # reserve for local vars
+
+    .const BLIT_GAME_STATE_CNT_OFFS = -2
+    .const BLIT_GAME_STATE_BOARD_PTR_OFFS = -4
+
+    sw fp, BLIT_GAME_STATE_CNT_OFFS, 0 # clr
+    sw fp, BLIT_GAME_STATE_BOARD_PTR_OFFS, a0 # save ptr to board
+    blit_game_state_loop:
+        lw t0, fp, BLIT_GAME_STATE_CNT_OFFS
+        lw t2, fp, BLIT_GAME_STATE_BOARD_PTR_OFFS
+        lb t1, t2, t0 # boardTileState = [a0 + t0] = board[t0]
+        eq blit_game_state_x, t1, TTT_PLAY_BOARD_ARR_X
+        eq blit_game_state_o, t1, TTT_PLAY_BOARD_ARR_O
+        blit_game_state_did_blit_exit:
+        lw t0, fp, BLIT_GAME_STATE_CNT_OFFS
+        inc t0
+        sw fp, BLIT_GAME_STATE_CNT_OFFS, t0
+        ult blit_game_state_loop, t0, 9
+    ret
+    blit_game_state_x:
+        mov a0, t0
+        call blit_ttt_x
+        jmp blit_game_state_did_blit_exit
+    blit_game_state_o:
+        mov a0, t0
+        call blit_ttt_o
+        jmp blit_game_state_did_blit_exit
+
 tictactoe_exit:
     call util_clr_fb
     call os_init_taskbar

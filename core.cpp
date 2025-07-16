@@ -74,6 +74,7 @@ int Board::run() {
         for (int i = 0; i < STEPS_PER_LOOP; ++i) {
             cpu.step();
             clock.tick();
+            if (cpu.isHalted) break;
         }
 
         diskController.handleDiskOperation();
@@ -778,7 +779,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
             break;
         }
         case(isa::Opcode_E::JMP): {
-            jumpTo(dest);
+            jumpTo(src1Val);
             break;
         }
         case(isa::Opcode_E::JCOND_Z): {
