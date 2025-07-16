@@ -15,6 +15,16 @@ tictactoe_title_play_prompt_str:
 tictactoe_title_esc_prompt_str:
     .string "  ESC to exit"
 
+tictactoe_in_game_title_str:
+    .string " TIC-TAC-TOE: Ultimate Edition"
+
+tictactoe_turn_1:
+    .string " PLAYER 1's TURN"
+
+tictactoe_turn_2:
+    .string " PLAYER 2\'S TURN"
+
+
 .text
 tictactoe_start:
     call tictactoe_init
@@ -58,19 +68,52 @@ tictactoe_enter_title_page:
         sb t1, 0 # clear
     ret
 tictactoe_play:
+   # init UI
     call util_clr_fb
+
+    mov a0, 1
+    mov a1, 0
+    mov a2, tictactoe_in_game_title_str
+    call blit_strl_rom
+
+    mov a0, 3
+    mov a1, 0
+    mov a2, tictactoe_turn_1
+    call blit_strl_rom
+
+    # init board
     call tictactoe_blit_board
-    call util_stall_esc
-    call util_clr_fb
+    # struct Board -> char[9] where each byte can either be 0 (empty), 1 (X), or 2 (O)
+    mov a0, 9
+    call util_sallocz
+    .const TTT_PLAY_BOARD_ARR_OFFS = -9
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+    # --> main loop should go here
+
+    # TESTING/WIP ~~~~~~~~~~~#
+    mov a0, 7
+    call blit_ttt_x
+    mov a0, 8
+    call blit_ttt_o
+    #~~~~~~~~~~~~~~~~~~~~~~~~#
+
+
+    call util_stall_esc # temporary
+    call util_clr_fb # clear screen for clean returning to title screen
+    # loop this w/ an escape at some point
     ret
+
+# BLITTING CONSTANTS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+.const TTT_BOARD_LINE_START = 5
+.const TTT_BOARD_IDX_START = 7
+.const TTT_BOARD_TILE_THICKNESS = 5
+.const TTT_ILINE_DIST = (TTT_BOARD_TILE_THICKNESS + 1)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 tictactoe_blit_board:
     # blitting intersections
-    .const TTT_BOARD_TILE_THICKNESS = 5
-    .const TTT_ILINE_DIST = (TTT_BOARD_TILE_THICKNESS + 1)
     .const TTT_BOARD_LINE_LEN = (TTT_BOARD_TILE_THICKNESS * 3 + 2)
 
-    .const TTT_BOARD_LINE_START = 5
-    .const TTT_BOARD_IDX_START = 7
     tictactoe_blit_board_hlines:
         add a0, TTT_BOARD_LINE_START, TTT_BOARD_TILE_THICKNESS
         mov a1, TTT_BOARD_IDX_START
@@ -114,14 +157,12 @@ tictactoe_exit:
 
 # helpers
 blit_ttt_tile:
-    #a0 = line, a1 = index, a2 = desired tile, s10 = clobber (TRUE/FALSE)
+    #a0 = line, a1 = index, a2 = desired tile (works for any flat-data tile), s10 = clobber (TRUE/FALSE)
     mult t0, a0, LINE_SIZE # set line
     add t0, t0, a1 # set index
     add t0, t0, FB_LOC #adjust for FB location start in SRAM
 
-    mov t1, ttt_tset_map_start
-    mult t2, a2, 8 # idx * tile width in ROM
-    add t1, t1, t2
+    mov t1, a2
 
     clr t2 # cnt
     blit_ttt_tile_loop:
@@ -139,13 +180,158 @@ blit_ttt_tile:
         or t3, t3, t4 # bitwise or rom and ram byte
         jmp blit_ttt_tile_clobber_false_exit
 blit_ttt_x:
+# for ref: TTT_BOARD_LINE_START = 5
+# for ref: TTT_BOARD_IDX_START = 7
+# for ref: TTT_ILINE_DIST = 6 (effectively)
     # a0 = place (0-8)
-    .const BLIT_TTT_X_NUM_LOCAL_VARS = 2
+    .const BLIT_TTT_X_NUM_LOCAL_VARS = 3
     sub sp, sp, (BLIT_TTT_X_NUM_LOCAL_VARS * 2) # reserve for local vars
+
     .const BLIT_TTT_X_LINE_OFFS = -2
     .const BLIT_TTT_X_IDX_OFFS = -4
+    .const BLIT_TTT_X_CNT_OFFS = -6
+
     mod t0, a0, 3
     sb fp, BLIT_TTT_X_IDX_OFFS, t0
     div t0, a0, 3
     sb fp, BLIT_TTT_X_LINE_OFFS, t0
+
+    #init line
+    lb t0, fp, BLIT_TTT_X_LINE_OFFS
+    mult t0, t0, TTT_ILINE_DIST
+    add t0, t0, TTT_BOARD_LINE_START
+    sb fp, BLIT_TTT_X_LINE_OFFS, t0
+
+    #init idx
+    lb t0, fp, BLIT_TTT_X_IDX_OFFS
+    mult t0, t0, TTT_ILINE_DIST
+    add t0, t0, TTT_BOARD_IDX_START
+    sb fp, BLIT_TTT_X_IDX_OFFS, t0
+
+    #set up tile blitting args
+    lb a0, fp, BLIT_TTT_X_LINE_OFFS
+    lb a1, fp, BLIT_TTT_X_IDX_OFFS
+    mov a2, ttt_x_map_tleft
+    mov s10, FALSE
+    #set up da counter for da loop
+    sw fp, BLIT_TTT_X_CNT_OFFS, 0 # clear cnt
+    blit_ttt_x_loop_0:
+        call blit_ttt_tile
+        inc a0
+        inc a1
+        lw t0, fp, BLIT_TTT_X_CNT_OFFS
+        inc t0
+        sw fp, BLIT_TTT_X_CNT_OFFS, t0
+        ult blit_ttt_x_loop_0, t0, 5
+
+    #set up tile blitting args
+    lb a0, fp, BLIT_TTT_X_LINE_OFFS
+    add a0, a0, 4 # to blit other side of x (start 4 byte-tiles to the right)
+    lb a1, fp, BLIT_TTT_X_IDX_OFFS
+    mov a2, ttt_x_map_tright
+    mov s10, FALSE
+    #set up da counter for da loop
+    sw fp, BLIT_TTT_X_CNT_OFFS, 0 # clear cnt
+    blit_ttt_x_loop_1:
+        call blit_ttt_tile
+        dec a0
+        inc a1
+        lw t0, fp, BLIT_TTT_X_CNT_OFFS
+        inc t0
+        sw fp, BLIT_TTT_X_CNT_OFFS, t0
+        ult blit_ttt_x_loop_1, t0, 5
     ret
+
+blit_ttt_o:
+# for ref: TTT_BOARD_LINE_START = 5
+# for ref: TTT_BOARD_IDX_START = 7
+# for ref: TTT_ILINE_DIST = 6 (effectively)
+# for ref: TTT_BOARD_TILE_THICKNESS = 5
+    # a0 = place (0-8)
+    .const BLIT_TTT_O_NUM_LOCAL_VARS = 3
+    sub sp, sp, (BLIT_TTT_O_NUM_LOCAL_VARS * 2) # reserve for local vars
+
+    .const BLIT_TTT_O_LINE_OFFS = -2
+    .const BLIT_TTT_O_IDX_OFFS = -4
+    .const BLIT_TTT_O_CNT_OFFS = -6
+
+    mod t0, a0, 3
+    sb fp, BLIT_TTT_O_IDX_OFFS, t0
+    div t0, a0, 3
+    sb fp, BLIT_TTT_O_LINE_OFFS, t0
+
+    #init line
+    lb t0, fp, BLIT_TTT_O_LINE_OFFS
+    mult t0, t0, TTT_ILINE_DIST
+    add t0, t0, TTT_BOARD_LINE_START
+    sb fp, BLIT_TTT_O_LINE_OFFS, t0
+
+    #init idx
+    lb t0, fp, BLIT_TTT_O_IDX_OFFS
+    mult t0, t0, TTT_ILINE_DIST
+    add t0, t0, TTT_BOARD_IDX_START
+    sb fp, BLIT_TTT_O_IDX_OFFS, t0
+
+    #set up tile blitting args
+    lb a0, fp, BLIT_TTT_O_LINE_OFFS
+    lb a1, fp, BLIT_TTT_O_IDX_OFFS
+    mov a2, TTT_HLINE
+    mov s10, FALSE
+
+    sw fp, BLIT_TTT_O_CNT_OFFS, 0 # clear cnt
+
+    blit_ttt_o_loop_0:
+        inc a1
+        call blit_ttt_tile
+        add a0, a0, (TTT_BOARD_TILE_THICKNESS - 1)
+        call blit_ttt_tile
+        sub a0, a0, (TTT_BOARD_TILE_THICKNESS - 1)
+
+        lw t0, fp, BLIT_TTT_O_CNT_OFFS
+        inc t0
+        sw fp, BLIT_TTT_O_CNT_OFFS, t0
+
+        ult blit_ttt_o_loop_0, t0, 3
+
+    #set up tile blitting args again
+    lb a0, fp, BLIT_TTT_O_LINE_OFFS
+    lb a1, fp, BLIT_TTT_O_IDX_OFFS
+    mov a2, TTT_VLINE
+    mov s10, FALSE
+
+    sw fp, BLIT_TTT_O_CNT_OFFS, 0 # clear cnt
+    blit_ttt_o_loop_1:
+        inc a0
+        call blit_ttt_tile
+        add a1, a1, (TTT_BOARD_TILE_THICKNESS - 1)
+        call blit_ttt_tile
+        sub a1, a1, (TTT_BOARD_TILE_THICKNESS - 1)
+
+        lw t0, fp, BLIT_TTT_O_CNT_OFFS
+        inc t0
+        sw fp, BLIT_TTT_O_CNT_OFFS, t0
+
+        ult blit_ttt_o_loop_1, t0, 3
+
+    # restore to get da corners
+    lb a0, fp, BLIT_TTT_O_LINE_OFFS
+    lb a1, fp, BLIT_TTT_O_IDX_OFFS
+    mov a2, TTT_O_TL
+    call blit_ttt_tile
+
+    add a0, a0, (TTT_BOARD_TILE_THICKNESS - 1)
+    mov a2, TTT_O_BL
+    call blit_ttt_tile
+
+    add a1, a1, (TTT_BOARD_TILE_THICKNESS - 1)
+    mov a2, TTT_O_BR
+    call blit_ttt_tile
+
+    sub a0, a0, (TTT_BOARD_TILE_THICKNESS - 1)
+    mov a2, TTT_O_TR
+    call blit_ttt_tile
+
+    ret
+
+
+
