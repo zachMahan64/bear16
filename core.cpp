@@ -121,7 +121,7 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     numBytes = 512;
     cpu.printSectionOfRam(startingAddr, numBytes, true);
     std::cout << std::dec << "Total cycles: " << clock.getCycles() << std::endl;
-    std::cout << std::dec << "Clock Speed = " << clockSpeedHz << " Hz" << std::endl;
+    std::cout << std::dec << "Clock Speed = " << clockSpeedHz << " Hz" << " = " << clockSpeedHz / 1'000'000 << " MHz" << std::endl;
     std::cout << "=====================" << std::endl;
     std::cout << "Disk contents: \n";
     for (int i = 0; i < 1024; i++) {

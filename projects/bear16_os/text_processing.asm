@@ -243,7 +243,7 @@ blit_2dig_pint:
         blit_4dig_pint_ret:
             ret
     blit_bnum:
-        #a0 = line, a1 = index, a2 = num, s10 = l/r, s9 = shift down pixels (1:1 row of pix), s8 = clobber (do not or)
+        #a0 = line, a1 = index, a2 = num, s10 = l/r, s9 = shift down pixels (1:1 row of pix), s8 = clobber (TRUE/FALSE)
         mult t1, s9, LINE_WIDTH_B # this t1 will later get safely overwritten
         mult t0, a0, LINE_SIZE    # set line
         add t0, t0, a1            # set index

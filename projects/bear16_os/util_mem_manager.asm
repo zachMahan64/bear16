@@ -112,8 +112,8 @@ util_salloc:
     jmp a1
 util_sallocz:
     # a0 = num bytes to allocate on stack
-    # a1 = jmp ret address
     # ~ don't return anything, use fp for referencing local vars
+    # jump w/ jal and return w/ retl
     mov t0, sp # t0 = end
     sub sp, sp, a0
     mov t1, sp # start, counter, & ptr
@@ -121,7 +121,8 @@ util_sallocz:
         sb t1, 0 # clear memory
         inc t1
         ult util_sallocz_loop, t1, t0
-    jmp a1
+    retl
+
 # HELPER/BASICS
 util_get_top_of_heap_ptr:
     lw t0, TOP_OF_HEAP_PTR

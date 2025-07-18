@@ -49,7 +49,7 @@ console_dispatch_main: # currently just echos
         lwrom t1, s5, s7 # dest, srcAddr, srcOffset
         mov a1, t1
         eq console_dispatch_main_jumpt, t1, NULL # if reached null case at const idx -> jump
-        call util_strcomp_ram_rom
+        call util_strcomp_ram_rom_ignore_case
         eq console_dispatch_main_jumpt, rv, TRUE # elif rv == true -> jump
         add s7, s7, 4 #else jump to next entry
         jmp console_dispatch_main_loop

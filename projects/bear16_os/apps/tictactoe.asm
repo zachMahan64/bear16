@@ -89,10 +89,8 @@ tictactoe_play:
     .const TTT_PLAY_BOARD_ARR_EMPTY = 0
     .const TTT_PLAY_BOARD_ARR_X = 1
     .const TTT_PLAY_BOARD_ARR_O = 2
-    mov a0, 9
-    mov a1, tictactoe_play_sallocz_for_board_exit
-    call util_sallocz
-    tictactoe_play_sallocz_for_board_exit:
+    mov a0, TTT_PLAY_BOARD_ARR_SIZE
+    jal util_sallocz
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
     # --> main loop should go here
@@ -100,7 +98,7 @@ tictactoe_play:
     # TESTING/WIP ~~~~~~~~~~~#
     add t0, fp, TTT_PLAY_BOARD_ARR_OFFS
     sb t0, 8, 1 # board[src1] = X
-    sb t0, 4, 2
+    sb t0, 3, 2
     add a0, fp, TTT_PLAY_BOARD_ARR_OFFS # a0 <- &board
     call ttt_blit_game_state
     #~~~~~~~~~~~~~~~~~~~~~~~~#

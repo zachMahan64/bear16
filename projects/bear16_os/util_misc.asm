@@ -87,6 +87,41 @@ util_strcomp_ram_rom:
     util_strcomp_ram_rom_ne:
         mov rv, FALSE
         ret
+util_strcomp_ram_rom_ignore_case:
+    # a0 = char* in ram
+    # a1 = char* in rom
+    # -> rv = TRUE/FALSE
+    clr t2 # cnt
+    util_strcomp_ram_rom_ignore_case_loop:
+        lb t0, a0, t2 # load *char w/ cnt as offset
+        jal util_strcomp_ram_rom_ignore_case_loop_clamp_case_ram
+        lbrom t1, a1, t2 # load *char w/ cnt as offset
+        jal util_strcomp_ram_rom_ignore_case_loop_clamp_case_rom
+        ne util_strcomp_ram_rom_ignore_case_ne, t0, t1
+        util_strcomp_ram_rom_ignore_case_char_eq:
+           ne util_strcomp_ram_rom_ignore_case_char_eq_exit, t0, '\0'
+           ne util_strcomp_ram_rom_ignore_case_char_eq_exit, t1, '\0'
+           mov rv, TRUE
+           ret
+        util_strcomp_ram_rom_ignore_case_char_eq_exit:
+        inc t2
+        jmp util_strcomp_ram_rom_ignore_case_loop
+        util_strcomp_ram_rom_ignore_case_loop_clamp_case_ram:
+            ult util_strcomp_ram_rom_ignore_case_loop_clamp_case_ram_skip_clamp, t0, 'A'
+            ugt util_strcomp_ram_rom_ignore_case_loop_clamp_case_ram_skip_clamp, t0, 'Z'
+            add t0, t0, 32
+            util_strcomp_ram_rom_ignore_case_loop_clamp_case_ram_skip_clamp:
+            retl
+        util_strcomp_ram_rom_ignore_case_loop_clamp_case_rom:
+            ult util_strcomp_ram_rom_ignore_case_loop_clamp_case_rom_skip_clamp, t1, 'A'
+            ugt util_strcomp_ram_rom_ignore_case_loop_clamp_case_rom_skip_clamp, t1, 'Z'
+            add t1, t1, 32
+            util_strcomp_ram_rom_ignore_case_loop_clamp_case_rom_skip_clamp:
+            retl
+    util_strcomp_ram_rom_ignore_case_ne:
+        mov rv, FALSE
+        ret
+
 util_strlen_ram:
     # a0 = char*
     # ~> rv = string length (not including '\0')

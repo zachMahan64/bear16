@@ -14,6 +14,8 @@ add_executable(bear16
         emu.cpp
         preprocess.cpp
         expr_resolver.cpp
+        cli.cpp
+        cli.h
 )
 if(APPLE)
     target_include_directories(bear16 PRIVATE "${CMAKE_SOURCE_DIR}/libs/SDL2.framework")
