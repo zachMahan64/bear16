@@ -10,7 +10,7 @@ class Emulator {
     //emu state
     std::string projectPath = "../projects_b16/bear16_os";
     std::string entry = "main.asm";
-    std::string diskPath = "../disks/default_disk.bin";
+    std::string diskPath = "../disks_b16/default_disk.bin";
 public:
     int assembleAndRun() const;
     void enterTUI();
