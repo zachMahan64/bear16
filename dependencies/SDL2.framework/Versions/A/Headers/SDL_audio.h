@@ -688,7 +688,7 @@ typedef enum
 /**
  * This function is a legacy means of querying the audio device.
  *
- * New projects might want to use SDL_GetAudioDeviceStatus() instead. This
+ * New projects_b16 might want to use SDL_GetAudioDeviceStatus() instead. This
  * function is equivalent to calling...
  *
  * ```c
@@ -733,7 +733,7 @@ extern DECLSPEC SDL_AudioStatus SDLCALL SDL_GetAudioDeviceStatus(SDL_AudioDevice
 /**
  * This function is a legacy means of pausing the audio device.
  *
- * New projects might want to use SDL_PauseAudioDevice() instead. This
+ * New projects_b16 might want to use SDL_PauseAudioDevice() instead. This
  * function is equivalent to calling...
  *
  * ```c
@@ -1360,7 +1360,7 @@ extern DECLSPEC void SDLCALL SDL_ClearQueuedAudio(SDL_AudioDeviceID dev);
 /**
  * This function is a legacy means of locking the audio device.
  *
- * New projects might want to use SDL_LockAudioDevice() instead. This function
+ * New projects_b16 might want to use SDL_LockAudioDevice() instead. This function
  * is equivalent to calling...
  *
  * ```c
@@ -1419,7 +1419,7 @@ extern DECLSPEC void SDLCALL SDL_LockAudioDevice(SDL_AudioDeviceID dev);
 /**
  * This function is a legacy means of unlocking the audio device.
  *
- * New projects might want to use SDL_UnlockAudioDevice() instead. This
+ * New projects_b16 might want to use SDL_UnlockAudioDevice() instead. This
  * function is equivalent to calling...
  *
  * ```c

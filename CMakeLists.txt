@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.5)
 project(cpu_emulator_16-bit_custom_isa)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -14,19 +14,17 @@ add_executable(bear16
         emu.cpp
         preprocess.cpp
         expr_resolver.cpp
-        cli.cpp
-        cli.h
 )
 if(APPLE)
-    target_include_directories(bear16 PRIVATE "${CMAKE_SOURCE_DIR}/libs/SDL2.framework")
+    target_include_directories(bear16 PRIVATE "${CMAKE_SOURCE_DIR}/dependencies/SDL2.framework")
 
-    target_link_directories(bear16 PRIVATE "${CMAKE_SOURCE_DIR}/libs")
+    target_link_directories(bear16 PRIVATE "${CMAKE_SOURCE_DIR}/dependencies")
 
-    target_link_libraries(bear16 "${CMAKE_SOURCE_DIR}/libs/SDL2.framework/Versions/A/SDL2")
+    target_link_libraries(bear16 "${CMAKE_SOURCE_DIR}/dependencies/SDL2.framework/Versions/A/SDL2")
 elseif(WIN32)
     # paths
-    set(SDL2_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/SDL2-2.32.8/include")
-    set(SDL2_LIB_DIR "${CMAKE_SOURCE_DIR}/libs/SDL2-2.32.8/lib/x86")
+    set(SDL2_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/dependencies/SDL2-2.32.8/include")
+    set(SDL2_LIB_DIR "${CMAKE_SOURCE_DIR}/dependencies/SDL2-2.32.8/lib/x86")
     set(SDL2_DLL "${SDL2_LIB_DIR}/SDL2.dll")
 
     target_compile_definitions(bear16 PRIVATE SDL_MAIN_HANDLED) # as to not override main()

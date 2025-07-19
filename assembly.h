@@ -13,6 +13,20 @@
 #include "preprocess.h"
 #include "fixpt8_8_t.h"
 
+//macros
+//#define DO_LOG_ASM
+#ifdef DO_LOG_ASM
+#define LOG_ASM(x) std::cout << x << "\n"
+#else
+#define LOG_ASM(x)
+#endif
+
+#ifdef DO_LOG_ASM
+#define LOG_ASM_NO_NEWLINE(x) std::cout << x
+#else
+#define LOG_ASM_NO_NEWLINE(x)
+#endif
+
 namespace assembly {
     enum class TokenType;
     class Token;

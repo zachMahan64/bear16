@@ -17,6 +17,7 @@
 
 #include "expr_resolver.h"
 #include "preprocess.h"
+
 // variant definition
 namespace assembly {
     using TokenizedRomLine = std::variant<TokenizedInstruction, TokenizedData>;
@@ -551,7 +552,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
     }
     std::vector<uint8_t> Assembler::assembleOpenedProject() {
         std::string fullPath = std::filesystem::path(projectPath) / entry;
-        LOG("Now assembling: " + fullPath);
+        LOG_ASM("Now assembling: " + fullPath);
         std::string processedAsm = preprocessor.preprocessAsmProject(entry);
         std::vector<Token> allTokens = tokenizeAsmFirstPass(processedAsm);
         std::vector<TokenizedRomLine> allTokenizedInstructions = parseListOfTokensIntoTokenizedRomLines(allTokens);
@@ -570,7 +571,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
 
         std::string buffer = processedAsm;
 
-        LOG("Orig asm (debug):\n" << buffer << std::endl);
+        LOG_ASM("Orig asm (debug):\n" << buffer << std::endl);
 
         std::string currentStr {};
         bool inComment = false;
@@ -714,11 +715,11 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
             LOG_ERR("ERROR: invalid expression (no closing parentheses) at end of asm file");
         }
 
-        LOG("First pass tokens:\n");
+        LOG_ASM("First pass tokens:\n");
         for (auto& token : firstPassTokens) {
-            LOG(toString(token.type) + "-" << token.body << " ");
+            LOG_ASM(toString(token.type) + "-" << token.body << " ");
         }
-        LOG(std::endl);
+        LOG_ASM(std::endl);
 
         return firstPassTokens;
     }
@@ -791,7 +792,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
                 if (inText) currentLine_TEXT.push_back(tkn);
                 if (inData) currentLine_DATA.push_back(tkn);
             } else {
-                //LOG("IGNORED A TOKEN TYPE (2nd pass):" + toString(tkn.type));
+                //LOG_ASM("IGNORED A TOKEN TYPE (2nd pass):" + toString(tkn.type));
             }
         }
         //handle hanging lines
@@ -826,7 +827,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
                     LOG_ERR("WARNING: duplicate label: " + labelName);
                 }
                 labelMap.emplace(labelName, labelValue);
-                LOG("placed label " << labelName << " at " << std::dec << labelValue);
+                LOG_ASM("placed label " << labelName << " at " << std::dec << labelValue);
             } else if (containsValue(stringToDataDirectives, firstTkn.type)) {
                 if (firstTkn.type == TokenType::STRING_DIR) {
                     try {
@@ -845,21 +846,21 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
                             line = fixedStrLine;
                             LOG ("REVISING STRING");
                             for (const Token &tkn : line) {
-                                LOG(toString(tkn.type) << "-" << tkn.body << " | ");
+                                LOG_ASM(toString(tkn.type) << "-" << tkn.body << " | ");
                             }
-                            LOG(std::endl);
+                            LOG_ASM(std::endl);
                             byteNum += static_cast<int>(newStrTkn.body.length()) + 1; //+1 for null terminator
                         }
                         else {
                             LOG_ERR("ERROR: invalid string declaration at byte index: " << byteNum <<  std::endl);
                             for (const Token &tkn : line) {
-                                LOG(tkn.body << " | ");
+                                LOG_ASM(tkn.body << " | ");
                             }
                         }
                     } catch (std::out_of_range &e) {
                         LOG_ERR("ERROR: invalid string declaration at byte index: ") << byteNum << " | " <<  std::endl;
                         for (const Token &tkn : line) {
-                            LOG(tkn.body << " | ");
+                            LOG_ASM(tkn.body << " | ");
                         }
                     }
                 } else {
@@ -870,7 +871,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
                         }
                     }
                     int byteNumDiff = byteNum - startingByteNum;
-                    LOG(byteNumDiff << " bytes added for " << toString(firstTkn.type) << " directive \n");
+                    LOG_ASM(byteNumDiff << " bytes added for " << toString(firstTkn.type) << " directive");
                 }
             }
         }
@@ -935,15 +936,14 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
 
         //debug
         int numLinesInSecondPass = 0;
-        LOG("\nTokenized lines (second pass):\n");
+        LOG_ASM("\nTokenized lines (second pass):\n");
         for (const std::vector<Token> &line : tokenLines_TEXT_and_DATA) {
             numLinesInSecondPass++;
-            LOG("Line " << numLinesInSecondPass << ":");
+            LOG_ASM("Line " << numLinesInSecondPass << ":");
             for (const Token &tkn : line) {
-                LOG(" " << toString(tkn.type) << "-");
-                LOG(tkn.body);
+                LOG_ASM(" " << toString(tkn.type) << "-" << tkn.body);
             }
-            LOG(std::endl);
+            LOG_ASM("");
         }
 
         std::vector<TokenizedRomLine> finalRomLines {};
@@ -1051,7 +1051,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
                         Token("\\s"),
                         Token("'")
                     };
-                    LOG("Empty char literal detected. Assumed a space was written or intended -> substituted with \\s");
+                    LOG_ASM("Empty char literal detected. Assumed a space was written or intended -> substituted with \\s");
                     }
 
                 operands.emplace_back(tokensForOperand);
@@ -1073,7 +1073,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
                         Token("\\s"),
                         Token("'")
                     };
-                    LOG("Empty string literal detected. Assumed a space was written or intended -> substituted with \\s");
+                    LOG_ASM("Empty string literal detected. Assumed a space was written or intended -> substituted with \\s");
                     }
 
                 operands.emplace_back(tokensForOperand);
@@ -1159,15 +1159,15 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
                 if (tkn.type == TokenType::REF) {
                     if (labelMap.contains(tkn.body)) {
                         revisedDataTokens.emplace_back(std::to_string(labelMap.at(tkn.body)));
-                        LOG(".data: converted raw REF to label-mapped val: " + tkn.body << "=" << labelMap.at(tkn.body));
+                        LOG_ASM(".data: converted raw REF to label-mapped val: " + tkn.body << "=" << labelMap.at(tkn.body));
                     } else if (constMap.contains(tkn.body)) {
                         revisedDataTokens.emplace_back(std::to_string(constMap.at(tkn.body)));
-                        LOG(".data: converted raw REF to const-mapped val: " + tkn.body << "=" << constMap.at(tkn.body));
+                        LOG_ASM(".data: converted raw REF to const-mapped val: " + tkn.body << "=" << constMap.at(tkn.body));
                     } else {
                         Token fixedStrTkn(tkn.body);
                         fixedStrTkn.type = TokenType::STRING;
                         revisedDataTokens.emplace_back(fixedStrTkn);
-                        LOG(".data: converted raw REF to STRING since ref was not found in label or const map:" + fixedStrTkn.body);
+                        LOG_ASM(".data: converted raw REF to STRING since ref was not found in label or const map:" + fixedStrTkn.body);
                         if (firstTkn.type != TokenType::STRING_DIR) {
                             LOG_ERR("ERROR: misused string or invalid reference in directive " << toString(firstTkn.type));
                         }
@@ -1211,11 +1211,11 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
                 }
             }
         }
-        LOG("DEBUG, serialized data section: \n");
+        LOG_ASM("DEBUG, serialized data section: \n");
         for (const auto& byte : byteVec) {
-            LOG(byte);
+            LOG_ASM_NO_NEWLINE(byte);
         }
-        LOG(std::endl);
+        LOG_ASM(std::endl);
 
         return byteVec;
     }
@@ -1335,7 +1335,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
         auto [str, raw] = expr_res::resolveStrExpr(body, labelMap, constMap);
         body = str;
         type = deduceTokenType(body);
-        LOG("DEBUG: resolved expression token body -> " << str << " - " << toString(type));
+        LOG_ASM("DEBUG: resolved expression token body -> " << str << " - " << toString(type));
     }
 
     std::pair<std::string, std::string> splitOpcodeStr(std::string opcodeStr) {
@@ -1396,18 +1396,18 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
         //set imm
         if (doNotAutoCorrectImmediates) return;
         if (src1 && opHasNoWritImm && src1->valueType == ValueType::IMM) {
-            LOG("Corrected imm to i1 for " + opcode.token.body);
+            LOG_ASM("Corrected imm to i1 for " + opcode.token.body);
             i1 = true;
         } if (src2 && opHasNoWritImm && src2->valueType == ValueType::IMM) {
-            LOG("Corrected imm to i2 for " + opcode.token.body);
+            LOG_ASM("Corrected imm to i2 for " + opcode.token.body);
             i2 = true;
         }
         if (!src1) {
-            LOG("Corrected imm to i1 for (absent operand)" + opcode.token.body);
+            LOG_ASM("Corrected imm to i1 for (absent operand)" + opcode.token.body);
             i1 = true;
         }
         if (!src2) {
-            LOG("Corrected imm to i2 for (absent operand)" + opcode.token.body);
+            LOG_ASM("Corrected imm to i2 for (absent operand)" + opcode.token.body);
             i2 = true;
         } if (opcode.immType == ImmType::I) {
             i1 = true;
@@ -1478,7 +1478,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
         if (!validOperandArguments.contains(significantToken.type)) {
             LOG_ERR("INVALID OPERAND: " + significantBody + " (" + toString(significantToken.type) + ")");
         }
-        LOG("full body:" + fullBody + ", significant body: " + significantBody + ", significant type: " + toString(significantToken.type));
+        LOG_ASM("full body:" + fullBody + ", significant body: " + significantBody + ", significant type: " + toString(significantToken.type));
     }
 
     //methods for resolving tokenized instr into literals-------------------------------------------------------------------

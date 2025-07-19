@@ -4,15 +4,21 @@
 #ifndef EMU_H
 #define EMU_H
 #include <string>
-namespace emu {
-    class Emulator {
-        static constexpr std::string version = "0.0.1";
-    public:
-        [[nodiscard]] int assembleAndRun(const std::string &projectPath, const std::string &entry,
-            const std::string& diskDataPath) const;
+class Emulator {
+    //version info
+    const std::string version = "0.0.3";
+    //emu state
+    std::string projectPath = "../projects_b16/bear16_os";
+    std::string entry = "main.asm";
+    std::string diskPath = "../disks/default_disk.bin";
+public:
+    int assembleAndRun() const;
+    void enterTUI();
 
-    };
-
-}
+    void printTUIStartUp();
+    void getProjectPathFromUser();
+    void getEntryFromUser();
+    void getDiskPathFromUser();
+};
 
 #endif //EMU_H
