@@ -153,15 +153,6 @@ void Board::printAllRegisterContents() const {
     }
 }
 
-void writeToFile(const std::string& filename, const std::array<uint8_t, isa::DISK_SIZE> &data) {
-    std::ofstream outFile(filename, std::ios::binary);
-    if (!outFile) {
-        throw std::runtime_error("Failed to open file for writing: " + filename);
-    }
-    outFile.write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(data.size()));
-    outFile.close();
-}
-
 void Board::loadUserRomFromBinInTxtFile(const std::string &path) {
     std::ifstream file(path);
     std::vector<uint8_t> byteRom{};
@@ -261,6 +252,34 @@ void Board::setUserRom(std::vector<uint8_t>& rom) {
 
 void Board::loadKernelRomFromByteVector(std::vector<uint8_t> &rom) {
     setUserRom(rom);
+}
+
+void Board::loadRomFromBinFile(const std::string &path) {
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file) {
+        std::cout << "ERROR: Could not open file" << std::endl;
+        return;
+    }
+
+    const std::streamsize size = file.tellg();
+    if (size > isa::ROM_SIZE) {
+        LOG_ERR("ERROR: File size exceeds disk capacity.");
+        return;
+    }
+    file.seekg(0, std::ios::beg);
+
+    std::vector<uint8_t> buffer(size);
+    if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+        LOG_ERR("ERROR: Failed to read entire file.");
+        return;
+    }
+
+    // Copy into disk array
+    std::ranges::copy(buffer, userRom.begin());
+}
+
+void Board::saveRomToBinFile(const std::string &path) const {
+    writeToFile(path, userRom);
 }
 
 void Board::loadDiskFromBinFile(const std::string &path) {

@@ -183,7 +183,10 @@ public:
     void loadUserRomFromHexInTxtFile(const std::string &path);
     void loadUserRomFromByteVector(std::vector<uint8_t>& rom);
     void loadKernelRomFromByteVector(std::vector<uint8_t>& rom);
-    //DISK LOADING
+    //BINARY ROM IO
+    void loadRomFromBinFile(const std::string &path);
+    void saveRomToBinFile(const std::string &path) const;
+    //DISK IO
     void loadDiskFromBinFile(const std::string &path);
     void saveDiskToBinFile(const std::string &path) const;
     //DIAGNOSTICS
@@ -192,7 +195,19 @@ public:
     void printAllRegisterContents() const;
 };
 //helper
-void writeToFile(const std::string& filename, const std::array<uint8_t, isa::DISK_SIZE> &data);
+template <typename T>
+void writeToFile(const std::string& filename, const T &data) {
+    static_assert(
+        requires { data.data(); data.size(); },
+        "T must have data() & size() methods and be a contiguous data container"
+    );
+    std::ofstream outFile(filename, std::ios::binary);
+    if (!outFile) {
+        throw std::runtime_error("Failed to open file for writing: " + filename);
+    }
+    outFile.write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(data.size()));
+    outFile.close();
+}
 uint64_t currentTimeMillis();
 
 

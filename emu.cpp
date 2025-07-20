@@ -23,9 +23,8 @@
 
 #include <regex>
 
-int Emulator::assembleAndRun() const {
+int Emulator::assembleAndRun() {
     //assemble
-    assembly::Assembler testAssembler(false, false);
     //testAssembler.openProject("../projects_b16/kernel_versions/", "kv_001.asm");
     //auto kernelRom = testAssembler.assembleOpenedProject();
     std::vector<uint8_t> kernelRom {};
@@ -51,33 +50,31 @@ int Emulator::assembleAndRun() const {
 }
 
 void Emulator::enterTUI() {
-    printTUIStartUp();
-    auto printOptions = [] () {
-        std::cout << " [S] Assemble & Run" << std::endl;
-        std::cout << " [A] Assemble" << std::endl;
-        std::cout << " [R] Run" << std::endl;
-        std::cout << " [C] Configure" << std::endl;
-        std::cout << " [H] Help" << std::endl;
-        std::cout << " [Q] Quit" << std::endl;
-    };
     auto printInvalidChoice = [] () {
         std::cout << "Invalid choice. Please try again." << std::endl;
     };
     std::string choice;
     bool hasLaunchedEmu = false;
     do {
-        printOptions();
+        printTUIMainMenu();
         std::getline(std::cin, choice);
         std::ranges::transform(choice, choice.begin(), [] (char c) {return std::tolower(c);});
         if (choice.size() > 1 ) {
             printInvalidChoice();
             continue;
         }
+        if (choice.empty()) {
+            printInvalidChoice();
+            continue;
+        }
 
         switch (choice.at(0)) {
-            case 's': {
+            case 'd': {
                 assembleAndRun();
                 hasLaunchedEmu = true;
+                break;
+            }
+            case 's': {
                 break;
             }
             case 'a': {
@@ -93,8 +90,16 @@ void Emulator::enterTUI() {
                 // do config
                 break;
             }
+            case 'p': {
+                // select project to open
+                break;
+            }
             case 'h': {
                 // display help
+                break;
+            }
+            case 'q': {
+                //we're done here
                 break;
             }
             default: {
@@ -105,15 +110,37 @@ void Emulator::enterTUI() {
     } while (choice != "q" && !hasLaunchedEmu);
 }
 
-void Emulator::printTUIStartUp() {
-    std::string emuTitle = " BEAR16 Emulator & Assembler (Version " + version + ", 20250718) ";
+void Emulator::printTUIMainMenu() {
+#define MM_WIDTH 55
+    std::string emuTitle = std::format("| {:^57} |", "BEAR16 Emulator & Assembler (Version " + version + ", " + dateOfLastVersion + ")");
     std::string author = "Made by Zach Mahan";
-    std::string authorLine = std::string((emuTitle.size() - author.size()) / 2, ' ') + author;
+    std::string authorLine = std::format("| {:^57} |", author);
     std::string emuTitleBar = std::string(emuTitle.size(), '=');
+    std::string emuDivideBar = std::string(emuTitle.size(), '-');
+    std::string emuBorderDivLine = std::format("|{}|", std::string(emuTitle.size() - 2, '-'));
+    auto getTrimmedProjectPath = [this]() {return projectPath.substr(projectPath.find_last_of("/\\") + 1);};
+    std::string openProject = "Open Project: " + getTrimmedProjectPath();
+    std::string openProjectLine = std::format("| {:^57} |", openProject);
+#define PRINT_TITLE_BAR() std::cout << emuTitleBar << std::endl
+#define PRINT_DIVIDE_BAR() std::cout << emuDivideBar << std::endl
+#define PRINT_BORDER_DIV_LINE() std::cout << emuBorderDivLine << std::endl
 
-    std::cout << emuTitleBar << std::endl;
+    PRINT_TITLE_BAR();
     std::cout << emuTitle << std::endl;
     std::cout << authorLine << std::endl;
-    std::cout << emuTitleBar << std::endl;
+    PRINT_TITLE_BAR();
+    std::cout << openProjectLine << std::endl;
+    PRINT_TITLE_BAR();
+    std::cout << std::format("| {:<57} |", "[D] Run Directly From Assembly") << std::endl;
+    std::cout << std::format("| {:<57} |", "[A] Assemble & Save Executable") << std::endl;
+    std::cout << std::format("| {:<57} |", "[R] Run Executable") << std::endl;
+    std::cout << std::format("| {:<57} |", "[S] Assemble, Save Executable, & Run") << std::endl;
+    PRINT_BORDER_DIV_LINE();
+    std::cout << std::format("| {:<57} |", "[P] Open a Different Project") << std::endl;
+    std::cout << std::format("| {:<57} |", "[C] Configure") << std::endl;
+    std::cout << std::format("| {:<57} |", "[H] Help") << std::endl;
+    std::cout << std::format("| {:<57} |", "[Q] Quit") << std::endl;
+    PRINT_DIVIDE_BAR();
+    std::cout << "Make a selection: " << std::endl;
 }
 

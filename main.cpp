@@ -3,8 +3,8 @@
 #include "emu.h"
 int main(int argc, char* argv[]) {
     Emulator emulator {};
-    std::optional<int> exitCode {};
-    exitCode = emulator.assembleAndRun();
-    //emulator.enterTUI();
-    return (exitCode) ? *exitCode : 0;
+    int exitCode = 0;
+    //exitCode = emulator.assembleAndRun();
+    emulator.enterTUI();
+    return exitCode;
 }
