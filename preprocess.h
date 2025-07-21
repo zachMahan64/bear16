@@ -90,6 +90,7 @@ namespace preprocess {
         Preprocessor() = default;
         void setProject(const std::string &projectPath, const std::string &entry);
         auto preprocessAsmProject(const std::string &fileName) -> std::string;
+        void reset();
     };
     //helper
     bool isBlank(const std::string& str);

@@ -5,6 +5,7 @@
 #define EMU_H
 #include <string>
 #include "assembly.h"
+#include "json.hpp"
 class Emulator {
     //version info
     const std::string version = "0.0.5";
@@ -16,13 +17,28 @@ class Emulator {
     //assembler
     assembly::Assembler testAssembler{false, false};
 public:
-    int assembleAndRun();
-    void enterTUI();
+    int assembleAndRunWithoutSavingExecutable();
 
+
+    //main menu
+    void enterTUI();
     void printTUIMainMenu();
+    //submenus/methods
+    void assembleAndSaveExecutable();
+    void runSavedExecutable();
+    //config
+    void loadEmuStateFromConfigFile();
+    //help menu
+    void printHelpMessage();
+    //helpers
+    [[nodiscard]] std::filesystem::path computeBinPath() const;
+    void saveEmuStateToConfigFile();
+    void getEmuStateFromConfigFile();
+    //getting input from user
     void getProjectPathFromUser();
     void getEntryFromUser();
     void getDiskPathFromUser();
+    void enterToContinue();
 };
 
 #endif //EMU_H

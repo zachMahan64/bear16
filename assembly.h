@@ -87,9 +87,6 @@ namespace assembly {
         static std::vector<uint8_t> buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction> &literalInstructions);
         static std::vector<uint8_t> build8ByteVecFromSingleLiteralInstruction(const parts::Instruction &literalInstruction);
 
-        static void throwAFit(const int &lineNum) {
-            std::cerr << "MISTAKE MADE ON WRITTEN LINE " << lineNum << std::endl;
-        }
         static void throwAFit(const std::string &ref) {
             std::cerr << "MISTAKE MADE IN USAGE OR DEFINITION OF " << ref << std::endl;
         }

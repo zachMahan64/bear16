@@ -147,6 +147,13 @@ namespace preprocess {
         revisedAsm += includedFilesContents;
         return revisedAsm;
     }
+
+    void Preprocessor::reset() {
+        includes.clear();
+        macros.clear();
+        LOG("Resetting preprocessor");
+    }
+
     bool Preprocessor::addIncludeIfAbsent(const IncludeToken& tkn) {
         const std::string& fullPath = tkn.getFullPath();
         const std::string entryPath = std::filesystem::path(projectPath) / entry;

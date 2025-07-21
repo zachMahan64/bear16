@@ -156,8 +156,9 @@ void Board::printAllRegisterContents() const {
 void Board::loadUserRomFromBinInTxtFile(const std::string &path) {
     std::ifstream file(path);
     std::vector<uint8_t> byteRom{};
+    std::filesystem::path executableName = std::filesystem::path(path).filename();
     if (!file.is_open()) {
-        std::cout << "ERROR: Could not open file" << std::endl;
+        std::cerr << "ERROR: could not run executable (" << executableName << " does not exist)"  << std::endl;
         return;
     }
 
@@ -192,8 +193,9 @@ void Board::loadUserRomFromBinInTxtFile(const std::string &path) {
 }
 void Board::loadUserRomFromHexInTxtFile(const std::string &path) {
     std::ifstream file(path, std::ios::in | std::ios::binary);
-    if (!file) {
-        std::cout << "ERROR: Could not open file" << std::endl;
+    std::filesystem::path executableName = std::filesystem::path(path).filename();
+    if (!file.is_open()) {
+        std::cerr << "ERROR: could not run executable (" << executableName << " does not exist)"  << std::endl;
         return;
     }
     //read whole file into buffer
@@ -256,8 +258,9 @@ void Board::loadKernelRomFromByteVector(std::vector<uint8_t> &rom) {
 
 void Board::loadRomFromBinFile(const std::string &path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
-    if (!file) {
-        std::cout << "ERROR: Could not open file" << std::endl;
+    std::filesystem::path executableName = std::filesystem::path(path).filename();
+    if (!file.is_open()) {
+        std::cerr << "ERROR: could not run executable (" << executableName << " does not exist)"  << std::endl;
         return;
     }
 

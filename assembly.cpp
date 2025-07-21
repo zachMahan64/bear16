@@ -561,6 +561,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
         std::vector<uint8_t> dataByteVec = parseTokenizedDataIntoByteVec(allTokenizedInstructions);
         byteVec.insert(byteVec.end(), dataByteVec.begin(), dataByteVec.end());
         LOG_ERR("Final ROM Size (bytes): " << std::dec << byteVec.size());
+        preprocessor.reset(); //clear state
         return byteVec;
     }
 
@@ -754,7 +755,6 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
                 LOG_ERR("NOT IN TEXT OR DATA SECTION: " + toString(tkn.type) + "-" + tkn.body);
             }
             else if (tkn.type == TokenType::MISTAKE) {
-                throwAFit(lineNumInOrigAsm);
                 LOG_ERR("ERROR: MISTAKE -> " + tkn.body);
                 if (inText) currentLine_TEXT.push_back(tkn);
                 if (inData) currentLine_DATA.push_back(tkn);
@@ -979,8 +979,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
                 TokenizedData dataForThisLine = parseLineOfTokensIntoTokenizedData(line, labelMap, constMap, byteIndex);
                 finalRomLines.emplace_back(dataForThisLine);
             } else {
-                throwAFit(numLines);
-                LOG_ERR(line.at(0).body + " (" + toString(line.at(0).type) + ") cannot begin a line");
+                LOG_ERR("ERROR: " << line.at(0).body + " (" + toString(line.at(0).type) + ") cannot begin a line");
             }
         }
         return finalRomLines;
