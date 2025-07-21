@@ -1,4 +1,4 @@
-__# Bear16: A Custom, Fully Featured 16-Bit ISA, Assembler, Emulator, & OS
+# Bear16: A Custom, Fully Featured 16-Bit ISA, Assembler, Emulator, & OS
 ## Technical Overview
 ### Background
 - I built Bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
