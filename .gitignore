@@ -1,0 +1,27 @@
+# build dirs
+cmake-build-*/
+
+# cmake intermeds
+CMakeFiles/
+CMakeCache.txt
+
+# ide files
+.idea/
+*.iml
+
+# os files
+.DS_Store
+Thumbs.db
+
+# executables
+*.exe
+*.out
+*.app
+
+# obj
+*.o
+*.obj
+*.bin
+
+# temps
+*.tmp
