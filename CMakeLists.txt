@@ -6,15 +6,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 set(CMAKE_FRAMEWORK_PATH "${CMAKE_SOURCE_DIR}")
 
-add_executable(bear16
-        main.cpp
-        parts.cpp
-        core.cpp
-        assembly.cpp
-        emu.cpp
-        preprocess.cpp
-        expr_resolver.cpp
-)
+# include path for headers
+include_directories(${CMAKE_SOURCE_DIR}/src/include)
+
+# grab all .cpp files inside src/
+file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS src/*.cpp)
+
+add_executable(bear16 ${SOURCE_FILES})
+
 if(APPLE)
     target_include_directories(bear16 PRIVATE "${CMAKE_SOURCE_DIR}/dependencies/SDL2.framework")
 

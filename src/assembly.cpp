@@ -423,8 +423,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
         {"jcond_neg", isa::Opcode_E::JCOND_NEG}, {"jcond_nneg", isa::Opcode_E::JCOND_NNEG},
         {"jcond_pos", isa::Opcode_E::JCOND_POS}, {"jcond_npos", isa::Opcode_E::JCOND_NPOS},
         {"nop", isa::Opcode_E::NOP}, {"hlt", isa::Opcode_E::HLT}, {"jal", isa::Opcode_E::JAL},
-        {"retl", isa::Opcode_E::RETL}
-};
+        {"retl", isa::Opcode_E::RETL}};
     const std::unordered_map<isa::Opcode_E, int> opcodeToOperandMinimumCountMap = {
         // Arith & Bitwise
 {isa::Opcode_E::ADD, 3}, {isa::Opcode_E::SUB, 3}, {isa::Opcode_E::MULT, 3},
