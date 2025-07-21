@@ -60,13 +60,13 @@
 
 ## The Bear16 Design Process and a Source Code Explication
 
-### Implementing a Cycle-Accurate RTL Emulator
+### A Cycle-Accurate RTL Emulator
 *(To be added soon.)*
 
-### Implementing a Preprocessor, Recursive Linker, and a Multipass Assembler
+### A Preprocessor, Recursive Linker, and a Multipass Assembler
 *(To be added soon.)*
 
-### Designing and Implementing a Monolithic OS and Kernel
+### A Monolithic OS and Kernel
 *(To be added soon.)*
 
 ### Unfinished and Unused Features
