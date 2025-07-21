@@ -13,16 +13,11 @@
 #include "emu.h"
 
 int Emulator::assembleAndRunWithoutSavingExecutable() {
-    //assemble
-    //testAssembler.openProject("../projects_b16/kernel_versions/", "kv_001.asm");
-    //auto kernelRom = testAssembler.assembleOpenedProject();
-    std::vector<uint8_t> kernelRom {};
     testAssembler.openProject(projectPath, entry);
     auto userRom = testAssembler.assembleOpenedProject();
 
     //init emulated system
     Board board(false);
-    board.loadKernelRomFromByteVector(kernelRom);
     board.loadUserRomFromByteVector(userRom);
     board.loadDiskFromBinFile(diskPath);
     //run
@@ -158,12 +153,10 @@ void Emulator::assembleAndSaveExecutable() {
     enterToContinue();
 }
 void Emulator::runSavedExecutable() {
-    std::vector<uint8_t> kernelRom {};
     std::vector<uint8_t> userRom {};
 
     //init emulated system
     Board board(false);
-    board.loadKernelRomFromByteVector(kernelRom);
     board.loadRomFromBinFile(computeBinPath());
     board.loadDiskFromBinFile(diskPath);
     //run
