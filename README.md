@@ -1,6 +1,7 @@
-## Bear16: A Custom, Fully Featured 16-Bit ISA, Assembler, and Emulator
-### Overview
-- The Bear16 ISA, VM, Assembler, and OS were built by me (Zach) after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
+# Bear16: A Custom, Fully Featured 16-Bit ISA, Assembler, Emulator, and OS
+## Technical Overview
+### Background
+- Bear16  was built by me (Zach) after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
     - The OS is effectively a monolithic kernel with fully featured utility libraries, a shell/CLI, file IO, keyboard IO,
       framebuffering, blitting, and memory allocator.
     - The VM and Assembler are written in C++ 23.
@@ -10,8 +11,8 @@
     - Bear16 is a pure Harvard architecture in which ROM and RAM occupy separate address spaces. This
       was done as a design choice largely to expand system memory given 16-bit address space constraints without
       the need for banking or wider-than-16-bit register addressing.
-    - The VM has been optimized heavily and can run well over 100 MHz, although this is, of course, overkill and
-      it has been throttled to 40 MHz.
+    - The VM has been optimized heavily and can run well over 100 MHz real-time, although this is, of course, overkill and
+      it has been throttled to 40 MHz. This VM operates at the RTL and is cycle-accurate.
     - Bear16 was primarily an educational endeavor for me, though the entire toolchain is usable by anyone.
 ### Bear16 ISA and Assembly Language Details
 - Full ISA spreadsheet available [here](https://docs.google.com/spreadsheets/d/1skLFHBtt_hR7RHbrW7IGVIHvV-CCc16sBRJoc0tyrCA/edit?usp=sharing)
@@ -55,6 +56,10 @@
     - Can contain labels or constants
 
 ### Bear16 Memory Layout: Stack, Heap, and Memory Mapped IO
+*(To be added soon.)*
+
+## The Bear16 Design Process and a Source Code Explication
+### Implementing a Cycle-Accurate RTL Emulator
 *(To be added soon.)*
 
 ### Designing and Implementing a Monolithic OS and Kernel
