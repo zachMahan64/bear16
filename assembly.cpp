@@ -751,6 +751,13 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
                 inText = false;
                 continue;
             }
+            if ((tkn.type == TokenType::BYTE_DIR ||
+                tkn.type == TokenType::OCTBYTE_DIR ||
+                tkn.type == TokenType::WORD_DIR ||
+                tkn.type == TokenType::QWORD_DIR ||
+                tkn.type == TokenType::STRING_DIR) && inText) {
+                LOG_ERR("WARNING: DATA DIRECTIVE IN TEXT SECTION: " + toString(tkn.type) + "-" + tkn.body);
+            }
             if (!inText && !inData && (tkn.type != TokenType::EOL && tkn.type != TokenType::COMMENT)) {
                 LOG_ERR("NOT IN TEXT OR DATA SECTION: " + toString(tkn.type) + "-" + tkn.body);
             }

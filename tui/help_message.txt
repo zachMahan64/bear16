@@ -1,13 +1,13 @@
-                                          THANK YOU FOR USING BEAR16
-====================================================================================================================
+                                               THANK YOU FOR USING BEAR16
+========================================================================================================================
 BACKGROUND
 ----------
-- The Bear16 ISA, VM, & OS were built by me (Zach) after hundreds of hours of labor.
-- You can write any of these for the emulator:
+- Bear16 was built by me (Zach) after hundreds of hours of labor.
+- You can use the assembler and emulator to run:
     - Standalone programs
     - Apps for the Bear16 OS
     - Write your own OS for the system (you could reuse my OS Core libraries to streamline the process!)
-- More documentation and information is available in the GitHub repo as well as in the README. This includes:
+- More documentation is available in the README and GitHub repo, including:
     - ISA details
     - Memory Mapped IO implementation details
     - Emulator & assembler source code
@@ -15,8 +15,8 @@ BACKGROUND
     - Example assembly programs & the Bear16 OS source code
 MAKING A NEW PROJECT
 --------------------
-    1.) Create a new directory inside of projects_b16 and mark it as your project directory in the config.
-    2.) Create at least one .asm file to be used as your entry point and mark it as such in the project config.
-    3.) You can create as many .asm files as you want and can link them using the @include directive.
+    1.) Create a new directory inside `projects_b16` and set it as your open project
+    2.) Create at least one `.asm` file to be used as your entry point and set it as such in the project config.
+    3.) You can create and link as many `.asm` files as you want (use the` @include` directive; see README for details).
     4.) Make sure to follow the opcode syntax in the ISA spreadsheet and the directive syntax section in the README.
     5.) The assembler is pretty helpful with any kind of syntax mistake, but it cannot catch logical errors.

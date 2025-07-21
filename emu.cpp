@@ -103,7 +103,7 @@ void Emulator::enterTUI() {
     } while (choice != "q" && !hasLaunchedEmu);
 }
 void Emulator::printTUIMainMenu() {
-    std::string emuTitle = std::format("| {:^57} |", "BEAR16 Emulator & Assembler (Version " + version + ", " + dateOfLastVersion + ")");
+    std::string emuTitle = std::format("| {:^57} |", "BEAR16 Emulator & Assembler - v" + version + " (" + dateOfLastVersion + ")");
     std::string author = "Made by Zach Mahan";
     std::string authorLine = std::format("| {:^57} |", author);
     std::string emuTitleBar = std::string(emuTitle.size(), '=');

@@ -1,7 +1,7 @@
 __# Bear16: A Custom, Fully Featured 16-Bit ISA, Assembler, Emulator, & OS
 ## Technical Overview
 ### Background
-- I built bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
+- I built Bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
     - The OS is effectively a monolithic kernel with fully featured utility libraries, a shell/CLI, file IO, keyboard IO,
       framebuffering, blitting, and memory allocator.
     - The VM and Assembler are written in modern C++ 23.
@@ -73,4 +73,4 @@ __# Bear16: A Custom, Fully Featured 16-Bit ISA, Assembler, Emulator, & OS
 *(To be added soon.)*
 
 ### Bear16: A Reflection
-*(To be added soon.)*__
+*(To be added soon.)*
