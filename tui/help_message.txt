@@ -1,18 +1,12 @@
                                                THANK YOU FOR USING BEAR16
 ========================================================================================================================
-BACKGROUND
+WHAT TO DO
 ----------
-- Bear16 was built by me (Zach) after hundreds of hours of labor.
 - You can use the assembler and emulator to run:
     - Standalone programs
     - Apps for the Bear16 OS
     - Write your own OS for the system (you could reuse my OS Core libraries to streamline the process!)
-- More documentation is available in the README and GitHub repo, including:
-    - ISA details
-    - Memory Mapped IO implementation details
-    - Emulator & assembler source code
-    - Bear16 OS
-    - Example assembly programs & the Bear16 OS source code
+
 MAKING A NEW PROJECT
 --------------------
     1.) Create a new directory inside `projects_b16` and set it as your open project
@@ -20,3 +14,14 @@ MAKING A NEW PROJECT
     3.) You can create and link as many `.asm` files as you want (use the` @include` directive; see README for details).
     4.) Make sure to follow the opcode syntax in the ISA spreadsheet and the directive syntax section in the README.
     5.) The assembler is pretty helpful with any kind of syntax mistake, but it cannot catch logical errors.
+
+MORE INFO
+---------
+- See the README and GitHub repo for:
+    - ISA reference
+    - Assembly syntax
+    - Memory-mapped IO implementation details
+    - Emulator & assembler source code
+    - Bear16 OS breakdown
+    - Example assembly programs and the Bear16 OS source code
+    → Docs on: https://github.com/zachMahan64/bear16

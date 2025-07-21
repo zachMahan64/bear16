@@ -15,7 +15,7 @@ namespace isa {
     static constexpr size_t MAX_UINT16_T = 65535;
     static constexpr size_t RA_REGISTER_INDEX = 0x000F;
     static constexpr size_t TOP_OF_HEAP_PTR = 6656;
-    static constexpr size_t STARTING_HEAP_PTR_VALUE = 16384;
+    static constexpr size_t STARTING_HEAP_PTR_VALUE = 8192;
     //RESERVED MEMORY REGIONS FOR MEMORY ALLOC/MANAGEMENT
     static constexpr size_t FREE_LIST_HEAD_LOC = 6558;
     static constexpr size_t DISK_ADDR_LO = 6559;

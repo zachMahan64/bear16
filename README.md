@@ -63,7 +63,22 @@
     - Can contain labels or constants
 
 ### Memory Layout: Stack, Heap, and Memory Mapped IO
-*(To be added soon.)*
+- ROM Layout: 64 KB
+    - After assembly, the executables layout will be in this order:
+    - `[0x0000: entry_point]`
+    - `[<varies>: combined_text_section]` → 8-byte aligned
+    - `[<varies>: combined_data_section]` → Byte aligned
+- RAM Layout: 64 KB
+    - `[0x0000 - 0x17FF: framebuffer]`
+      - 6 KB
+    - `[0x1800 - 0x19FF: privileged_space]`
+      - 2 KB 
+      - Reserved for memory mapped IO
+      - See `isa.h` or `bear16_os` for details
+    - `[0x1800 - 0x9FFF: heap]`
+      - 32 KB
+    - `[0xA000-0xFFFF: stack]`
+      - 24 KB
 
 ## The Bear16 Design Process and a Toolchain Overview
 
