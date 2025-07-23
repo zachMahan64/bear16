@@ -4,6 +4,8 @@
 
 #ifndef EXPRESSION_RESOLVER_H
 #define EXPRESSION_RESOLVER_H
+#include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include <unordered_map>
