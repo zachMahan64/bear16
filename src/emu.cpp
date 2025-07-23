@@ -157,7 +157,7 @@ void Emulator::runSavedExecutable() {
 
     //init emulated system
     Board board(false);
-    board.loadRomFromBinFile(computeBinPath());
+    board.loadRomFromBinFile(computeBinPath().string());
     board.loadDiskFromBinFile(diskPath);
     //run
     LOG_ERR("Launching the Bear16 Emulator...");
@@ -249,7 +249,7 @@ void Emulator::getProjectPathFromUser() {
         enterToContinue();
         return;
     }
-    std::string projectPath(std::filesystem::path("../projects_b16") / projectDir);
+    std::string projectPath((std::filesystem::path("../projects_b16") / projectDir).string());
     if (!std::filesystem::exists(projectPath)) {
         std::cout << "Project path does not exist: " << projectPath << std::endl;
         bool madeValidChoice = false;
