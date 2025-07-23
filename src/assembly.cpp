@@ -15,6 +15,8 @@
 #include "core.h"
 #include "assembly.h"
 
+#include <filesystem>
+
 #include "expr_resolver.h"
 #include "preprocess.h"
 
@@ -550,7 +552,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
         outFile.close();
     }
     std::vector<uint8_t> Assembler::assembleOpenedProject() {
-        std::string fullPath = std::filesystem::path(projectPath) / entry;
+        std::string fullPath = (std::filesystem::path(projectPath) / entry).string();
         LOG_ASM("Now assembling: " + fullPath);
         std::string processedAsm = preprocessor.preprocessAsmProject(entry);
         std::vector<Token> allTokens = tokenizeAsmFirstPass(processedAsm);
@@ -1309,7 +1311,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
         else if (std::regex_match(text, std::regex(R"(^[-+]?(\d+(\.\d*)?|\.\d+)$)"))) type = TokenType::FIXED_PT;
         else if (text[0] == '#') type = TokenType::COMMENT;
         else if (text[0] == '\n') type = TokenType::EOL;
-        else if (text.length() == 1 && (std::isalpha(text[0]) || std::__format_spec::__is_ascii(text[0]))) type = TokenType::CHAR;
+        else if (text.length() == 1 && (std::isalpha(text[0]) || text[0] < 128)) type = TokenType::CHAR;
         else if (text == "\\0"){
             type = TokenType::CHAR;
         }
