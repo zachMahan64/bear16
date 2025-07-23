@@ -26,8 +26,9 @@ public:
     //submenus/methods
     void assembleAndSaveExecutable();
     void runSavedExecutable();
-    //config
-    void loadEmuStateFromConfigFile();
+    //config menu
+    void enterConfigMenu();
+    void printConfigMenu();
     //help menu
     void printHelpMessage();
     //helpers

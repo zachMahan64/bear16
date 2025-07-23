@@ -104,7 +104,7 @@ void Emulator::printTUIMainMenu() {
     std::string emuTitleBar = std::string(emuTitle.size(), '=');
     std::string emuDivideBar = std::string(emuTitle.size(), '-');
     std::string emuBorderDivLine = std::format("|{}|", std::string(emuTitle.size() - 2, '-'));
-    auto getTrimmedProjectPath = [this]() {return projectPath.substr(projectPath.find_last_of("/\\") + 1);};
+    auto getTrimmedProjectPath = [this]() {return projectPath.substr(projectPath.find_last_of("/") + 1);};
     std::string openProject = "Open Project: " + getTrimmedProjectPath();
     std::string openProjectLine = std::format("| {:^57} |", openProject);
 #define PRINT_TITLE_BAR() std::cout << emuTitleBar << std::endl
@@ -171,9 +171,15 @@ void Emulator::runSavedExecutable() {
     std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode << std::endl;
     std::cout << std::endl;
 }
-void Emulator::loadEmuStateFromConfigFile() {
+
+void Emulator::enterConfigMenu() {
 
 }
+
+void Emulator::printConfigMenu() {
+    std::cout << " [1] Change .asm entry file";
+}
+
 void Emulator::printHelpMessage() {
     std::ifstream helpMessageFile("../tui/help_message.txt");
     if (helpMessageFile) {
@@ -239,7 +245,8 @@ void Emulator::getProjectPathFromUser() {
     std::cout << "Enter the name of the project directory: ";
     std::getline(std::cin, projectDir);
     if (projectDir.empty()) {
-        std::cerr << "ERROR: Project path cannot be empty." << std::endl;
+        std::cout << "ERROR: Project path cannot be empty." << std::endl;
+        enterToContinue();
         return;
     }
     std::string projectPath(std::filesystem::path("../projects_b16") / projectDir);
