@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <iostream>
 #include <thread>
+#include <array>
 #include "isa.h"
 
 namespace parts {

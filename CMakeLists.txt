@@ -22,8 +22,8 @@ if(APPLE)
     target_link_libraries(bear16 "${CMAKE_SOURCE_DIR}/dependencies/SDL2.framework/Versions/A/SDL2")
 elseif(WIN32)
     # paths
-    set(SDL2_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/dependencies/SDL2-2.32.8/include")
-    set(SDL2_LIB_DIR "${CMAKE_SOURCE_DIR}/dependencies/SDL2-2.32.8/lib/x86")
+    set(SDL2_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/dependencies/x86_64-w64-mingw32/include")
+    set(SDL2_LIB_DIR "${CMAKE_SOURCE_DIR}/dependencies/x86_64-w64-mingw32/lib")
     set(SDL2_DLL "${SDL2_LIB_DIR}/SDL2.dll")
 
     target_compile_definitions(bear16 PRIVATE SDL_MAIN_HANDLED) # as to not override main()

@@ -6,6 +6,11 @@
 #include <cstdint>
 #include <unordered_set>
 #include <vector>
+#include <sstream>
+#include <algorithm>
+#include <functional>
+#include <variant>
+#include <optional>
 
 #include "assembly.h"
 #include "isa.h"

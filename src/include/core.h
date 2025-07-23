@@ -15,13 +15,7 @@
 #include <string>
 #include <cstddef>
 #include <span>
-#ifdef _WIN32
-    #include <SDL.h>
-#elif defined(__APPLE__) && defined(__MACH__)
-    #include <SDL2/SDL.h>
-#else
-    #error "Unsupported platform"
-#endif
+#include <SDL2/SDL.h>
 
 class CPU16 {
     bool isEnableDebug = false;

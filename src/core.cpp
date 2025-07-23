@@ -17,13 +17,7 @@
 #include <cstddef>
 #include <cstring>
 #include <filesystem>
-#ifdef _WIN32
-    #include <SDL.h>
-#elif defined(__APPLE__) && defined(__MACH__)
-    #include <SDL2/SDL.h>
-#else
-    #error "Unsupported platform"
-#endif
+#include <SDL2/SDL.h>
 
 
 //macros
