@@ -15,6 +15,7 @@
 #include <iostream>
 #include <string>
 #include <cstddef>
+#include <cstring>
 #include <filesystem>
 #ifdef _WIN32
     #include <SDL.h>
@@ -365,7 +366,7 @@ void CPU16::setTrapReturnAddress(uint16_t trapRetAddr) {
 //fetch
 uint64_t CPU16::fetchInstruction() const {
     uint64_t instr;
-    std::memcpy(&instr, &activeRom[pc], sizeof(uint64_t));
+    memcpy(&instr, &activeRom[pc], sizeof(uint64_t));
     return __builtin_bswap64(instr); // cuz big endian
 }
 //execute
