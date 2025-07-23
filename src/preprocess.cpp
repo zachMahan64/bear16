@@ -2,6 +2,10 @@
 // Created by Zachary Mahan on 6/20/25.
 //
 #include "preprocess.h"
+
+#include <algorithm>
+#include <filesystem>
+#include <unordered_map>
 #include <utility>
 namespace preprocess {
     //Tokens
@@ -18,7 +22,7 @@ namespace preprocess {
         }
 
         // Combine with project path
-        fullPath = std::filesystem::path(projectPath) / fileName;
+        fullPath = (std::filesystem::path(projectPath) / fileName).string();
     }
     bool IncludeToken::checkPathValidity() const {
         const std::ifstream file(fullPath, std::ios::in | std::ios::binary);
@@ -68,7 +72,7 @@ namespace preprocess {
         this->entry = entry;
     }
     std::string Preprocessor::preprocessAsmProject(const std::string &fileName) {
-        std::string path = std::filesystem::path(projectPath) / fileName;
+        std::string path = (std::filesystem::path(projectPath) / fileName).string();
         std::string revisedAsm {};
         std::ifstream file(path, std::ios::in | std::ios::binary);
         if (!file) {
@@ -156,7 +160,7 @@ namespace preprocess {
 
     bool Preprocessor::addIncludeIfAbsent(const IncludeToken& tkn) {
         const std::string& fullPath = tkn.getFullPath();
-        const std::string entryPath = std::filesystem::path(projectPath) / entry;
+        const std::string entryPath = (std::filesystem::path(projectPath) / entry).string();
         if (fullPath == entryPath) {
             LOG("DID NOT ADD " + fullPath + " SINCE IT IS THE ENTRY FILE.");
             return false;
