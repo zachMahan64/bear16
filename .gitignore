@@ -1,5 +1,6 @@
 # build dirs
 cmake-build-*/
+nvim-build*/
 
 # cmake intermeds
 CMakeFiles/

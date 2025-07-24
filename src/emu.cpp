@@ -13,7 +13,7 @@
 #include "emu.h"
 
 int Emulator::assembleAndRunWithoutSavingExecutable() {
-    testAssembler.openProject(projectPath, entry);
+    testAssembler.openProject(projectPath, entryFileName);
     auto userRom = testAssembler.assembleOpenedProject();
 
     //init emulated system
@@ -104,7 +104,7 @@ void Emulator::printTUIMainMenu() {
     std::string emuTitleBar = std::string(emuTitle.size(), '=');
     std::string emuDivideBar = std::string(emuTitle.size(), '-');
     std::string emuBorderDivLine = std::format("|{}|", std::string(emuTitle.size() - 2, '-'));
-    auto getTrimmedProjectPath = [this]() {return projectPath.substr(projectPath.find_last_of("/") + 1);};
+    auto getTrimmedProjectPath = [this]() {return projectPath.string().substr(projectPath.string().find_last_of("/") + 1);};
     std::string openProject = "Open Project: " + getTrimmedProjectPath();
     std::string openProjectLine = std::format("| {:^57} |", openProject);
 #define PRINT_TITLE_BAR() std::cout << emuTitleBar << std::endl
@@ -130,7 +130,7 @@ void Emulator::printTUIMainMenu() {
     std::cout << "Make a selection: " << std::endl;
 }
 void Emulator::assembleAndSaveExecutable() {
-    testAssembler.openProject(projectPath, entry);
+    testAssembler.openProject(projectPath, entryFileName);
     auto userRom = testAssembler.assembleOpenedProject();
 
     std::filesystem::path executablePath = computeBinPath();
@@ -209,7 +209,7 @@ void Emulator::saveEmuStateToConfigFile() {
     try {
         nlohmann::json j {};
         j["projectPath"] = projectPath;
-        j["entry"] = entry;
+        j["entry"] = entryFileName;
         j["diskPath"] = diskPath;
 
         std::ofstream outStream("../tui/config.json");
@@ -232,9 +232,9 @@ void Emulator::getEmuStateFromConfigFile() {
         }
         nlohmann::json j {};
         inStream >> j;
-        projectPath = j["projectPath"];
-        entry = j["entry"];
-        diskPath = j["diskPath"];
+        projectPath = std::filesystem::path(j["projectPath"]);
+        entryFileName = j["entry"];
+        diskPath = std::filesystem::path(j["diskPath"]);
     } catch (const std::exception& e) {
         std::cerr << "ERROR: Could not read config file: " << e.what() << std::endl;
     }

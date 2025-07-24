@@ -535,7 +535,7 @@ const std::unordered_set<std::string> validOpcodeMnemonics = {
     //assembler class
     Assembler::Assembler(bool enableDebug, bool doNotAutoCorrectImmediates)
         : isEnableDebug(enableDebug), doNotAutoCorrectImmediates(doNotAutoCorrectImmediates) {}
-    void Assembler::openProject(std::string projectPath, std::string entry) {
+    void Assembler::openProject(std::filesystem::path projectPath, std::string entry) {
         this->projectPath = std::move(projectPath);
         this->entry = std::move(entry);
         preprocessor.setProject(this->projectPath, this->entry);

@@ -12,7 +12,7 @@
 #include <variant>
 #include <optional>
 
-#include "assembly.h"
+
 #include "isa.h"
 #include "parts.h"
 #include "preprocess.h"
@@ -63,12 +63,12 @@ namespace assembly {
         bool doNotAutoCorrectImmediates = false;
         Assembler(bool enableDebug, bool doNotAutoCorrectImmediates);
         //reading asm file
-        void openProject(std::string projectPath, std::string entry);
+        void openProject(std::filesystem::path projectPath, std::string entry);
         void changeEntry(std::string entry);
         [[nodiscard]] std::vector<uint8_t> assembleOpenedProject();
     private:
         preprocess::Preprocessor preprocessor {};
-        std::string projectPath {};
+        std::filesystem::path projectPath {};
         std::string entry {};
         static std::vector<Token> tokenizeAsmFirstPass(const std::string& processedAsm);
 
