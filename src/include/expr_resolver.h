@@ -4,6 +4,7 @@
 
 #ifndef EXPRESSION_RESOLVER_H
 #define EXPRESSION_RESOLVER_H
+#include <cstdint>
 #include <optional>
 #include <stdexcept>
 #include <string>

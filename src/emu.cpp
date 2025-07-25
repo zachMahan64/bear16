@@ -9,6 +9,10 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
+#include <filesystem>
+#include <format>
+
 
 int Emulator::assembleAndRunWithoutSavingExecutable() {
     testAssembler.openProject(projectPath, entryFileName);
