@@ -10,9 +10,9 @@ class Emulator {
     const std::string version = "0.0.5";
     const std::string dateOfLastVersion = "2025-07-19";
     //emu state
-    std::filesystem::path projectPath = "../projects_b16/bear16_os";
+    std::filesystem::path projectPath = "./projects_b16/bear16_os";
     std::string entryFileName = "main.asm";
-    std::filesystem::path diskPath = "../disks_b16/default_disk.bin";
+    std::filesystem::path diskPath = "./disks_b16/default_disk.bin";
     //assembler
     assembly::Assembler testAssembler{false, false};
 public:
