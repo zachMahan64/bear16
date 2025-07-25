@@ -4,6 +4,8 @@ nvim-build*/
 
 # caches
 .cache*/
+# must be generated manually
+compile_commands.json
 
 # cmake intermeds
 CMakeFiles/
