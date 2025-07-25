@@ -1,5 +1,5 @@
 {
-    "diskPath": "../disks_b16/default_disk.bin",
+    "diskPath": "./disks_b16/default_disk.bin",
     "entry": "main.asm",
-    "projectPath": "../projects_b16/bear16_os"
-}
+    "projectPath": "./projects_b16/bear16_os"
+} 

@@ -270,7 +270,7 @@ void Emulator::getProjectPathFromUser() {
         return;
     }
     std::string projectPath(
-        (std::filesystem::path("../projects_b16") / projectDir).string());
+        (std::filesystem::path("./projects_b16") / projectDir).string());
     if (!std::filesystem::exists(projectPath)) {
         std::cout << "Project path does not exist: " << projectPath
                   << std::endl;
