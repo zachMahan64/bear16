@@ -16,6 +16,7 @@
 #include <cstring>
 #include <filesystem>
 #include <SDL2/SDL.h>
+#include "fixpt8_8_t.h"
 
 
 //macros
