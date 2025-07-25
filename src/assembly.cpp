@@ -5,14 +5,11 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <utility>
 #include <vector>
 #include <iomanip>
 #include <algorithm>
-#include <iterator>
 #include <regex>
-#include "core.h"
 #include "assembly.h"
 
 #include <filesystem>

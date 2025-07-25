@@ -3,13 +3,9 @@
 //
 
 #include "expr_resolver.h"
-
-#include <any>
 #include <iostream>
 #include <iostream>
 #include <optional>
-
-#include "assembly.h"
 
 namespace expr_res {
     //meat of the operation
@@ -35,7 +31,7 @@ namespace expr_res {
                 curr += c;
                 emplaceToken(curr);
                 curr.clear();
-            }
+                  }
             else {
                 curr.push_back(c);
             }
@@ -186,7 +182,7 @@ Token Expression::solve() const {
         if (isParen(tkn)) {
             if (tkn.getType() == TokenType::LPAREN) {
                 if (leftParenCount == 1) {
-                    LOG_ERR("WARNING: Nested expression detected. This is not supported on the current assembler version.");
+          std::cerr << "WARNING: Nested expression detected. This is not supported on the current assembler version." << std::endl;
                 }
                 leftParenCount++;
             }
