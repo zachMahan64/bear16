@@ -13,7 +13,7 @@
 #include "assembly.h"
 
 #include <filesystem>
-
+#include "fixpt8_8_t.h"
 #include "expr_resolver.h"
 #include "preprocess.h"
 

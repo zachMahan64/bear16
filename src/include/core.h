@@ -8,8 +8,6 @@
 #include "isa.h"
 #include "parts.h"
 #include <cstdint>
-#include <thread>
-#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <string>
