@@ -8,6 +8,7 @@
 #include "assembly.h"
 #include "core.h"
 #include "emu.h"
+#include "json.hpp"
 
 int Emulator::assembleAndRunWithoutSavingExecutable() {
     testAssembler.openProject(projectPath, entryFileName);
@@ -24,7 +25,7 @@ int Emulator::assembleAndRunWithoutSavingExecutable() {
     //save disk state
     board.saveDiskToBinFile(diskPath);
 
-    //display diagnostics
+    //display diagnostics:
     board.printDiagnostics(false);
     std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode << std::endl;
     std::cout << std::endl;

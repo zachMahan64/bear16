@@ -6,7 +6,7 @@
 #include <iostream>
 #include <iostream>
 #include <optional>
-
+#include "fixpt8_8_t.h"
 namespace expr_res {
     //meat of the operation
     const std::unordered_set<char> monoChars {
@@ -22,7 +22,7 @@ namespace expr_res {
         };
         for (char c : input) {
             if (c == ' ') {
-                emplaceToken(curr);
+    emplaceToken(curr);
                 curr.clear();
             }
             else if (monoChars.contains(c)) {

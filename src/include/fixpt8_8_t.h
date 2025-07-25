@@ -7,7 +7,8 @@
 
 #include <cstdint>
 #include <type_traits>
-#include <cmath>
+#include <cmath> 
+#include <bit>
 
 struct fixpt8_8_t {
     int16_t val = 0;

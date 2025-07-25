@@ -6,7 +6,8 @@
   - CMake >= v3.5
   - C++23 compiler
   - SDL2 (for framebuffer and input)
-- **IDE Recommendation:** Ideally use one with built-in assembly color-coding and find/replace capabilities. CLion works well (and is free).
+- **IDE Recommendation:** Ideally use one with built-in assembly color-coding and find/replace capabilities.
+  - I used CLion & NeoVim, and they worked well.
 ## Technical Overview
 ### Background
 - I built Bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.

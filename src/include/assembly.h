@@ -9,9 +9,11 @@
 #include <sstream>
 #include <variant>
 #include <optional>
+#include <filesystem>
 #include "isa.h"
 #include "parts.h"
 #include "preprocess.h"
+
 
 //macros
 //#define DO_LOG_ASM
