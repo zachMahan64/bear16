@@ -4,6 +4,7 @@
 #ifndef EMU_H
 #define EMU_H
 #include "assembly.h"
+#include <filesystem>
 #include <string>
 class Emulator {
     // version info
@@ -13,6 +14,10 @@ class Emulator {
     std::filesystem::path projectPath = "./projects_b16/bear16_os";
     std::string entryFileName = "main.asm";
     std::filesystem::path diskPath = "./disks_b16/default_disk.bin";
+    // user data paths
+    const std::filesystem::path TUI_PATH = "./tui/";
+    const std::filesystem::path HELP_MESSAGE = "help_message.txt";
+    const std::filesystem::path CONFIG = "config.json";
     // assembler
     assembly::Assembler testAssembler{false, false};
 

@@ -195,7 +195,7 @@ void Emulator::enterConfigMenu() {}
 void Emulator::printConfigMenu() { std::cout << " [1] Change .asm entry file"; }
 
 void Emulator::printHelpMessage() {
-    std::ifstream helpMessageFile("../tui/help_message.txt");
+    std::ifstream helpMessageFile(std::filesystem::path(TUI_PATH / HELP_MESSAGE));
     if (helpMessageFile) {
         std::string helpMessageBuffer(
             (std::istreambuf_iterator<char>(helpMessageFile)),
@@ -230,7 +230,7 @@ void Emulator::saveEmuStateToConfigFile() {
         j["entry"] = entryFileName;
         j["diskPath"] = diskPath;
 
-        std::ofstream outStream("../tui/config.json");
+        std::ofstream outStream(std::filesystem::path(TUI_PATH / CONFIG));
         if (!outStream) {
             std::cerr << "ERROR: Could not open config file." << std::endl;
             return;
@@ -244,7 +244,7 @@ void Emulator::saveEmuStateToConfigFile() {
 
 void Emulator::getEmuStateFromConfigFile() {
     try {
-        std::ifstream inStream("../tui/config.json");
+        std::ifstream inStream(std::filesystem::path(TUI_PATH / CONFIG));
         if (!inStream) {
             std::cerr << "ERROR: Could not open config file." << std::endl;
             return;
