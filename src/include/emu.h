@@ -3,42 +3,42 @@
 //
 #ifndef EMU_H
 #define EMU_H
-#include <string>
 #include "assembly.h"
+#include <string>
 class Emulator {
-    //version info
+    // version info
     const std::string version = "0.0.5";
     const std::string dateOfLastVersion = "2025-07-19";
-    //emu state
+    // emu state
     std::filesystem::path projectPath = "./projects_b16/bear16_os";
     std::string entryFileName = "main.asm";
     std::filesystem::path diskPath = "./disks_b16/default_disk.bin";
-    //assembler
+    // assembler
     assembly::Assembler testAssembler{false, false};
-public:
+
+  public:
     int assembleAndRunWithoutSavingExecutable();
 
-
-    //main menu
+    // main menu
     void enterTUI();
     void printTUIMainMenu();
-    //submenus/methods
+    // submenus/methods
     void assembleAndSaveExecutable();
     void runSavedExecutable();
-    //config menu
+    // config menu
     void enterConfigMenu();
     void printConfigMenu();
-    //help menu
+    // help menu
     void printHelpMessage();
-    //helpers
+    // helpers
     [[nodiscard]] std::filesystem::path computeBinPath() const;
     void saveEmuStateToConfigFile();
     void getEmuStateFromConfigFile();
-    //getting input from user
+    // getting input from user
     void getProjectPathFromUser();
     void getEntryFromUser();
     void getDiskPathFromUser();
     void enterToContinue();
 };
 
-#endif //EMU_H
+#endif // EMU_H

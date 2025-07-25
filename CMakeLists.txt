@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(cpu_emulator_16-bit_custom_isa)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # make sure to have a symlink in the
+# project root dir to the compile_commands.json file in the build dir
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
