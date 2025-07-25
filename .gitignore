@@ -2,6 +2,9 @@
 cmake-build-*/
 nvim-build*/
 
+# caches
+.cache*/
+
 # cmake intermeds
 CMakeFiles/
 CMakeCache.txt
