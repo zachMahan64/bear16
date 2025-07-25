@@ -4,12 +4,10 @@
 #include <iostream>
 #include "core.h"
 #include "assembly.h"
-#include <utility>
 #include <vector>
 #include "isa.h"
 #include "parts.h"
 #include <cstdint>
-#include <thread>
 #include <chrono>
 #include <fstream>
 #include <iostream>

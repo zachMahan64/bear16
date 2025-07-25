@@ -5,10 +5,7 @@
 #include <fstream>
 #include <string>
 #include <filesystem>
-#include <sstream>
 #include "assembly.h"
-#include "isa.h"
-#include "parts.h"
 #include "core.h"
 #include "emu.h"
 

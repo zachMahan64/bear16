@@ -7,16 +7,11 @@
 #include <unordered_set>
 #include <vector>
 #include <sstream>
-#include <algorithm>
-#include <functional>
 #include <variant>
 #include <optional>
-
-
 #include "isa.h"
 #include "parts.h"
 #include "preprocess.h"
-#include "fixpt8_8_t.h"
 
 //macros
 //#define DO_LOG_ASM

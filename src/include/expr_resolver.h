@@ -10,7 +10,6 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
-#include "fixpt8_8_t.h"
 
 namespace expr_res {
     struct ResolutionResult {

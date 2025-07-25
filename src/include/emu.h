@@ -5,7 +5,6 @@
 #define EMU_H
 #include <string>
 #include "assembly.h"
-#include "json.hpp"
 class Emulator {
     //version info
     const std::string version = "0.0.5";
