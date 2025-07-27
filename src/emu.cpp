@@ -309,3 +309,26 @@ void Emulator::enterToContinue() {
     std::cout << "[ENTER] to continue" << std::endl;
     std::cin.get();
 }
+std::filesystem::path Emulator::getBear16RootDir() {
+#ifdef _WIN32
+    const char* userFolderEnv = std::getenv("USERPROFILE");
+#else
+    const char* userFolderEnv = std::getenv("HOME");
+#endif
+
+    if (!userFolderEnv || std::string(userFolderEnv).empty())
+        throw std::runtime_error("User folder not found");
+
+    std::filesystem::path userFolder(userFolderEnv);
+    std::filesystem::path bear16Path = userFolder / "bear16";
+
+    // Create directory if it doesn't exist
+    if (!std::filesystem::exists(bear16Path)) {
+        std::error_code ec;
+        if (!std::filesystem::create_directories(bear16Path, ec) || ec) {
+            throw std::runtime_error("Failed to create directory: " + ec.message());
+        }
+    }
+
+    return bear16Path;
+}

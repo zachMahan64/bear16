@@ -44,6 +44,7 @@ class Emulator {
     void getEntryFromUser();
     void getDiskPathFromUser();
     void enterToContinue();
+    std::filesystem::path getBear16RootDir();
 };
 
 #endif // EMU_H
