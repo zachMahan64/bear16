@@ -1,7 +1,7 @@
 # build dirs
 cmake-build-*/
 nvim-build*/
-
+build*/
 # caches
 .cache*/
 # must be generated manually
