@@ -13,7 +13,7 @@ class Emulator {
     // emu state
     std::filesystem::path projectPath = "./projects_b16/bear16_os";
     std::string entryFileName = "main.asm";
-    std::filesystem::path diskPath = "./disks_b16/default_disk.bin";
+    std::filesystem::path diskPath = std::filesystem::path(".") / "disks_b16" / "default_disk.bin";
     // user data paths
     const std::filesystem::path TUI_PATH = "./tui/";
     const std::filesystem::path HELP_MESSAGE = "help_message.txt";

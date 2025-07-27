@@ -322,13 +322,13 @@ std::filesystem::path Emulator::getBear16RootDir() {
     std::filesystem::path userFolder(userFolderEnv);
     std::filesystem::path bear16Path = userFolder / "bear16";
 
-    // Create directory if it doesn't exist
     if (!std::filesystem::exists(bear16Path)) {
-        std::error_code ec;
-        if (!std::filesystem::create_directories(bear16Path, ec) || ec) {
-            throw std::runtime_error("Failed to create directory: " + ec.message());
-        }
+        std::cerr << "[bear16] Notice: ~/bear16 does not exist.\n";
+        std::cerr << "          Create it manually or symlink to your cloned repo:\n";
+        std::cerr << "          ln -s /path/to/your/repo ~/bear16\n";
+        throw std::runtime_error("bear16 root directory not found.");
     }
 
     return bear16Path;
 }
+
