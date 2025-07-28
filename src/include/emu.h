@@ -11,7 +11,7 @@ class Emulator {
     const std::string version = "0.0.5";
     const std::string dateOfLastVersion = "2025-07-19";
     // emu state
-    std::filesystem::path projectPath = "./projects_b16/bear16_os";
+    std::filesystem::path projectPath = std::filesystem::path(".") / "projects_b16" / "bear16_os";
     std::string entryFileName = "main.asm";
     std::filesystem::path diskPath = std::filesystem::path(".") / "disks_b16" / "default_disk.bin";
     // user data paths

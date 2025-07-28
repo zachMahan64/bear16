@@ -10,8 +10,12 @@
 #endif
 
 int main(int argc, char *argv[]) {
-    Emulator emulator{};
     int exitCode = 0;
+    if (argc == 1) {
+    Emulator emulator{};
     LAUNCH_EMU();
+    } else {
+        // add CLI parsing
+    }
     return exitCode;
 }
