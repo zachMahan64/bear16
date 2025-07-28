@@ -15,6 +15,10 @@ CMakeCache.txt
 .idea/
 *.iml
 
+# python venv
+.venv*/
+.envrc
+
 # os files
 .DS_Store
 Thumbs.db

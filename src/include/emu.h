@@ -10,6 +10,7 @@ class Emulator {
     // version info
     const std::string version = "0.0.5";
     const std::string dateOfLastVersion = "2025-07-19";
+    // PATHING -> turn this into a struct
     // emu state
     std::filesystem::path projectPath = std::filesystem::path(".") / "projects_b16" / "bear16_os";
     std::string entryFileName = "main.asm";
