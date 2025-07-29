@@ -31,7 +31,7 @@ class Emulator {
     assembly::Assembler testAssembler{};
     //CLI
     static std::vector<std::string> vectorizeArgs(int argc, char** argv);
-
+    int parseCLIFlags(std::vector<std::string> args); 
     //TUI
     int assembleAndRunWithoutSavingExecutable();
     // main menu
@@ -57,7 +57,7 @@ class Emulator {
 
   public:
     explicit Emulator(emu_launch launchState);
-    void launch(int argc, char** argv);
+    int launch(int argc, char** argv);
 };
 
 #endif // EMU_H

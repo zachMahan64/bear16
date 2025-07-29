@@ -35,19 +35,21 @@ int Emulator::assembleAndRunWithoutSavingExecutable() {
     std::cout << std::endl;
     return exitCode;
 }
-static std::vector<std::string> vectorizeArgs(int argc, char** argv) {
+std::vector<std::string> Emulator::vectorizeArgs(int argc, char** argv) {
     std::vector<std::string> args = {};
     for (int i = 0; i < argc; i++) {
         args.emplace_back(argv[i]);
     }
     return args;
 }
-void Emulator::launch(int argv, char** argc) {
+int Emulator::launch(int argc, char** argv) {
+    int exitCode = 0;
     if (launchState == emu_launch::tui) {
         enterTUI();
     } else {
-        std::vector<std::string> args = vectorizeArgs(argv, argc);
+        std::vector<std::string> args;
     }
+    return exitCode;
 }
 void Emulator::enterTUI() {
     getEmuStateFromConfigFile();

@@ -5,6 +5,4 @@
 
 std::filesystem::path getBear16RootDir();
 
-
-
 #endif // PATH_MANAGER_H
