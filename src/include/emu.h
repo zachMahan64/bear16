@@ -6,15 +6,17 @@
 #include "assembly.h"
 #include <filesystem>
 #include <string>
+#include <vector>
 #include "path_manager.h"
 enum class emu_launch {
     cli_args,
     tui
 }; 
 class Emulator {
-    // version info
+    // version info & constant state
     const std::string version = "0.0.5";
     const std::string dateOfLastVersion = "2025-07-19";
+    const emu_launch launchState;
     // PATHING
     std::filesystem::path bear16RootDir = getBear16RootDir();
     // emu state
@@ -27,10 +29,11 @@ class Emulator {
     const std::filesystem::path CONFIG = "config.json";
     // assembler
     assembly::Assembler testAssembler{};
+    //CLI
+    static std::vector<std::string> vectorizeArgs(int argc, char** argv);
 
-  public:
+    //TUI
     int assembleAndRunWithoutSavingExecutable();
-
     // main menu
     void enterTUI();
     void printTUIMainMenu();
@@ -51,6 +54,10 @@ class Emulator {
     void getEntryFromUser();
     void getDiskPathFromUser();
     void enterToContinue();
+
+  public:
+    explicit Emulator(emu_launch launchState);
+    void launch(int argc, char** argv);
 };
 
 #endif // EMU_H

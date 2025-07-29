@@ -6,14 +6,12 @@
 #include "core.h"
 #include "json.hpp"
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <filesystem>
-#include <format>
-
-
+Emulator::Emulator(emu_launch launchState) : launchState(launchState) {}
 int Emulator::assembleAndRunWithoutSavingExecutable() {
     testAssembler.openProject(projectPath, entryFileName);
     auto userRom = testAssembler.assembleOpenedProject();
@@ -36,6 +34,20 @@ int Emulator::assembleAndRunWithoutSavingExecutable() {
               << exitCode << std::endl;
     std::cout << std::endl;
     return exitCode;
+}
+static std::vector<std::string> vectorizeArgs(int argc, char** argv) {
+    std::vector<std::string> args = {};
+    for (int i = 0; i < argc; i++) {
+        args.emplace_back(argv[i]);
+    }
+    return args;
+}
+void Emulator::launch(int argv, char** argc) {
+    if (launchState == emu_launch::tui) {
+        enterTUI();
+    } else {
+        std::vector<std::string> args = vectorizeArgs(argv, argc);
+    }
 }
 void Emulator::enterTUI() {
     getEmuStateFromConfigFile();
@@ -199,7 +211,8 @@ void Emulator::enterConfigMenu() {}
 void Emulator::printConfigMenu() { std::cout << " [1] Change .asm entry file"; }
 
 void Emulator::printHelpMessage() {
-    std::ifstream helpMessageFile(std::filesystem::path(TUI_PATH / HELP_MESSAGE));
+    std::ifstream helpMessageFile(
+        std::filesystem::path(TUI_PATH / HELP_MESSAGE));
     if (helpMessageFile) {
         std::string helpMessageBuffer(
             (std::istreambuf_iterator<char>(helpMessageFile)),
@@ -309,4 +322,3 @@ void Emulator::enterToContinue() {
     std::cout << "[ENTER] to continue" << std::endl;
     std::cin.get();
 }
-
