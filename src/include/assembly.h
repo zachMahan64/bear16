@@ -63,6 +63,7 @@ class Assembler {
     bool isEnableDebug = true;
     bool doNotAutoCorrectImmediates = false;
     Assembler(bool enableDebug, bool doNotAutoCorrectImmediates);
+    Assembler();
     // reading asm file
     void openProject(std::filesystem::path projectPath, std::string entry);
     void changeEntry(std::string entry);

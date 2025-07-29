@@ -15,6 +15,14 @@ file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS src/*.cpp)
 
 add_executable(bear16 ${SOURCE_FILES})
 
+
+# for full compiler warnings
+target_compile_options(bear16 PRIVATE
+    $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
+
 if(APPLE)
   target_include_directories(
     bear16 PRIVATE "${CMAKE_SOURCE_DIR}/dependencies/SDL2.framework")
@@ -30,8 +38,7 @@ elseif(WIN32)
   set(SDL2_LIB_DIR "${CMAKE_SOURCE_DIR}/dependencies/x86_64-w64-mingw32/lib")
   set(SDL2_DLL "${SDL2_LIB_DIR}/SDL2.dll")
 
-  target_compile_definitions(bear16 PRIVATE SDL_MAIN_HANDLED) # as to not
-                                                              # override main()
+  target_compile_definitions(bear16 PRIVATE SDL_MAIN_HANDLED) # as to not override main()
 
   target_include_directories(bear16 PRIVATE "${SDL2_INCLUDE_DIR}")
   target_link_directories(bear16 PRIVATE "${SDL2_LIB_DIR}")

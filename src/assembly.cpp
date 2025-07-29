@@ -416,6 +416,8 @@ void asmMnemonicSetGenerator() {
 Assembler::Assembler(bool enableDebug, bool doNotAutoCorrectImmediates)
     : isEnableDebug(enableDebug),
       doNotAutoCorrectImmediates(doNotAutoCorrectImmediates) {}
+Assembler::Assembler() : isEnableDebug(false), doNotAutoCorrectImmediates(false)
+{}
 void Assembler::openProject(std::filesystem::path projectPath,
                             std::string entry) {
   this->projectPath = std::move(projectPath);
@@ -1248,7 +1250,7 @@ TokenType Token::deduceTokenType(const std::string &text) {
     type = TokenType::COMMENT;
   else if (text[0] == '\n')
     type = TokenType::EOL;
-  else if (text.length() == 1 && (std::isalpha(text[0]) || text[0] < 128))
+  else if (text.length() == 1 && (std::isalpha(text[0]) || text[0] <= 127))
     type = TokenType::CHAR;
   else if (text == "\\0") {
     type = TokenType::CHAR;

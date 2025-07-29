@@ -6,21 +6,27 @@
 #include "assembly.h"
 #include <filesystem>
 #include <string>
+#include "path_manager.h"
+enum class emu_launch {
+    cli_args,
+    tui
+}; 
 class Emulator {
     // version info
     const std::string version = "0.0.5";
     const std::string dateOfLastVersion = "2025-07-19";
-    // PATHING -> turn this into a struct
+    // PATHING
+    std::filesystem::path bear16RootDir = getBear16RootDir();
     // emu state
-    std::filesystem::path projectPath = std::filesystem::path(".") / "projects_b16" / "bear16_os";
+    std::filesystem::path projectPath = bear16RootDir / "projects_b16" / "bear16_os";
     std::string entryFileName = "main.asm";
-    std::filesystem::path diskPath = std::filesystem::path(".") / "disks_b16" / "default_disk.bin";
+    std::filesystem::path diskPath = bear16RootDir / "disks_b16" / "default_disk.bin";
     // user data paths
-    const std::filesystem::path TUI_PATH = "./tui/";
+    const std::filesystem::path TUI_PATH = bear16RootDir / "tui";
     const std::filesystem::path HELP_MESSAGE = "help_message.txt";
     const std::filesystem::path CONFIG = "config.json";
     // assembler
-    assembly::Assembler testAssembler{false, false};
+    assembly::Assembler testAssembler{};
 
   public:
     int assembleAndRunWithoutSavingExecutable();
@@ -45,7 +51,6 @@ class Emulator {
     void getEntryFromUser();
     void getDiskPathFromUser();
     void enterToContinue();
-    std::filesystem::path getBear16RootDir();
 };
 
 #endif // EMU_H
