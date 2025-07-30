@@ -171,7 +171,7 @@ void Emulator::assembleAndSaveExecutable() {
     testAssembler.openProject(projectPath, entryFileName);
     auto userRom = testAssembler.assembleOpenedProject();
 
-    std::filesystem::path executablePath = computeBinPath();
+    std::filesystem::path executablePath = computeDefaultExecutablePath();
 
     std::ofstream executableFile(executablePath, std::ios::binary);
     if (!executableFile) {
@@ -197,7 +197,7 @@ void Emulator::runSavedExecutable() {
 
     // init emulated system
     Board board(false);
-    board.loadRomFromBinFile(computeBinPath().string());
+    board.loadRomFromBinFile(computeDefaultExecutablePath().string());
     board.loadDiskFromBinFile(diskPath);
     // run
     LOG_ERR("Launching the Bear16 Emulator...");
@@ -232,7 +232,7 @@ void Emulator::printHelpMessage() {
     std::cout << std::endl;
     enterToContinue();
 }
-std::filesystem::path Emulator::computeBinPath() const {
+std::filesystem::path Emulator::computeDefaultExecutablePath() const {
     // Ensure projectPath is a valid path
     std::filesystem::path projectFilePath(projectPath);
     if (!std::filesystem::exists(projectFilePath)) {

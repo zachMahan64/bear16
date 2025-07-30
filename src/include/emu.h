@@ -46,7 +46,7 @@ class Emulator {
     // help menu
     void printHelpMessage();
     // helpers
-    [[nodiscard]] std::filesystem::path computeBinPath() const;
+    [[nodiscard]] std::filesystem::path computeDefaultExecutablePath() const;
     void saveEmuStateToConfigFile();
     void getEmuStateFromConfigFile();
     // getting input from user
