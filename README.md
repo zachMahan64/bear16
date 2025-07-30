@@ -4,7 +4,8 @@
 - `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/bear16`
 ### Windows
 - `git clone --depth=1 https://github.com/zachMahan64/bear16.git %USERPROFILE%/bear16`
-- Note (for all platforms): clone the repo into any dir, but you will need to manually configure it.
+- Note (for all platforms): You can clone the repo into any location, just set the correct path in the TUI configuration
+- **You should add the bear16 executable ("b16") to your path for proper CLI support.
 ## Build Instructions and Toolchain Tips
 - **Buildable with CMake** directly after cloning the GitHub repo.
 - **Platform support:** MacOS and Windows. Linux should work with minor adjustments (SDL2 dependencies).
