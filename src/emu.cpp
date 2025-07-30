@@ -5,6 +5,7 @@
 #include "assembly.h"
 #include "core.h"
 #include "json.hpp"
+#include "path_manager.h"
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -250,9 +251,9 @@ std::filesystem::path Emulator::computeBinPath() const {
 void Emulator::saveEmuStateToConfigFile() {
     try {
         nlohmann::json j{};
-        j["projectPath"] = projectPath;
+        j["projectPath"] = snipBear16RootDir(projectPath);
         j["entry"] = entryFileName;
-        j["diskPath"] = diskPath;
+        j["diskPath"] = snipBear16RootDir(diskPath);
 
         std::ofstream outStream(std::filesystem::path(TUI_PATH / CONFIG));
         if (!outStream) {
@@ -275,9 +276,9 @@ void Emulator::getEmuStateFromConfigFile() {
         }
         nlohmann::json j{};
         inStream >> j;
-        projectPath = std::filesystem::path(j["projectPath"]);
+        projectPath = getBear16RootDir() / std::filesystem::path(j["projectPath"]);
         entryFileName = j["entry"];
-        diskPath = std::filesystem::path(j["diskPath"]);
+        diskPath = getBear16RootDir() / std::filesystem::path(j["diskPath"]);
     } catch (const std::exception &e) {
         std::cerr << "ERROR: Could not read config file: " << e.what()
                   << std::endl;
@@ -293,8 +294,7 @@ void Emulator::getProjectPathFromUser() {
         enterToContinue();
         return;
     }
-    std::string projectPath(
-        (std::filesystem::path("./projects_b16") / projectDir).string());
+    std::string projectPath((getBear16RootDir() / projectDir).string());
     if (!std::filesystem::exists(projectPath)) {
         std::cout << "Project path does not exist: " << projectPath
                   << std::endl;

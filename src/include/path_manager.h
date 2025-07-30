@@ -4,5 +4,5 @@
 #include <filesystem>
 
 std::filesystem::path getBear16RootDir();
-
+std::string snipBear16RootDir(const std::string& path);
 #endif // PATH_MANAGER_H

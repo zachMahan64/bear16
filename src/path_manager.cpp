@@ -1,5 +1,8 @@
 #include "path_manager.h"
 #include <iostream>
+#include <string>
+#include <cstdlib>
+
 std::filesystem::path getBear16RootDir() {
 #ifdef _WIN32
     const char* userFolderEnv = std::getenv("USERPROFILE");
@@ -21,4 +24,51 @@ std::filesystem::path getBear16RootDir() {
     }
 
     return bear16Path;
+}
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+std::string snipBear16RootDir(const std::string& path) {
+    if (path.empty()) return path;
+
+    std::string home;
+
+#ifdef _WIN32
+    char buffer[MAX_PATH];
+    if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, buffer))) {
+        home = std::string(buffer);
+    } else {
+        // fallback
+        const char* env = std::getenv("USERPROFILE");
+        home = env ? env : "";
+    }
+#else
+    const char* env = std::getenv("HOME");
+    home = env ? env : "";
+#endif
+
+    if (home.empty()) return path; // no home info
+
+    // Normalize home path separator for matching if needed:
+    // On Windows, convert backslashes to forward slashes for comparison
+#ifdef _WIN32
+    for (auto& c : home) if (c == '\\') c = '/';
+#endif
+
+    std::string path_norm = path;
+#ifdef _WIN32
+    for (auto& c : path_norm) if (c == '\\') c = '/';
+#endif
+
+    if (path_norm.compare(0, home.size(), home) == 0) {
+        size_t pos = home.size();
+        if (path_norm.size() > pos && (path_norm[pos] == '/' || path_norm[pos] == '\\')) {
+            pos++; // remove trailing slash
+        }
+        return path.substr(pos); // return remainder from original path (with original separators)
+    }
+
+    return path; // no match, return original
 }
