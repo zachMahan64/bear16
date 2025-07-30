@@ -1,13 +1,19 @@
 # Bear16: A Custom, Fully Featured 16-Bit ISA, Assembler, Emulator, & OS
+## Set-up
+### macOS:
+- `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/bear16`
+### Windows
+- `git clone --depth=1 https://github.com/zachMahan64/bear16.git %USERPROFILE%/bear16`
+- Note (for all platforms): clone the repo into any dir, but you will need to manually configure it.
 ## Build Instructions and Toolchain Tips
 - **Buildable with CMake** directly after cloning the GitHub repo.
 - **Platform support:** MacOS and Windows. Linux should work with minor adjustments (SDL2 dependencies).
 - **Dependencies:**
-  - CMake >= v3.5
-  - C++23 compiler
+  - CMake >= v3.10
+  - C++23 compiler (altough C++20 should work too with a couple tweaks)
   - SDL2 (for framebuffer and input)
-- **IDE Recommendation:** Ideally use one with built-in assembly color-coding and find/replace capabilities.
-  - I used CLion & NeoVim, and they worked well.
+- **IDE Recommendation:**
+- I used CLion & NeoVim, and they worked well.
 ## Technical Overview
 ### Background
 - I built Bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.

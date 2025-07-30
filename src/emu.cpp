@@ -51,6 +51,11 @@ int Emulator::launch(int argc, char** argv) {
     }
     return exitCode;
 }
+int parseArgs(std::vector<std::string> args) {
+    int exitCode = 0;
+    
+    return exitCode;
+}
 void Emulator::enterTUI() {
     getEmuStateFromConfigFile();
     auto printInvalidChoice = []() {
