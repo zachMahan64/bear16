@@ -77,8 +77,7 @@ class CPU16 {
     CPU16(std::array<uint8_t, isa::SRAM_SIZE> &sram,
           std::array<uint8_t, isa::ROM_SIZE> &userRom,
           std::array<uint8_t, isa::ROM_SIZE> &kernelRom,
-          std::unique_ptr<std::array<uint8_t, isa::DISK_SIZE>> &disk,
-          bool enableDebug);
+          std::vector<uint8_t> &disk, bool enableDebug);
     // EXECUTION
     void step();
     // INTERRUPT COMMUNICATION INTERFACE
@@ -159,9 +158,8 @@ class DiskController {
     static constexpr uint8_t WRITE_DONE = 0x08;
 
   public:
-    explicit DiskController(
-        std::array<uint8_t, isa::SRAM_SIZE> &sramRef,
-        const std::unique_ptr<std::array<uint8_t, isa::DISK_SIZE>> &disk);
+    explicit DiskController(std::array<uint8_t, isa::SRAM_SIZE> &sramRef,
+                            std::vector<uint8_t> &disk);
     void handleDiskOperation();
 };
 
@@ -176,8 +174,7 @@ class Board {
     std::array<uint8_t, isa::ROM_SIZE> userRom{};
     std::array<uint8_t, isa::ROM_SIZE> kernelRom{};
     // disk
-    std::unique_ptr<std::array<uint8_t, isa::DISK_SIZE>> disk =
-        std::make_unique<std::array<uint8_t, isa::DISK_SIZE>>();
+    std::vector<uint8_t> disk = decltype(disk)(isa::DISK_SIZE);
     // IO (WIP)
     uint64_t input = 0;
     uint64_t output = 0;

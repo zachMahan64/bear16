@@ -133,7 +133,7 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << "=====================" << std::endl;
     std::cout << "Disk contents: \n";
     for (int i = 0; i < 1024; i++) {
-        std::cout << disk->at(i);
+        std::cout << disk.at(i);
         if (i % 128 == 127) {
             std::cout << std::endl;
         }
@@ -329,11 +329,11 @@ void Board::loadDiskFromBinFile(const std::string &path) {
     }
 
     // Copy into disk array
-    std::ranges::copy(buffer, disk->begin());
+    std::ranges::copy(buffer, disk.begin());
 }
 
 void Board::saveDiskToBinFile(const std::string &path) const {
-    writeToFile(path, *disk);
+    writeToFile(path, disk);
 }
 
 void Board::calcClockSpeedHz(double elapsedMillis) {
@@ -355,11 +355,9 @@ void Board::setKernelRom(std::vector<uint8_t> &rom) {
 CPU16::CPU16(std::array<uint8_t, isa::SRAM_SIZE> &sram,
              std::array<uint8_t, isa::ROM_SIZE> &userRom,
              std::array<uint8_t, isa::ROM_SIZE> &kernelRom,
-             std::unique_ptr<std::array<uint8_t, isa::DISK_SIZE>> &disk,
-             bool enableDebug)
+             std::vector<uint8_t> &disk, bool enableDebug)
     : isEnableDebug(enableDebug), sram(sram), userRom(userRom),
-      kernelRom(kernelRom), activeRom(this->userRom),
-      disk(disk->data(), isa::DISK_SIZE) {}
+      kernelRom(kernelRom), activeRom(this->userRom), disk(disk) {}
 
 // CPU16 flow of execution
 void CPU16::step() {
@@ -1124,10 +1122,9 @@ void InputController::handleKeyboardRelease(const SDL_Event &e) const {
 // Interrupt Controller
 void InterruptController::handleKeyboardInterrupt() {}
 // Disk Controller
-DiskController::DiskController(
-    std::array<uint8_t, isa::SRAM_SIZE> &sramRef,
-    const std::unique_ptr<std::array<uint8_t, isa::DISK_SIZE>> &disk)
-    : disk(disk->data(), isa::DISK_SIZE), sram(sramRef) {}
+DiskController::DiskController(std::array<uint8_t, isa::SRAM_SIZE> &sramRef,
+                               std::vector<uint8_t> &disk)
+    : disk(disk), sram(sramRef) {}
 
 void DiskController::handleDiskOperation() {
     if (sram[isa::DISK_OP] == NO_OP) {
@@ -1137,7 +1134,7 @@ void DiskController::handleDiskOperation() {
               (static_cast<uint32_t>(sram[isa::DISK_ADDR_MID]) << 8) |
               (static_cast<uint32_t>(sram[isa::DISK_ADDR_HI]) << 16);
 
-    if (addrPtr >= isa::DISK_SIZE) { 
+    if (addrPtr >= isa::DISK_SIZE) {
         LOG_ERR("ERROR: Disk address out of bounds: " << addrPtr << std::endl);
         sram[isa::DISK_STATUS] |= OVERFLOW_ERROR;
         return;
