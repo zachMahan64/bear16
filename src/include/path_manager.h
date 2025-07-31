@@ -3,6 +3,6 @@
 
 #include <filesystem>
 
-std::filesystem::path getBear16RootDir();
-std::string snipBear16RootDir(const std::string& path);
+std::filesystem::path getBear16DefaultRootDir();
+std::string snipHomeDir(const std::string &path);
 #endif // PATH_MANAGER_H

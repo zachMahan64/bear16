@@ -15,7 +15,7 @@ class Emulator {
     const std::string dateOfLastVersion = "2025-07-19";
     const emu_launch launchState;
     // PATHING
-    std::filesystem::path bear16RootDir = getBear16RootDir();
+    std::filesystem::path bear16RootDir = getBear16DefaultRootDir();
     std::filesystem::path projectPath =
         bear16RootDir / "projects_b16" / "bear16_os";
     std::string entryFileName = "main.asm";
@@ -47,6 +47,7 @@ class Emulator {
     [[nodiscard]] std::filesystem::path computeDefaultExecutablePath() const;
     void saveEmuStateToConfigFile();
     void getEmuStateFromConfigFile();
+    std::filesystem::path snipBear16RootDir(const std::filesystem::path &path);
     // getting input from user
     void getProjectPathFromUser();
     void getEntryFromUser();

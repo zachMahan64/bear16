@@ -36,14 +36,14 @@ int Emulator::assembleAndRunWithoutSavingExecutable() {
     std::cout << std::endl;
     return exitCode;
 }
-std::vector<std::string> Emulator::vectorizeArgs(int argc, char** argv) {
+std::vector<std::string> Emulator::vectorizeArgs(int argc, char **argv) {
     std::vector<std::string> args = {};
     for (int i = 0; i < argc; i++) {
         args.emplace_back(argv[i]);
     }
     return args;
 }
-int Emulator::launch(int argc, char** argv) {
+int Emulator::launch(int argc, char **argv) {
     int exitCode = 0;
     if (launchState == emu_launch::tui) {
         enterTUI();
@@ -54,7 +54,7 @@ int Emulator::launch(int argc, char** argv) {
 }
 int parseArgs(std::vector<std::string> args) {
     int exitCode = 0;
-    
+
     return exitCode;
 }
 void Emulator::enterTUI() {
@@ -103,8 +103,7 @@ void Emulator::enterTUI() {
             break;
         }
         case 'c': {
-            std::cout << "THIS FEATURE IS WIP." << std::endl;
-            enterToContinue();
+            enterConfigMenu();
             break;
         }
         case 'h': {
@@ -216,7 +215,10 @@ void Emulator::runSavedExecutable() {
 
 void Emulator::enterConfigMenu() {}
 
-void Emulator::printConfigMenu() { std::cout << " [1] Change .asm entry file"; }
+void Emulator::printConfigMenu() {
+    std::cout << " [4] Change .asm entry file";
+    std::cout <<
+}
 
 void Emulator::printHelpMessage() {
     std::ifstream helpMessageFile(
@@ -251,6 +253,7 @@ std::filesystem::path Emulator::computeDefaultExecutablePath() const {
 void Emulator::saveEmuStateToConfigFile() {
     try {
         nlohmann::json j{};
+        j["bear16RootDir"] = bear16RootDir;
         j["projectPath"] = snipBear16RootDir(projectPath);
         j["entry"] = entryFileName;
         j["diskPath"] = snipBear16RootDir(diskPath);
@@ -276,15 +279,31 @@ void Emulator::getEmuStateFromConfigFile() {
         }
         nlohmann::json j{};
         inStream >> j;
-        projectPath = getBear16RootDir() / std::filesystem::path(j["projectPath"]);
+        if (j[bear16RootDir].empty()) {
+            bear16RootDir = std::filesystem::path(getBear16DefaultRootDir());
+        } else {
+            bear16RootDir = std::filesystem::path(j["bear16RootDir"]);
+        }
+        projectPath = bear16RootDir / std::filesystem::path(j["projectPath"]);
         entryFileName = j["entry"];
-        diskPath = getBear16RootDir() / std::filesystem::path(j["diskPath"]);
+        diskPath = bear16RootDir / std::filesystem::path(j["diskPath"]);
     } catch (const std::exception &e) {
         std::cerr << "ERROR: Could not read config file: " << e.what()
                   << std::endl;
     }
 }
-
+std::filesystem::path
+Emulator::snipBear16RootDir(const std::filesystem::path &path) {
+    std::string snippedOfHomeDir = snipHomeDir(path);
+    size_t pos = snippedOfHomeDir.find_first_of("/\\");
+    std::string snippedOfBear16RootDir{};
+    if (pos != std::string::npos) {
+        snippedOfBear16RootDir = snippedOfHomeDir.substr(pos);
+    } else {
+        snippedOfBear16RootDir = snippedOfHomeDir;
+    }
+    return std::filesystem::path(snippedOfBear16RootDir);
+}
 void Emulator::getProjectPathFromUser() {
     std::string projectDir;
     std::cout << "Enter the name of the project directory: ";
@@ -294,7 +313,7 @@ void Emulator::getProjectPathFromUser() {
         enterToContinue();
         return;
     }
-    std::string projectPath((getBear16RootDir() / projectDir).string());
+    std::string projectPath((bear16RootDir / projectDir).string());
     if (!std::filesystem::exists(projectPath)) {
         std::cout << "Project path does not exist: " << projectPath
                   << std::endl;
