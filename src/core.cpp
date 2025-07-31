@@ -1137,7 +1137,7 @@ void DiskController::handleDiskOperation() {
               (static_cast<uint32_t>(sram[isa::DISK_ADDR_MID]) << 8) |
               (static_cast<uint32_t>(sram[isa::DISK_ADDR_HI]) << 16);
 
-    if (addrPtr >= isa::DISK_SIZE) {
+    if (addrPtr >= isa::DISK_SIZE) { 
         LOG_ERR("ERROR: Disk address out of bounds: " << addrPtr << std::endl);
         sram[isa::DISK_STATUS] |= OVERFLOW_ERROR;
         return;
