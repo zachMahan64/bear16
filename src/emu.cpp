@@ -329,7 +329,9 @@ void Emulator::getEmuStateFromConfigFile() {
     std::filesystem::path configPath = std::filesystem::path(TUI_PATH / CONFIG);
     try {
         if (!std::filesystem::exists(configPath)) {
-            std::cerr << "Generating default config.json ...\n";
+            std::cout << "Oh, it's your first time using Bear16? Let's do some "
+                         "automatic set up.\n";
+            std::cout << "Generating default config.json ...\n";
             enterToContinue();
             saveEmuStateToConfigFile(); // saves the defaults, which the emu
                                         // boots up w/
