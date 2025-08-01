@@ -1,9 +1,14 @@
+# bear16 config
+config.json
+
 # build dirs
 cmake-build-*/
 nvim-build*/
 build*/
+
 # caches
 .cache*/
+
 # must be generated manually
 compile_commands.json
 

@@ -167,7 +167,7 @@ void Emulator::printTUIMainMenu() {
     std::cout << std::format("| {:<57} |", "[H] Help") << std::endl;
     std::cout << std::format("| {:<57} |", "[Q] Quit") << std::endl;
     PRINT_DIVIDE_BAR();
-    std::cout << "Make a selection: " << std::endl;
+    std::cout << "Make a selection: ";
 }
 void Emulator::assembleAndSaveExecutable() {
     testAssembler.openProject(projectPath, entryFileName);
@@ -217,17 +217,62 @@ void Emulator::runSavedExecutable() {
 }
 
 void Emulator::enterConfigMenu() {
-    printConfigMenu();
+    auto printInvalidChoice = []() {
+        std::cout << "Invalid choice. Please try again." << std::endl;
+    };
+    std::string line;
+    do {
+        printConfigMenu();
+        std::cout << "Make a selection: ";
+        std::getline(std::cin, line);
+        std::ranges::transform(line, line.begin(),
+                               [](char c) { return std::tolower(c); });
 
-    enterToContinue();
+        if (line.length() != 1) {
+            printInvalidChoice();
+            enterToContinue();
+            continue;
+        }
+        char selection = line.at(0);
+        switch (selection) {
+        case ('1'): {
+            break;
+        }
+        case ('2'): {
+            getProjectPathFromUser();
+            break;
+        }
+        case ('3'): {
+            break;
+        }
+        case ('4'): {
+            break;
+        }
+        case ('5'): {
+        }
+        case ('c'): {
+            break;
+        }
+        default: {
+            printInvalidChoice();
+            enterToContinue();
+            continue;
+        }
+        }
+    } while (line.empty() || line.at(0) != 'c');
 }
 
 void Emulator::printConfigMenu() {
     using namespace std;
+    cout << "\n";
+    cout << " Enter a [#] to make a change" << "\n";
+    cout << "==============================" << "\n";
     cout << " [1] Bear16 Root Directory: " << bear16RootDir << "\n";
     cout << " [2] Project Directory: " << projectPath << "\n";
     cout << " [3] Entry .asm file: " << entryFileName << "\n";
     cout << " [4] Disk Path: " << diskPath << "\n";
+    cout << " [5] Restore defaults" << "\n";
+    cout << " [C] Cancel" << "\n";
 }
 
 void Emulator::printHelpMessage() {
@@ -281,8 +326,15 @@ void Emulator::saveEmuStateToConfigFile() {
 }
 
 void Emulator::getEmuStateFromConfigFile() {
+    std::filesystem::path configPath = std::filesystem::path(TUI_PATH / CONFIG);
     try {
-        std::ifstream inStream(std::filesystem::path(TUI_PATH / CONFIG));
+        if (!std::filesystem::exists(configPath)) {
+            std::cerr << "Generating default config.json ...\n";
+            enterToContinue();
+            saveEmuStateToConfigFile(); // saves the defaults, which the emu
+                                        // boots up w/
+        }
+        std::ifstream inStream(configPath);
         if (!inStream) {
             std::cerr << "ERROR: Could not open config file." << std::endl;
             return;
