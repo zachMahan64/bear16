@@ -131,12 +131,14 @@ void Emulator::printTUIMainMenu() {
     std::string emuDivideBar = std::string(emuTitle.size(), '-');
     std::string emuBorderDivLine =
         std::format("|{}|", std::string(emuTitle.size() - 2, '-'));
-    auto getTrimmedProjectPath = [this]() {
+    auto getProjPathSubtitle = [this]() {
         return projectPath.string().substr(
             projectPath.string().find_last_of("/") + 1);
     };
-    std::string openProject = "Open Project: " + getTrimmedProjectPath();
+    std::string openProject = "Open Project: " + getProjPathSubtitle();
     std::string openProjectLine = std::format("| {:^57} |", openProject);
+    std::string fullPath =
+        std::format("| {:^57} |", "(" + projectPath.string() + ")");
 #define PRINT_TITLE_BAR() std::cout << emuTitleBar << std::endl
 #define PRINT_DIVIDE_BAR() std::cout << emuDivideBar << std::endl
 #define PRINT_BORDER_DIV_LINE() std::cout << emuBorderDivLine << std::endl
@@ -146,6 +148,7 @@ void Emulator::printTUIMainMenu() {
     std::cout << authorLine << std::endl;
     PRINT_TITLE_BAR();
     std::cout << openProjectLine << std::endl;
+    std::cout << fullPath << std::endl;
     PRINT_TITLE_BAR();
     std::cout << std::format("| {:<57} |",
                              "[1] Assemble & Run Without Saving Executable")
@@ -213,11 +216,18 @@ void Emulator::runSavedExecutable() {
     std::cout << std::endl;
 }
 
-void Emulator::enterConfigMenu() {}
+void Emulator::enterConfigMenu() {
+    printConfigMenu();
+
+    enterToContinue();
+}
 
 void Emulator::printConfigMenu() {
-    std::cout << " [4] Change .asm entry file";
-    std::cout <<
+    using namespace std;
+    cout << " [1] Bear16 Root Directory: " << bear16RootDir << "\n";
+    cout << " [2] Project Directory: " << projectPath << "\n";
+    cout << " [3] Entry .asm file: " << entryFileName << "\n";
+    cout << " [4] Disk Path: " << diskPath << "\n";
 }
 
 void Emulator::printHelpMessage() {
@@ -298,7 +308,7 @@ Emulator::snipBear16RootDir(const std::filesystem::path &path) {
     size_t pos = snippedOfHomeDir.find_first_of("/\\");
     std::string snippedOfBear16RootDir{};
     if (pos != std::string::npos) {
-        snippedOfBear16RootDir = snippedOfHomeDir.substr(pos);
+        snippedOfBear16RootDir = snippedOfHomeDir.substr(pos + 1);
     } else {
         snippedOfBear16RootDir = snippedOfHomeDir;
     }
@@ -306,7 +316,8 @@ Emulator::snipBear16RootDir(const std::filesystem::path &path) {
 }
 void Emulator::getProjectPathFromUser() {
     std::string projectDir;
-    std::cout << "Enter the name of the project directory: ";
+    std::cout << "Enter the name of the project directory: " << "\n";
+    std::cout << bear16RootDir.string() << '/';
     std::getline(std::cin, projectDir);
     if (projectDir.empty()) {
         std::cout << "ERROR: Project path cannot be empty." << std::endl;

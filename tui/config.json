@@ -1,6 +1,6 @@
 {
-    "bear16RootDir": "",
-    "projectPath": "projects_b16/bear16_os",
+    "bear16RootDir": "/Users/zachmahan/bear16",
+    "diskPath": "disks_b16/default_disk.bin",
     "entry": "main.asm",
-    "diskPath": "disks_b16/default_disk.bin"
-} 
+    "projectPath": "projects_b16/bear16_os"
+}
