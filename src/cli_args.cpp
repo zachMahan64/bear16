@@ -1,9 +1,10 @@
 #include "cli_args.h"
+#include <filesystem>
 #include <vector>
 
-const std::unordered_map<std::string, cli_arg> stringToArgFlagMap{
-    {"", cli_arg::assemble}, {"", cli_arg::run}, {"", cli_arg::help},
-    {"", cli_arg::version},  {"", cli_arg::ui},
+const std::unordered_map<std::string, cli_flag> stringToArgFlagMap{
+    {"", cli_flag::assemble}, {"", cli_flag::run}, {"", cli_flag::help},
+    {"", cli_flag::version},  {"", cli_flag::ui},
 };
 
 std::vector<std::string> vectorizeArgs(int argc, char **argv) {
@@ -14,14 +15,17 @@ std::vector<std::string> vectorizeArgs(int argc, char **argv) {
     return args;
 }
 
-std::vector<cli_arg> parseCLIArgs(std::vector<std::string> args) {
-    std::vector<cli_arg> parsedArgs{};
+std::vector<cli_flag> parseFlags(std::vector<std::string> args) {
+    std::vector<cli_flag> parsedArgs{};
     parsedArgs.reserve(args.size());
     for (const auto &arg : args) {
         if (stringToArgFlagMap.count(arg)) {
             parsedArgs.emplace_back(stringToArgFlagMap.at(arg));
         }
     }
-    // TODO
     return parsedArgs;
+}
+
+bool isValidFile(const std::string &filePath, const std::string &fileSuffix) {
+    return filePath.ends_with(fileSuffix) && std::filesystem::exists(filePath);
 }
