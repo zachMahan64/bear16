@@ -3,6 +3,7 @@
 //
 #include "emu.h"
 #include "assembly.h"
+#include "cli_args.h"
 #include "core.h"
 #include "json.hpp"
 #include "path_manager.h"
@@ -36,23 +37,17 @@ int Emulator::assembleAndRunWithoutSavingExecutable() {
     std::cout << std::endl;
     return exitCode;
 }
-std::vector<std::string> Emulator::vectorizeArgs(int argc, char **argv) {
-    std::vector<std::string> args = {};
-    for (int i = 0; i < argc; i++) {
-        args.emplace_back(argv[i]);
-    }
-    return args;
-}
 int Emulator::launch(int argc, char **argv) {
     int exitCode = 0;
     if (launchState == emu_launch::tui) {
         enterTUI();
     } else {
-        std::vector<std::string> args;
+        std::vector<std::string> args = vectorizeArgs(argc, argv);
+        exitCode = execBasedOnArgs(args);
     }
     return exitCode;
 }
-int parseArgs(std::vector<std::string> args) {
+int Emulator::execBasedOnArgs(std::vector<std::string> args) {
     int exitCode = 0;
 
     return exitCode;
@@ -122,6 +117,7 @@ void Emulator::enterTUI() {
     } while (choice != "q" && !hasLaunchedEmu);
 }
 void Emulator::printTUIMainMenu() {
+    int LINE_LEN = 61;
     std::string emuTitle =
         std::format("| {:^57} |", "BEAR16 Emulator & Assembler - v" + version +
                                       " (" + dateOfLastVersion + ")");
@@ -148,7 +144,9 @@ void Emulator::printTUIMainMenu() {
     std::cout << authorLine << std::endl;
     PRINT_TITLE_BAR();
     std::cout << openProjectLine << std::endl;
-    std::cout << fullPath << std::endl;
+    if (fullPath.length() <= LINE_LEN) {
+        std::cout << fullPath << std::endl;
+    }
     PRINT_TITLE_BAR();
     std::cout << std::format("| {:<57} |",
                              "[1] Assemble & Run Without Saving Executable")

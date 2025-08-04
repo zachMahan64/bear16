@@ -28,8 +28,7 @@ class Emulator {
     // assembler
     assembly::Assembler testAssembler{};
     // CLI
-    static std::vector<std::string> vectorizeArgs(int argc, char **argv);
-    int parseCLIFlags(std::vector<std::string> args);
+    int execBasedOnArgs(std::vector<std::string>);
     // TUI
     int assembleAndRunWithoutSavingExecutable();
     // main menu
