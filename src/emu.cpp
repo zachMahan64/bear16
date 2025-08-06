@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <unordered_set>
 #include <vector>
 Emulator::Emulator(emu_launch launchState) : launchState(launchState) {}
 int Emulator::assembleAndRunWithoutSavingExecutable() {
@@ -43,12 +44,13 @@ int Emulator::launch(int argc, char **argv) {
         enterTUI();
     } else {
         std::vector<std::string> args = vectorizeArgs(argc, argv);
-        exitCode = execBasedOnArgs(args);
+        exitCode = performActionBasedOnArgs(args);
     }
     return exitCode;
 }
-int Emulator::execBasedOnArgs(std::vector<std::string> args) {
+int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
     int exitCode = 0;
+    std::unordered_set<cli_flag> flags = parseFlags(args);
 
     return exitCode;
 }

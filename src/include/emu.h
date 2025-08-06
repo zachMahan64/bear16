@@ -28,7 +28,7 @@ class Emulator {
     // assembler
     assembly::Assembler testAssembler{};
     // CLI
-    int execBasedOnArgs(std::vector<std::string>);
+    int performActionBasedOnArgs(const std::vector<std::string> &args);
     // TUI
     int assembleAndRunWithoutSavingExecutable();
     // main menu

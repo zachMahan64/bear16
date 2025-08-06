@@ -3,12 +3,13 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 enum class cli_flag { assemble, run, help, version, ui };
 extern const std::unordered_map<std::string, cli_flag> stringToArgFlagMap;
 
 std::vector<std::string> vectorizeArgs(int argc, char **argv);
-std::vector<cli_flag> parseFlags(std::vector<std::string> args);
+std::unordered_set<cli_flag> parseFlags(const std::vector<std::string> &args);
 std::vector<std::string>
 parseForAsmFile(); // make sure to get parent directory as "project path"
 std::vector<std::string> parseForBinary(); // TODO
