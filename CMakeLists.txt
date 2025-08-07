@@ -1,3 +1,5 @@
+# BUILD IS COMPATIBLE W/ LINUX, MACOS, & WINDOWS
+# SEE THE BEAR16 REPO FOR DETAILS
 cmake_minimum_required(VERSION 3.10)
 project(b16)
 

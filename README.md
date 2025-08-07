@@ -1,14 +1,19 @@
 # Bear16: A Custom, Fully Featured 16-Bit ISA, Assembler, Emulator, & OS
 ## Set-up
+### Linux:
+- Fedora: `sudo dnf install SDL2-devel`
+- Debian/Ubuntu: `sudo apt install libsdl2-dev`
+- Arch: `sudo pacman -S sdl2`
+- `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/bear16`
 ### macOS:
 - `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/bear16`
 ### Windows
 - `git clone --depth=1 https://github.com/zachMahan64/bear16.git %USERPROFILE%/bear16`
-- Note (for all platforms): You can clone the repo into any location, just set the correct path in the TUI configuration
-- **You should add the bear16 executable ("b16") to your path for proper CLI support.**
+- Note (for all platforms): You can clone the repo into any location, just make a symlink in your home dir or change the config.
+- **you should add the bear16 executable ("b16") to your path for proper CLI support.**
 ## Build Instructions and Toolchain Tips
 - **Buildable with CMake** directly after cloning the GitHub repo.
-- **Platform support:** MacOS and Windows. Linux should work with minor adjustments (SDL2 dependencies).
+- **Platform support:** Linux, MacOS, and Windows.
 - **Dependencies:**
   - CMake >= v3.10
   - C++23 compiler (altough C++20 should work too with a couple tweaks)
