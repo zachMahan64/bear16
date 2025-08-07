@@ -41,6 +41,11 @@ if(APPLE)
     target_link_libraries(
     ${PROJECT_NAME}
     "${CMAKE_SOURCE_DIR}/dependencies/SDL2.framework/Versions/A/SDL2")
+elseif(UNIX)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(SDL2 REQUIRED sdl2)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
 elseif(WIN32)
     # paths
     set(SDL2_INCLUDE_DIR
