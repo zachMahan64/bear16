@@ -11,7 +11,13 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+if (MSVC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2")
+else()
+  # Use GCC/Clang flags
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+endif()
+
 
 set(CMAKE_FRAMEWORK_PATH "${CMAKE_SOURCE_DIR}")
 
@@ -23,15 +29,15 @@ file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS src/*.cpp)
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 # for full compiler warnings
-target_compile_options(
-  ${PROJECT_NAME}
-  PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall
-          -Wextra
-          -Wpedantic>
-          $<$<CXX_COMPILER_ID:Clang>:-Wall
-          -Wextra
-          -Wpedantic>
-          $<$<CXX_COMPILER_ID:MSVC>:/W4>)
+# target_compile_options(
+#   ${PROJECT_NAME}
+#   PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall
+#           -Wextra
+#           -Wpedantic>
+#           $<$<CXX_COMPILER_ID:Clang>:-Wall
+#           -Wextra
+#           -Wpedantic>
+#           $<$<CXX_COMPILER_ID:MSVC>:/W4>)
 
 if(APPLE)
     target_include_directories(

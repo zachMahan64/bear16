@@ -1,4 +1,6 @@
 #include "path_manager.h"
+
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -29,6 +31,7 @@ std::filesystem::path getBear16DefaultRootDir() {
 
 #ifdef _WIN32
 #include <windows.h>
+#include <Shlobj.h>
 #endif
 
 std::string snipHomeDir(const std::string &path) {

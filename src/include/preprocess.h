@@ -30,7 +30,7 @@ class IncludeToken {
     std::string projectPath{};
     std::string fileName{};
     std::string contents{};
-    void adjustFullPathAccordingToProjectPath(std::string &projectPath);
+    void adjustFullPathAccordingToProjectPath(const std::string &projectPath);
     [[nodiscard]] bool checkPathValidity() const;
     void buildContents();
 

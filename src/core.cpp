@@ -17,6 +17,13 @@
 #include <string>
 #include <vector>
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#define BSWAP64  _byteswap_uint64
+#else
+#define BSWAP64 __builtin_bswap64
+#endif
+
 // macros
 // #define DEBUG_MODE
 #ifdef DEBUG_MODE
@@ -382,7 +389,7 @@ void CPU16::setTrapReturnAddress(uint16_t trapRetAddr) {
 uint64_t CPU16::fetchInstruction() const {
     uint64_t instr;
     memcpy(&instr, &activeRom[pc], sizeof(uint64_t));
-    return __builtin_bswap64(instr); // cuz big endian
+    return BSWAP64(instr); // cuz big endian
 }
 // execute
 void CPU16::execute(parts::Instruction instr) {

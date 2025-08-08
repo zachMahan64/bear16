@@ -22,13 +22,13 @@ int Emulator::assembleAndRunWithoutSavingExecutable() {
     // init emulated system
     Board board(false);
     board.loadUserRomFromByteVector(userRom);
-    board.loadDiskFromBinFile(diskPath);
+    board.loadDiskFromBinFile(diskPath.string());
     // run
     LOG_ERR("Launching the Bear16 Emulator...");
     int exitCode = board.run();
 
     // save disk state
-    board.saveDiskToBinFile(diskPath);
+    board.saveDiskToBinFile(diskPath.string());
 
     // display diagnostics:
     board.printDiagnostics(false);
@@ -121,8 +121,8 @@ void Emulator::enterTUI() {
 void Emulator::printTUIMainMenu() {
     int LINE_LEN = 61;
     std::string emuTitle =
-        std::format("| {:^57} |", "BEAR16 Emulator & Assembler - v" + version +
-                                      " (" + dateOfLastVersion + ")");
+        std::format("| {:^57} |", std::string("BEAR16 Emulator & Assembler - v" + version +
+                                      " (" + dateOfLastVersion + ")"));
     std::string author = "Made by Zach Mahan";
     std::string authorLine = std::format("| {:^57} |", author);
     std::string emuTitleBar = std::string(emuTitle.size(), '=');
@@ -200,13 +200,13 @@ void Emulator::runSavedExecutable() {
     // init emulated system
     Board board(false);
     board.loadRomFromBinFile(computeDefaultExecutablePath().string());
-    board.loadDiskFromBinFile(diskPath);
+    board.loadDiskFromBinFile(diskPath.string());
     // run
     LOG_ERR("Launching the Bear16 Emulator...");
     int exitCode = board.run();
 
     // save disk state
-    board.saveDiskToBinFile(diskPath);
+    board.saveDiskToBinFile(diskPath.string());
 
     // display diagnostics
     board.printDiagnostics(false);
@@ -343,7 +343,7 @@ void Emulator::getEmuStateFromConfigFile() {
         }
         nlohmann::json j{};
         inStream >> j;
-        if (j[bear16RootDir].empty()) {
+        if (j[bear16RootDir.string()].empty()) {
             bear16RootDir = std::filesystem::path(getBear16DefaultRootDir());
         } else {
             bear16RootDir = std::filesystem::path(j["bear16RootDir"]);
@@ -358,7 +358,7 @@ void Emulator::getEmuStateFromConfigFile() {
 }
 std::filesystem::path
 Emulator::snipBear16RootDir(const std::filesystem::path &path) {
-    std::string snippedOfHomeDir = snipHomeDir(path);
+    std::string snippedOfHomeDir = snipHomeDir(path.string());
     size_t pos = snippedOfHomeDir.find_first_of("/\\");
     std::string snippedOfBear16RootDir{};
     if (pos != std::string::npos) {

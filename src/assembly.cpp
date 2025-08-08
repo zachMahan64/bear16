@@ -422,7 +422,7 @@ void Assembler::openProject(std::filesystem::path projectPath,
                             std::string entry) {
     this->projectPath = std::move(projectPath);
     this->entry = std::move(entry);
-    preprocessor.setProject(this->projectPath, this->entry);
+    preprocessor.setProject(this->projectPath.string(), this->entry);
 }
 void Assembler::changeEntry(std::string entry) {
     this->entry = std::move(entry);

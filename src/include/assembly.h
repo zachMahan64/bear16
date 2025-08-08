@@ -15,7 +15,7 @@
 #include <vector>
 
 // macros
-// #define DO_LOG_ASM
+//#define DO_LOG_ASM
 #ifdef DO_LOG_ASM
 #define LOG_ASM(x) std::cout << x << "\n"
 #else
