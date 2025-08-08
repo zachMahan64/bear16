@@ -3,9 +3,16 @@
 #include <unordered_set>
 #include <vector>
 const std::unordered_map<std::string, cli_flag> stringToArgFlagMap{
-    {"", cli_flag::assemble}, {"", cli_flag::run}, {"", cli_flag::help},
-    {"", cli_flag::version},  {"", cli_flag::ui},
-};
+    {"-a", cli_flag::assemble},
+    {"-r", cli_flag::run},
+    {"-h", cli_flag::help},
+    {"-v", cli_flag::version},
+    {"-u", cli_flag::ui},
+    {"--assemble", cli_flag::assemble},
+    {"--run", cli_flag::run},
+    {"--help", cli_flag::help},
+    {"--version", cli_flag::version},
+    {"--ui", cli_flag::ui}};
 
 std::vector<std::string> vectorizeArgs(int argc, char **argv) {
     std::vector<std::string> args = {};
@@ -21,6 +28,9 @@ std::unordered_set<cli_flag> parseFlags(const std::vector<std::string> &args) {
     for (const auto &arg : args) {
         if (stringToArgFlagMap.count(arg)) {
             parsedFlags.insert(stringToArgFlagMap.at(arg));
+        } else if (arg == "-ar" || arg == "-ra") {
+            parsedFlags.insert(cli_flag::assemble);
+            parsedFlags.insert(cli_flag::run);
         }
     }
     // TODO

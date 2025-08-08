@@ -15,4 +15,8 @@ parseForAsmFile(); // make sure to get parent directory as "project path"
 std::vector<std::string> parseForBinary(); // TODO
 bool isValidFile(const std::string &filePath, const std::string &fileSuffix);
 
+enum class cli_flag_warning {
+    multiple_incompatible_flags,
+};
+
 #endif
