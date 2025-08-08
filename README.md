@@ -1,22 +1,26 @@
 # Bear16: A Custom, Fully Featured 16-Bit ISA, Assembler, Emulator, & OS
 ## Set-up
 ### Linux:
-- Fedora: `sudo dnf install SDL2-devel`
+Installing SDL2 packages:
+- Fedora:        `sudo dnf install SDL2-devel`
 - Debian/Ubuntu: `sudo apt install libsdl2-dev`
-- Arch: `sudo pacman -S sdl2`
+- Arch:          `sudo pacman -S sdl2`
+Cloning the repo:
 - `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/bear16`
 ### macOS:
 - `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/bear16`
 ### Windows
 - `git clone --depth=1 https://github.com/zachMahan64/bear16.git %USERPROFILE%/bear16`
 - Note (for all platforms): You can clone the repo into any location, just make a symlink in your home dir or change the config.
-- **you should add the bear16 executable ("b16") to your path for proper CLI support.**
+- **You should export the bear16 directory to your path for proper CLI support (or whichever your b16 executable lives, like a build dir).**
 ## Build Instructions and Toolchain Tips
 - **Buildable with CMake** directly after cloning the GitHub repo.
 - **Platform support:** Linux, MacOS, and Windows.
 - **Dependencies:**
   - CMake >= v3.10
   - C++23 compiler (altough C++20 should work too with a couple tweaks)
+     - Linux & MacOS: Both gcc & clang work.
+     - Windows: MinGW recomended (tested & working), altough MSVC should work with some manual config.
   - SDL2 (for framebuffer and input)
 - **IDE Recommendation:**
 - I used CLion & NeoVim, and they worked well.
@@ -39,7 +43,7 @@
 - Bear16 is a 16-bit, little-endian architecture with 16-bit memory addressing and 64-bit fixed-width instructions.
 - Instruction format:
   - Each instruction is broken up into four distinct 16-bit fields
-    - [16] [16] [16] [16] 
+    - [16] [16] [16] [16]
     - [opcode] [destination] [source_one] [source_two]
     - Each opcode contains two sub-fields:
       - [opcode]
@@ -52,11 +56,11 @@
   - Example Instruction:
     - `add t0, t1, 2`
     - Explanation: This instruction adds the value stored in register t1 (temporary/volatile 1) and stores the result into t0. Notice how the source_two field contains the immediate value 2. So this instruction really should be: `addi2 t0, t1, 2`. Thankfully, the assembler recognizes this necessity and resolves all inlined immediates. Manual suffixing (`i1`, `i2`, `i`) is entirely optional and generally discouraged.
-    
+
 - Directives:
   - `@include "relative_path_if_in_sub_directory/file_name.asm"`
     - For C-style linking
-  - .data 
+  - .data
     - Denotes constant data
   - .text
     - Denotes executable code
@@ -85,7 +89,7 @@
     - `[0x0000 - 0x17FF: framebuffer]`
       - 6 KB
     - `[0x1800 - 0x19FF: privileged_space]`
-      - 2 KB 
+      - 2 KB
       - Reserved for memory mapped IO
       - See `isa.h` or `bear16_os` for details
     - `[0x1800 - 0x9FFF: heap]`
