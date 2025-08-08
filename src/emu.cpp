@@ -24,7 +24,7 @@ int Emulator::assembleAndRunWithoutSavingExecutable() {
     board.loadUserRomFromByteVector(userRom);
     board.loadDiskFromBinFile(diskPath.string());
     // run
-    LOG_ERR("Launching the Bear16 Emulator...");
+    LOG_ERR("Launched the Bear16 Emulator...");
     int exitCode = board.run();
 
     // save disk state

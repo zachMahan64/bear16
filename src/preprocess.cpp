@@ -56,7 +56,7 @@ void IncludeToken::buildContents() {
                 fullPath);
         return;
     }
-    LOG_ERR("Successfully opened .asm file: " + fullPath +
+    LOG("Successfully opened .asm file: " + fullPath +
         " for building contents");
     std::ifstream file(fullPath, std::ios::in | std::ios::binary);
     contents = std::string((std::istreambuf_iterator<char>(file)),
@@ -142,7 +142,7 @@ std::string Preprocessor::preprocessAsmProject(const std::string &fileName) {
             }
             if (inIncludeDirective && !isBlank(currentStr)) {
                 std::string fileToInclude = currentStr;
-                LOG_ERR("fileToInclude = " + fileToInclude);
+                LOG_ERR("Included file: " + fileToInclude);
                 IncludeToken tkn(fileToInclude, projectPath);
                 if (addIncludeIfAbsent(tkn)) {
                     includedFilesContents +=
