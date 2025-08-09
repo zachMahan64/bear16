@@ -7,6 +7,7 @@
 #include "core.h"
 #include "json.hpp"
 #include "path_manager.h"
+#include <complex>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -57,12 +58,31 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
         errors.insert(cli_error::missing_asm_file);
     }
     if (mentionedFiles.binFile.empty() &&
-        (flags.contains(cli_flag::assemble) || flags.contains(cli_flag::run) ||
-         flags.contains(cli_flag::set_disk))) {
+        (flags.contains(cli_flag::assemble) ||
+         (flags.contains(cli_flag::run) ||
+          flags.contains(cli_flag::set_disk)))) {
         errors.insert(cli_error::missing_bin_file);
+    }
+    // TODO -> throw any errors not implemented
+    bool doAssemble = flags.contains(cli_flag::assemble);
+    bool doRun = flags.contains(cli_flag::run);
+    if (doAssemble) {
+        projectPath =
+            std::filesystem::path(mentionedFiles.asmFile).parent_path();
+        entryFileName =
+            std::filesystem::path(mentionedFiles.asmFile).filename();
+        assembleAndSaveExecutable();
+    }
+    if (doRun) {
+        projectPath =
+            std::filesystem::canonical(mentionedFiles.binFile).parent_path();
+        runSavedExecutable();
     }
     // TODO
     return exitCode;
+}
+void throwAnyErrorsFromArgParsing(const std::unordered_set<cli_error> &errors) {
+    // TODO
 }
 void Emulator::enterTUI() {
     getEmuStateFromConfigFile();
@@ -301,17 +321,17 @@ void Emulator::printHelpMessage() {
 }
 std::filesystem::path Emulator::computeDefaultExecutablePath() const {
     // Ensure projectPath is a valid path
-    std::filesystem::path projectFilePath(projectPath);
-    if (!std::filesystem::exists(projectFilePath)) {
-        std::cerr << "Project file does not exist: " << projectPath
+    std::filesystem::path curProjectPath(projectPath);
+    if (!std::filesystem::exists(curProjectPath)) {
+        std::cerr << "Project path does not exist: " << projectPath
                   << std::endl;
         return {};
     }
     // compute the output binary path
     std::filesystem::path executableName =
-        projectFilePath.stem(); // filename w/o extension
+        curProjectPath.stem(); // filename w/o extension
     std::filesystem::path executablePath =
-        projectFilePath / (executableName.string() + ".bin");
+        curProjectPath / (executableName.string() + ".bin");
     return executablePath;
 }
 

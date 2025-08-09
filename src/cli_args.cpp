@@ -1,5 +1,6 @@
 #include "cli_args.h"
 #include <filesystem>
+#include <iostream>
 #include <unordered_set>
 #include <vector>
 
@@ -51,7 +52,8 @@ parseFlags(const std::vector<std::string> &args,
     return parsedFlags;
 }
 
-bool isValidFile(const std::string &filePath, const std::string &fileSuffix) {
+bool fileExistsAndIsValid(const std::string &filePath,
+                          const std::string &fileSuffix) {
     return filePath.ends_with(fileSuffix) && std::filesystem::exists(filePath);
 }
 
@@ -60,15 +62,23 @@ parseArgsForMentionedFiles(const std::vector<std::string> &args,
                            std::unordered_set<cli_error> &cliErrorState) {
     MentionedFiles mentionedFiles{};
     for (const auto &arg : args) {
-        if (isValidFile(arg, asm_suffix)) {
-            if (!mentionedFiles.asmFile.empty()) {
+        if (fileExistsAndIsValid(arg, asm_suffix)) {
+            if (mentionedFiles.asmFile.empty()) {
                 mentionedFiles.asmFile = arg;
             } else {
                 cliErrorState.insert(cli_error::too_many_asm_files);
             }
-        } else if (isValidFile(arg, bin_suffix)) {
-            if (!mentionedFiles.binFile.empty()) {
+        } else if (fileExistsAndIsValid(arg, bin_suffix)) {
+            if (mentionedFiles.binFile.empty()) {
                 mentionedFiles.binFile = arg;
+                mentionedFiles.binFileState = bin_file_state::exists;
+            } else {
+                cliErrorState.insert(cli_error::too_many_num_bin_files);
+            }
+        } else if (arg.ends_with(bin_suffix)) {
+            if (mentionedFiles.binFile.empty()) {
+                mentionedFiles.binFile = arg;
+                mentionedFiles.binFileState = bin_file_state::does_not_exist;
             } else {
                 cliErrorState.insert(cli_error::too_many_num_bin_files);
             }

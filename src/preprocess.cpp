@@ -25,22 +25,26 @@ void IncludeToken::adjustFullPathAccordingToProjectPath(
     this->projectPath = projectPath;
 
     // Strip surrounding quotes if present
-    if (!fileName.empty() && fileName.front() == '"' && fileName.back() == '"') {
+    if (!fileName.empty() && fileName.front() == '"' &&
+        fileName.back() == '"') {
         fileName = fileName.substr(1, fileName.size() - 2);
     }
 
     // Remove all internal quotes
-    fileName.erase(std::remove(fileName.begin(), fileName.end(), '"'), fileName.end());
+    fileName.erase(std::remove(fileName.begin(), fileName.end(), '"'),
+                   fileName.end());
 
     // Remove all whitespace characters
-    fileName.erase(std::remove_if(fileName.begin(), fileName.end(),
-                                  [](unsigned char c) { return std::isspace(c); }),
-                   fileName.end());
+    fileName.erase(
+        std::remove_if(fileName.begin(), fileName.end(),
+                       [](unsigned char c) { return std::isspace(c); }),
+        fileName.end());
 
     // Remove all non-ASCII characters (keep 0x20-0x7E printable ASCII range)
-    fileName.erase(std::remove_if(fileName.begin(), fileName.end(),
-                                  [](unsigned char c) { return c < 0x20 || c > 0x7E; }),
-                   fileName.end());
+    fileName.erase(
+        std::remove_if(fileName.begin(), fileName.end(),
+                       [](unsigned char c) { return c < 0x20 || c > 0x7E; }),
+        fileName.end());
 
     fullPath = (std::filesystem::path(projectPath) / fileName).string();
 }
@@ -98,7 +102,8 @@ std::string Preprocessor::preprocessAsmProject(const std::string &fileName) {
     if (!file) {
         LOG_ERR(
             "Current working directory: " << std::filesystem::current_path());
-        LOG_ERR("ERROR: Could not open .asm file for preprocessing: " << "\"" + path + "\"");
+        LOG_ERR("ERROR: Could not open .asm file for preprocessing: "
+                << "\"" + path + "\"");
         return {};
     }
     LOG("Successfully opened .asm file: " + path + " for preprocessing.");
@@ -142,9 +147,9 @@ std::string Preprocessor::preprocessAsmProject(const std::string &fileName) {
             }
             if (inIncludeDirective && !isBlank(currentStr)) {
                 std::string fileToInclude = currentStr;
-                LOG_ERR("Included file: " + fileToInclude);
                 IncludeToken tkn(fileToInclude, projectPath);
                 if (addIncludeIfAbsent(tkn)) {
+                    LOG_ERR("Included file: " + fileToInclude);
                     includedFilesContents +=
                         preprocessAsmProject(tkn.getFileName());
                 }
