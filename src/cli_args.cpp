@@ -33,11 +33,11 @@ std::unordered_set<cli_flag> parseFlags(const std::vector<std::string> &args,
     std::unordered_set<cli_flag> parsedFlags{};
     parsedFlags.reserve(args.size());
     for (const auto &arg : args) {
-        if (stringToArgFlagMap.count(arg)) {
-            parsedFlags.insert(stringToArgFlagMap.at(arg));
-        } else if (arg == "-ar" || arg == "-ra") {
+        if (arg == "-ar" || arg == "-ra") {
             parsedFlags.insert(cli_flag::assemble);
             parsedFlags.insert(cli_flag::run);
+        } else if (stringToArgFlagMap.count(arg)) {
+            parsedFlags.insert(stringToArgFlagMap.at(arg));
         }
     }
 

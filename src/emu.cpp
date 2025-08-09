@@ -7,7 +7,6 @@
 #include "core.h"
 #include "json.hpp"
 #include "path_manager.h"
-#include <complex>
 #include <exception>
 #include <filesystem>
 #include <format>
@@ -68,7 +67,7 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
     if (doAssemble) {
         // if no bin -> assemble to a default-named binary of format <project_name>.bin
         if (mentionedFiles.asmFile.empty()) errors.insert(cli_error_e::missing_asm_file);
-        enumerateErrorsAndTerminate(errors);
+        if (!errors.empty()) enumerateErrorsAndTerminate(errors);
         // TODO change assembler api to allow the note above ^
         projectPath = std::filesystem::canonical(mentionedFiles.asmFile).parent_path();
         entryFileName = std::filesystem::path(mentionedFiles.asmFile).filename();
@@ -76,9 +75,10 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
     }
     if (doRun) {
         if (mentionedFiles.binFile.empty()) errors.insert(cli_error_e::missing_bin_file);
-        enumerateErrorsAndTerminate(errors);
+        if (!errors.empty()) enumerateErrorsAndTerminate(errors);
         runMentionedExecutable(mentionedFiles.binFile);
     }
+    if (!errors.empty()) enumerateErrorsAndTerminate(errors);
     // TODO -> help, disk, version
     return exitCode;
 }
