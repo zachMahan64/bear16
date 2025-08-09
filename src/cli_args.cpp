@@ -54,7 +54,25 @@ bool isValidFile(const std::string &filePath, const std::string &fileSuffix) {
 
 MentionedFiles
 parseArgsForMentionedFiles(const std::vector<std::string> &args,
-                           std::unordered_set<cli_error> &cliErrorState) {}
+                           std::unordered_set<cli_error> &cliErrorState) {
+    MentionedFiles mentionedFiles{};
+    for (const auto &arg : args) {
+        if (isValidFile(arg, asm_suffix)) {
+            if (!mentionedFiles.asmFile.empty()) {
+                mentionedFiles.asmFile = arg;
+            } else {
+                cliErrorState.insert(cli_error::too_many_asm_files);
+            }
+        } else if (isValidFile(arg, bin_suffix)) {
+            if (!mentionedFiles.binFile.empty()) {
+                mentionedFiles.binFile = arg;
+            } else {
+                cliErrorState.insert(cli_error::too_many_num_bin_files);
+            }
+        }
+    }
+    return mentionedFiles;
+}
 
 bool parseForUnrecognizedArgs(std::unordered_set<cli_error> &cliErrorState) {
     // TODO

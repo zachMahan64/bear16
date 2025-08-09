@@ -53,6 +53,12 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
     std::unordered_set<cli_error> errors{};
     std::unordered_set<cli_flag> flags = parseFlags(args, errors);
     MentionedFiles mentiondFiles = parseArgsForMentionedFiles(args, errors);
+    if (mentiondFiles.asmFile.empty() && flags.contains(cli_flag::assemble)) {
+        errors.insert(cli_error::missing_asm_file);
+    }
+    if (mentiondFiles.binFile.empty() && flags.contains(cli_flag::assemble)) {
+        errors.insert(cli_error::missing_bin_file);
+    }
     // TODO
     return exitCode;
 }
