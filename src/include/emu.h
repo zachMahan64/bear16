@@ -8,7 +8,6 @@
 #include "path_manager.h"
 #include <filesystem>
 #include <string>
-#include <unordered_set>
 #include <vector>
 enum class emu_launch { cli_args, tui };
 class Emulator {
@@ -18,11 +17,9 @@ class Emulator {
     const emu_launch launchState;
     // PATHING
     std::filesystem::path bear16RootDir = getBear16DefaultRootDir();
-    std::filesystem::path projectPath =
-        bear16RootDir / "projects_b16" / "bear16_os";
+    std::filesystem::path projectPath = bear16RootDir / "projects_b16" / "bear16_os";
     std::string entryFileName = "main.asm";
-    std::filesystem::path diskPath =
-        bear16RootDir / "disks_b16" / "default_disk.bin";
+    std::filesystem::path diskPath = bear16RootDir / "disks_b16" / "default_disk.bin";
     // user data paths
     const std::filesystem::path TUI_PATH = bear16RootDir / "tui";
     const std::filesystem::path HELP_MESSAGE = "help_message.txt";
@@ -31,8 +28,9 @@ class Emulator {
     assembly::Assembler testAssembler{};
     // CLI
     int performActionBasedOnArgs(const std::vector<std::string> &args);
-    void
-    throwAnyErrorsFromArgParsing(const std::unordered_set<cli_error> &errors);
+    int runMentionedExecutable(const std::string &executableFileName);
+    [[noreturn]] void enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e> errors,
+                                                  int exitCode = EXIT_FAILURE);
     // TUI
     int assembleAndRunWithoutSavingExecutable();
     // main menu

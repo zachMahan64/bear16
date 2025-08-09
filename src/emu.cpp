@@ -8,6 +8,7 @@
 #include "json.hpp"
 #include "path_manager.h"
 #include <complex>
+#include <exception>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -33,9 +34,8 @@ int Emulator::assembleAndRunWithoutSavingExecutable() {
 
     // display diagnostics:
     board.printDiagnostics(false);
-    std::cout << "Emulated process (version " + version +
-                     ") finished with exit code "
-              << exitCode << std::endl;
+    std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode
+              << std::endl;
     std::cout << std::endl;
     return exitCode;
 }
@@ -51,38 +51,69 @@ int Emulator::launch(int argc, char **argv) {
 }
 int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
     int exitCode = 0;
-    std::unordered_set<cli_error> errors{};
+    std::unordered_set<cli_error_e> errors{};
     std::unordered_set<cli_flag> flags = parseFlags(args, errors);
     MentionedFiles mentionedFiles = parseArgsForMentionedFiles(args, errors);
     if (mentionedFiles.asmFile.empty() && flags.contains(cli_flag::assemble)) {
-        errors.insert(cli_error::missing_asm_file);
+        errors.insert(cli_error_e::missing_asm_file);
     }
     if (mentionedFiles.binFile.empty() &&
         (flags.contains(cli_flag::assemble) ||
-         (flags.contains(cli_flag::run) ||
-          flags.contains(cli_flag::set_disk)))) {
-        errors.insert(cli_error::missing_bin_file);
+         (flags.contains(cli_flag::run) || flags.contains(cli_flag::set_disk)))) {
+        errors.insert(cli_error_e::missing_bin_file);
     }
-    // TODO -> throw any errors not implemented
+    bool errorFlag = parseForUnrecognizedArgs(args, errors);
     bool doAssemble = flags.contains(cli_flag::assemble);
     bool doRun = flags.contains(cli_flag::run);
     if (doAssemble) {
-        projectPath =
-            std::filesystem::path(mentionedFiles.asmFile).parent_path();
-        entryFileName =
-            std::filesystem::path(mentionedFiles.asmFile).filename();
+        // if no bin -> assemble to a default-named binary of format <project_name>.bin
+        if (mentionedFiles.asmFile.empty()) errors.insert(cli_error_e::missing_asm_file);
+        enumerateErrorsAndTerminate(errors);
+        // TODO change assembler api to allow the note above ^
+        projectPath = std::filesystem::canonical(mentionedFiles.asmFile).parent_path();
+        entryFileName = std::filesystem::path(mentionedFiles.asmFile).filename();
         assembleAndSaveExecutable();
     }
     if (doRun) {
-        projectPath =
-            std::filesystem::canonical(mentionedFiles.binFile).parent_path();
-        runSavedExecutable();
+        if (mentionedFiles.binFile.empty()) errors.insert(cli_error_e::missing_bin_file);
+        enumerateErrorsAndTerminate(errors);
+        runMentionedExecutable(mentionedFiles.binFile);
     }
-    // TODO
+    // TODO -> help, disk, version
     return exitCode;
 }
-void throwAnyErrorsFromArgParsing(const std::unordered_set<cli_error> &errors) {
-    // TODO
+
+[[noreturn]] void
+Emulator::enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e> errors, int exitCode) {
+    size_t cnt = 0;
+    std::cerr << " ERRORS FOUND \n";
+    std::cerr << "==============\n";
+    for (const auto &error : errors) {
+        std::cerr << ++cnt << " - " << errMsgMap.at(error) << '\n';
+    }
+    std::exit(exitCode);
+}
+
+int Emulator::runMentionedExecutable(const std::string &executableFileName) {
+    std::vector<uint8_t> userRom{};
+
+    // init emulated system
+    Board board(false);
+    board.loadRomFromBinFile(executableFileName);
+    board.loadDiskFromBinFile(diskPath.string());
+    // run
+    LOG_ERR("Launching the Bear16 Emulator...");
+    int exitCode = board.run();
+
+    // save disk state
+    board.saveDiskToBinFile(diskPath.string());
+
+    // display diagnostics
+    board.printDiagnostics(false);
+    std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode
+              << std::endl;
+    std::cout << std::endl;
+    return exitCode;
 }
 void Emulator::enterTUI() {
     getEmuStateFromConfigFile();
@@ -94,8 +125,7 @@ void Emulator::enterTUI() {
     do {
         printTUIMainMenu();
         std::getline(std::cin, choice);
-        std::ranges::transform(choice, choice.begin(),
-                               [](char c) { return std::tolower(c); });
+        std::ranges::transform(choice, choice.begin(), [](char c) { return std::tolower(c); });
         if (choice.size() > 1) {
             printInvalidChoice();
             continue;
@@ -150,23 +180,20 @@ void Emulator::enterTUI() {
 }
 void Emulator::printTUIMainMenu() {
     size_t LINE_LEN = 61;
-    std::string emuTitle = std::format(
-        "| {:^57} |", std::string("BEAR16 Emulator & Assembler - v" + version +
-                                  " (" + dateOfLastVersion + ")"));
+    std::string emuTitle =
+        std::format("| {:^57} |", std::string("BEAR16 Emulator & Assembler - v" + version + " (" +
+                                              dateOfLastVersion + ")"));
     std::string author = "Made by Zach Mahan";
     std::string authorLine = std::format("| {:^57} |", author);
     std::string emuTitleBar = std::string(emuTitle.size(), '=');
     std::string emuDivideBar = std::string(emuTitle.size(), '-');
-    std::string emuBorderDivLine =
-        std::format("|{}|", std::string(emuTitle.size() - 2, '-'));
+    std::string emuBorderDivLine = std::format("|{}|", std::string(emuTitle.size() - 2, '-'));
     auto getProjPathSubtitle = [this]() {
-        return projectPath.string().substr(
-            projectPath.string().find_last_of("/") + 1);
+        return projectPath.string().substr(projectPath.string().find_last_of("/") + 1);
     };
     std::string openProject = "Open Project: " + getProjPathSubtitle();
     std::string openProjectLine = std::format("| {:^57} |", openProject);
-    std::string fullPath =
-        std::format("| {:^57} |", "(" + projectPath.string() + ")");
+    std::string fullPath = std::format("| {:^57} |", "(" + projectPath.string() + ")");
 #define PRINT_TITLE_BAR() std::cout << emuTitleBar << std::endl
 #define PRINT_DIVIDE_BAR() std::cout << emuDivideBar << std::endl
 #define PRINT_BORDER_DIV_LINE() std::cout << emuBorderDivLine << std::endl
@@ -180,19 +207,13 @@ void Emulator::printTUIMainMenu() {
         std::cout << fullPath << std::endl;
     }
     PRINT_TITLE_BAR();
-    std::cout << std::format("| {:<57} |",
-                             "[1] Assemble & Run Without Saving Executable")
+    std::cout << std::format("| {:<57} |", "[1] Assemble & Run Without Saving Executable")
               << std::endl;
-    std::cout << std::format("| {:<57} |", "[2] Assemble & Save Executable")
-              << std::endl;
-    std::cout << std::format("| {:<57} |", "[3] Run Saved Executable")
-              << std::endl;
-    std::cout << std::format("| {:<57} |",
-                             "[4] Assemble, Save, & Run Executable")
-              << std::endl;
+    std::cout << std::format("| {:<57} |", "[2] Assemble & Save Executable") << std::endl;
+    std::cout << std::format("| {:<57} |", "[3] Run Saved Executable") << std::endl;
+    std::cout << std::format("| {:<57} |", "[4] Assemble, Save, & Run Executable") << std::endl;
     PRINT_BORDER_DIV_LINE();
-    std::cout << std::format("| {:<57} |", "[P] Open a Different Project")
-              << std::endl;
+    std::cout << std::format("| {:<57} |", "[P] Open a Different Project") << std::endl;
     std::cout << std::format("| {:<57} |", "[C] Configure") << std::endl;
     std::cout << std::format("| {:<57} |", "[H] Help") << std::endl;
     std::cout << std::format("| {:<57} |", "[Q] Quit") << std::endl;
@@ -207,13 +228,11 @@ void Emulator::assembleAndSaveExecutable() {
 
     std::ofstream executableFile(executablePath, std::ios::binary);
     if (!executableFile) {
-        std::cerr << "Failed to open output file: " << executablePath
-                  << std::endl;
+        std::cerr << "Failed to open output file: " << executablePath << std::endl;
         return;
     }
 
-    executableFile.write(reinterpret_cast<const char *>(userRom.data()),
-                         userRom.size());
+    executableFile.write(reinterpret_cast<const char *>(userRom.data()), userRom.size());
     if (!executableFile) {
         std::cerr << "Failed to write to file: " << executablePath << std::endl;
         return;
@@ -240,9 +259,8 @@ void Emulator::runSavedExecutable() {
 
     // display diagnostics
     board.printDiagnostics(false);
-    std::cout << "Emulated process (version " + version +
-                     ") finished with exit code "
-              << exitCode << std::endl;
+    std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode
+              << std::endl;
     std::cout << std::endl;
 }
 
@@ -255,8 +273,7 @@ void Emulator::enterConfigMenu() {
         printConfigMenu();
         std::cout << "Make a selection: ";
         std::getline(std::cin, line);
-        std::ranges::transform(line, line.begin(),
-                               [](char c) { return std::tolower(c); });
+        std::ranges::transform(line, line.begin(), [](char c) { return std::tolower(c); });
 
         if (line.length() != 1) {
             printInvalidChoice();
@@ -306,12 +323,10 @@ void Emulator::printConfigMenu() {
 }
 
 void Emulator::printHelpMessage() {
-    std::ifstream helpMessageFile(
-        std::filesystem::path(TUI_PATH / HELP_MESSAGE));
+    std::ifstream helpMessageFile(std::filesystem::path(TUI_PATH / HELP_MESSAGE));
     if (helpMessageFile) {
-        std::string helpMessageBuffer(
-            (std::istreambuf_iterator<char>(helpMessageFile)),
-            std::istreambuf_iterator<char>());
+        std::string helpMessageBuffer((std::istreambuf_iterator<char>(helpMessageFile)),
+                                      std::istreambuf_iterator<char>());
         std::cout << helpMessageBuffer;
     } else {
         std::cerr << "ERROR: Could not open help message file." << std::endl;
@@ -323,15 +338,12 @@ std::filesystem::path Emulator::computeDefaultExecutablePath() const {
     // Ensure projectPath is a valid path
     std::filesystem::path curProjectPath(projectPath);
     if (!std::filesystem::exists(curProjectPath)) {
-        std::cerr << "Project path does not exist: " << projectPath
-                  << std::endl;
+        std::cerr << "Project path does not exist: " << projectPath << std::endl;
         return {};
     }
     // compute the output binary path
-    std::filesystem::path executableName =
-        curProjectPath.stem(); // filename w/o extension
-    std::filesystem::path executablePath =
-        curProjectPath / (executableName.string() + ".bin");
+    std::filesystem::path executableName = curProjectPath.stem(); // filename w/o extension
+    std::filesystem::path executablePath = curProjectPath / (executableName.string() + ".bin");
     return executablePath;
 }
 
@@ -350,8 +362,7 @@ void Emulator::saveEmuStateToConfigFile() {
         }
         outStream << j.dump(4);
     } catch (const std::exception &e) {
-        std::cerr << "ERROR: Could not save to config file: " << e.what()
-                  << std::endl;
+        std::cerr << "ERROR: Could not save to config file: " << e.what() << std::endl;
     }
 }
 
@@ -382,12 +393,10 @@ void Emulator::getEmuStateFromConfigFile() {
         entryFileName = j["entry"];
         diskPath = bear16RootDir / std::filesystem::path(j["diskPath"]);
     } catch (const std::exception &e) {
-        std::cerr << "ERROR: Could not read config file: " << e.what()
-                  << std::endl;
+        std::cerr << "ERROR: Could not read config file: " << e.what() << std::endl;
     }
 }
-std::filesystem::path
-Emulator::snipBear16RootDir(const std::filesystem::path &path) {
+std::filesystem::path Emulator::snipBear16RootDir(const std::filesystem::path &path) {
     std::string snippedOfHomeDir = snipHomeDir(path.string());
     size_t pos = snippedOfHomeDir.find_first_of("/\\");
     std::string snippedOfBear16RootDir{};
@@ -410,8 +419,7 @@ void Emulator::getProjectPathFromUser() {
     }
     std::string projectPath((bear16RootDir / projectDir).string());
     if (!std::filesystem::exists(projectPath)) {
-        std::cout << "Project path does not exist: " << projectPath
-                  << std::endl;
+        std::cout << "Project path does not exist: " << projectPath << std::endl;
         bool madeValidChoice = false;
         do {
             std::cout << " [1] Create new project directory" << std::endl;
@@ -424,8 +432,7 @@ void Emulator::getProjectPathFromUser() {
             }
             if (choice == "1") {
                 std::filesystem::create_directory(projectPath);
-                std::cout << "Project directory created at " << projectPath
-                          << std::endl;
+                std::cout << "Project directory created at " << projectPath << std::endl;
                 madeValidChoice = true;
                 enterToContinue();
             } else if (choice == "2") {
