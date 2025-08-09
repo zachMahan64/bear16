@@ -50,8 +50,10 @@ int Emulator::launch(int argc, char **argv) {
 }
 int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
     int exitCode = 0;
-    std::unordered_set<cli_flag> flags = parseFlags(args);
-
+    std::unordered_set<cli_error> errors{};
+    std::unordered_set<cli_flag> flags = parseFlags(args, errors);
+    MentionedFiles mentiondFiles = parseArgsForMentionedFiles(args, errors);
+    // TODO
     return exitCode;
 }
 void Emulator::enterTUI() {

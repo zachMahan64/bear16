@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <unordered_set>
 #include <vector>
+
 const std::unordered_map<std::string, cli_flag> stringToArgFlagMap{
     {"-a", cli_flag::assemble},
     {"-r", cli_flag::run},
@@ -12,17 +13,21 @@ const std::unordered_map<std::string, cli_flag> stringToArgFlagMap{
     {"--run", cli_flag::run},
     {"--help", cli_flag::help},
     {"--version", cli_flag::version},
-    {"--ui", cli_flag::ui}};
+    {"--ui", cli_flag::ui},
+    {"-ar", cli_flag::valid_multi},
+    {"-ar", cli_flag::valid_multi}};
 
 std::vector<std::string> vectorizeArgs(int argc, char **argv) {
     std::vector<std::string> args = {};
-    for (int i = 0; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         args.emplace_back(argv[i]);
     }
     return args;
 }
 
-std::unordered_set<cli_flag> parseFlags(const std::vector<std::string> &args) {
+std::unordered_set<cli_flag>
+parseFlags(const std::vector<std::string> &args,
+           std::unordered_set<cli_error> &cliErrorState) {
     std::unordered_set<cli_flag> parsedFlags{};
     parsedFlags.reserve(args.size());
     for (const auto &arg : args) {
@@ -33,10 +38,24 @@ std::unordered_set<cli_flag> parseFlags(const std::vector<std::string> &args) {
             parsedFlags.insert(cli_flag::run);
         }
     }
-    // TODO
+
+    if (parsedFlags.size() > 1 &&
+        !(parsedFlags.size() == 2 && parsedFlags.contains(cli_flag::assemble) &&
+          parsedFlags.contains(cli_flag::run))) {
+        cliErrorState.insert(cli_error::multiple_incompatible_flags);
+    }
+
     return parsedFlags;
 }
 
 bool isValidFile(const std::string &filePath, const std::string &fileSuffix) {
     return filePath.ends_with(fileSuffix) && std::filesystem::exists(filePath);
+}
+
+MentionedFiles
+parseArgsForMentionedFiles(const std::vector<std::string> &args,
+                           std::unordered_set<cli_error> &cliErrorState) {}
+
+bool parseForUnrecognizedArgs(std::unordered_set<cli_error> &cliErrorState) {
+    // TODO
 }
