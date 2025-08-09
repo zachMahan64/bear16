@@ -15,7 +15,10 @@ const std::unordered_map<std::string, cli_flag> stringToArgFlagMap{
     {"--version", cli_flag::version},
     {"--ui", cli_flag::ui},
     {"-ar", cli_flag::valid_multi},
-    {"-ar", cli_flag::valid_multi}};
+    {"-ar", cli_flag::valid_multi},
+    {"-d", cli_flag::set_disk},
+    {"--disk", cli_flag::set_disk},
+    {"--set-disk", cli_flag::set_disk}};
 
 std::vector<std::string> vectorizeArgs(int argc, char **argv) {
     std::vector<std::string> args = {};

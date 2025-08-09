@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include <vector>
 // FLAGS
-enum class cli_flag { assemble, run, help, version, ui, valid_multi };
+enum class cli_flag { assemble, run, help, version, ui, valid_multi, set_disk };
 extern const std::unordered_map<std::string, cli_flag> stringToArgFlagMap;
 // ERRORS
 enum class cli_error {

@@ -4,9 +4,11 @@
 #ifndef EMU_H
 #define EMU_H
 #include "assembly.h"
+#include "cli_args.h"
 #include "path_manager.h"
 #include <filesystem>
 #include <string>
+#include <unordered_set>
 #include <vector>
 enum class emu_launch { cli_args, tui };
 class Emulator {
@@ -29,6 +31,8 @@ class Emulator {
     assembly::Assembler testAssembler{};
     // CLI
     int performActionBasedOnArgs(const std::vector<std::string> &args);
+    void
+    throwAnyErrorsFromArgParsing(const std::unordered_set<cli_error> &errors);
     // TUI
     int assembleAndRunWithoutSavingExecutable();
     // main menu

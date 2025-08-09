@@ -52,11 +52,13 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
     int exitCode = 0;
     std::unordered_set<cli_error> errors{};
     std::unordered_set<cli_flag> flags = parseFlags(args, errors);
-    MentionedFiles mentiondFiles = parseArgsForMentionedFiles(args, errors);
-    if (mentiondFiles.asmFile.empty() && flags.contains(cli_flag::assemble)) {
+    MentionedFiles mentionedFiles = parseArgsForMentionedFiles(args, errors);
+    if (mentionedFiles.asmFile.empty() && flags.contains(cli_flag::assemble)) {
         errors.insert(cli_error::missing_asm_file);
     }
-    if (mentiondFiles.binFile.empty() && flags.contains(cli_flag::assemble)) {
+    if (mentionedFiles.binFile.empty() &&
+        (flags.contains(cli_flag::assemble) || flags.contains(cli_flag::run) ||
+         flags.contains(cli_flag::set_disk))) {
         errors.insert(cli_error::missing_bin_file);
     }
     // TODO
@@ -127,7 +129,7 @@ void Emulator::enterTUI() {
     } while (choice != "q" && !hasLaunchedEmu);
 }
 void Emulator::printTUIMainMenu() {
-    int LINE_LEN = 61;
+    size_t LINE_LEN = 61;
     std::string emuTitle = std::format(
         "| {:^57} |", std::string("BEAR16 Emulator & Assembler - v" + version +
                                   " (" + dateOfLastVersion + ")"));
