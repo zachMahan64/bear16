@@ -17,7 +17,7 @@ const std::unordered_map<cli_error_e, std::string> errMsgMap{
     {cli_error_e::too_many_bin_files, "Too many binary files provided"},
     {cli_error_e::missing_asm_file, "Missing required assembly file"},
     {cli_error_e::missing_bin_file, "Missing required binary file"},
-    {cli_error_e::unrecognized_arg, "Unrecognized argument"},
+    {cli_error_e::unrecognized_arg, "Unrecognized argument(s)"},
     {cli_error_e::bin_file_does_not_exist, "Binary file does not exist"}};
 
 std::vector<std::string> vectorizeArgs(int argc, char **argv) {
@@ -93,7 +93,7 @@ bool parseForUnrecognizedArgs(const std::vector<std::string> &args,
     for (const auto &arg : args) {
         if (isUnreckonized(arg)) {
             cliErrorState.insert(cli_error_e::unrecognized_arg);
-            std::cerr << "Unrecognized argument: " << arg << "\n";
+            std::cerr << "Unrecognized argument: \" << arg << \"\n";
             errFlag = true;
         }
     }

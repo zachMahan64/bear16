@@ -6,7 +6,15 @@
 #include <unordered_set>
 #include <vector>
 // FLAGS
-enum class cli_flag { assemble, run, help, version, ui, valid_multi, set_disk };
+enum class cli_flag {
+    assemble,
+    run,
+    help,
+    version,
+    ui,
+    valid_multi,
+    set_disk
+}; // valid multi currently redundant 20250809
 extern const std::unordered_map<std::string, cli_flag> stringToArgFlagMap;
 // ERRORS
 enum class cli_error_e {
@@ -19,7 +27,7 @@ enum class cli_error_e {
     bin_file_does_not_exist
 };
 extern const std::unordered_map<cli_error_e, std::string> errMsgMap;
-// FILE EXTENSIONS
+// FILE EXTENSIONS/STRING CONSTANTS
 static std::string asm_suffix = ".asm", bin_suffix = ".bin", bear16_executable_name = "b16";
 // FN's
 std::vector<std::string> vectorizeArgs(int argc, char **argv);

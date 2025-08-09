@@ -12,8 +12,8 @@
 enum class emu_launch { cli_args, tui };
 class Emulator {
     // version info & constant state
-    const std::string version = "0.0.5";
-    const std::string dateOfLastVersion = "2025-07-19";
+    const std::string version = "0.0.6";
+    const std::string dateOfLastVersion = "2025-08-09";
     const emu_launch launchState;
     // PATHING
     std::filesystem::path bear16RootDir = getBear16DefaultRootDir();
@@ -37,7 +37,7 @@ class Emulator {
     void enterTUI();
     void printTUIMainMenu();
     // submenus/methods
-    void assembleAndSaveExecutable();
+    void assembleAndSaveExecutable(std::filesystem::path executablePath);
     void runSavedExecutable();
     // config menu
     void enterConfigMenu();

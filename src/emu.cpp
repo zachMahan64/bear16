@@ -71,10 +71,21 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
         // TODO change assembler api to allow the note above ^
         projectPath = std::filesystem::canonical(mentionedFiles.asmFile).parent_path();
         entryFileName = std::filesystem::path(mentionedFiles.asmFile).filename();
-        assembleAndSaveExecutable();
+        std::filesystem::path execPath = (mentionedFiles.binFile.empty())
+                                             ? computeDefaultExecutablePath()
+                                             : std::filesystem::path(mentionedFiles.binFile);
+        assembleAndSaveExecutable(execPath);
+        mentionedFiles.binFileState = bin_file_state::exists; // always becuz we just assembled it
     }
     if (doRun) {
         if (mentionedFiles.binFile.empty()) errors.insert(cli_error_e::missing_bin_file);
+        if (mentionedFiles.binFileState == bin_file_state::does_not_exist) {
+            if (!errors.contains(
+                    cli_error_e::missing_asm_file)) { // condition simply avoids redundancy in error
+                                                      // enumeration
+                errors.insert(cli_error_e::bin_file_does_not_exist);
+            }
+        }
         if (!errors.empty()) enumerateErrorsAndTerminate(errors);
         runMentionedExecutable(mentionedFiles.binFile);
     }
@@ -85,11 +96,9 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
 
 [[noreturn]] void
 Emulator::enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e> errors, int exitCode) {
-    size_t cnt = 0;
-    std::cerr << " ERRORS FOUND \n";
-    std::cerr << "==============\n";
+    std::cerr << "Bear16 found critical errors. \n";
     for (const auto &error : errors) {
-        std::cerr << ++cnt << " - " << errMsgMap.at(error) << '\n';
+        std::cerr << " -> " << errMsgMap.at(error) << '\n';
     }
     std::exit(exitCode);
 }
@@ -141,7 +150,7 @@ void Emulator::enterTUI() {
             break;
         }
         case '2': {
-            assembleAndSaveExecutable();
+            assembleAndSaveExecutable(computeDefaultExecutablePath());
             break;
         }
         case '3': {
@@ -150,7 +159,7 @@ void Emulator::enterTUI() {
             break;
         }
         case '4': {
-            assembleAndSaveExecutable();
+            assembleAndSaveExecutable(computeDefaultExecutablePath());
             runSavedExecutable();
             hasLaunchedEmu = true;
             break;
@@ -220,11 +229,9 @@ void Emulator::printTUIMainMenu() {
     PRINT_DIVIDE_BAR();
     std::cout << "Make a selection: ";
 }
-void Emulator::assembleAndSaveExecutable() {
+void Emulator::assembleAndSaveExecutable(std::filesystem::path executablePath) {
     testAssembler.openProject(projectPath, entryFileName);
     auto userRom = testAssembler.assembleOpenedProject();
-
-    std::filesystem::path executablePath = computeDefaultExecutablePath();
 
     std::ofstream executableFile(executablePath, std::ios::binary);
     if (!executableFile) {
