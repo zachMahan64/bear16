@@ -32,7 +32,7 @@ const std::unordered_map<cli_error_e, std::string> errMsgMap{
     {cli_error_e::bin_file_does_not_exist, "Binary file does not exist"},
     {cli_error_e::too_many_arguments, "Too many arguments with given flags"}};
 
-std::vector<std::string> vectorizeArgs(int argc, char **argv) {
+std::vector<std::string> vectorizeArgs(int argc, char** argv) {
     std::vector<std::string> args = {};
     for (int i = 1; i < argc; i++) {
         args.emplace_back(argv[i]);
@@ -40,11 +40,11 @@ std::vector<std::string> vectorizeArgs(int argc, char **argv) {
     return args;
 }
 
-std::unordered_set<cli_flag> parseFlags(const std::vector<std::string> &args,
-                                        std::unordered_set<cli_error_e> &cliErrorState) {
+std::unordered_set<cli_flag> parseFlags(const std::vector<std::string>& args,
+                                        std::unordered_set<cli_error_e>& cliErrorState) {
     std::unordered_set<cli_flag> parsedFlags{};
     parsedFlags.reserve(args.size());
-    for (const auto &arg : args) {
+    for (const auto& arg : args) {
         if (arg == "-ar" || arg == "-ra") {
             parsedFlags.insert(cli_flag::assemble);
             parsedFlags.insert(cli_flag::run);
@@ -62,14 +62,14 @@ std::unordered_set<cli_flag> parseFlags(const std::vector<std::string> &args,
     return parsedFlags;
 }
 
-bool fileExistsAndIsValid(const std::string &filePath, const std::string &fileSuffix) {
+bool fileExistsAndIsValid(const std::string& filePath, const std::string& fileSuffix) {
     return filePath.ends_with(fileSuffix) && std::filesystem::exists(filePath);
 }
 
-MentionedFiles parseArgsForMentionedFiles(const std::vector<std::string> &args,
-                                          std::unordered_set<cli_error_e> &cliErrorState) {
+MentionedFiles parseArgsForMentionedFiles(const std::vector<std::string>& args,
+                                          std::unordered_set<cli_error_e>& cliErrorState) {
     MentionedFiles mentionedFiles{};
-    for (const auto &arg : args) {
+    for (const auto& arg : args) {
         if (fileExistsAndIsValid(arg, asm_suffix)) {
             if (mentionedFiles.asmFile.empty()) {
                 mentionedFiles.asmFile = arg;
@@ -95,14 +95,14 @@ MentionedFiles parseArgsForMentionedFiles(const std::vector<std::string> &args,
     return mentionedFiles;
 }
 
-bool parseForUnrecognizedArgs(const std::vector<std::string> &args,
-                              std::unordered_set<cli_error_e> &cliErrorState) {
+bool parseForUnrecognizedArgs(const std::vector<std::string>& args,
+                              std::unordered_set<cli_error_e>& cliErrorState) {
     bool errFlag = false;
     auto isUnreckonized = [](std::string arg) {
         return (!stringToArgFlagMap.contains(arg) && !arg.ends_with(asm_suffix) &&
                 !arg.ends_with(bin_suffix) && arg != bear16_executable_name);
     };
-    for (const auto &arg : args) {
+    for (const auto& arg : args) {
         if (isUnreckonized(arg)) {
             cliErrorState.insert(cli_error_e::unrecognized_arg);
             std::cerr << "Unrecognized argument: \" << arg << \"\n";

@@ -20,15 +20,17 @@ class Emulator {
     std::filesystem::path projectPath = bear16RootDir / "projects_b16" / "bear16_os";
     std::string entryFileName = "main.asm";
     std::filesystem::path diskPath = bear16RootDir / "disks_b16" / "default_disk.bin";
-    // user data paths
-    const std::filesystem::path TUI_PATH = bear16RootDir / "tui";
-    const std::filesystem::path HELP_MESSAGE = "help_message.txt";
-    const std::filesystem::path CONFIG = "config.json";
+    // user-facing data paths
+    const std::filesystem::path CONFIG_ROOT = bear16RootDir / "config_b16";
+    const std::filesystem::path RESOURCES_PATH = bear16RootDir / "resources";
+    const std::filesystem::path HELP_MESSAGE_TUI = "help_message_tui.txt";
+    const std::filesystem::path HELP_MESSAGE_CLI = "help_message_cli.txt";
+    const std::filesystem::path CONFIG_FILE = "config.json";
     // assembler
     assembly::Assembler testAssembler{};
     // CLI
-    int performActionBasedOnArgs(const std::vector<std::string> &args);
-    int runMentionedExecutable(const std::string &executableFileName);
+    int performActionBasedOnArgs(const std::vector<std::string>& args);
+    int runMentionedExecutable(const std::string& executableFileName);
     [[noreturn]] static void
     enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e> errors,
                                 int exitCode = EXIT_FAILURE);
@@ -44,12 +46,12 @@ class Emulator {
     void enterConfigMenu();
     void printConfigMenu();
     // help menu
-    void printHelpMessage();
+    void printMsgFile(const std::filesystem::path& messageFileToPrint);
     // helpers
     [[nodiscard]] std::filesystem::path computeDefaultExecutablePath() const;
     void saveEmuStateToConfigFile();
     void getEmuStateFromConfigFile();
-    std::filesystem::path snipBear16RootDir(const std::filesystem::path &path);
+    std::filesystem::path snipBear16RootDir(const std::filesystem::path& path);
     // getting input from user
     void getProjectPathFromUser();
     void getEntryFromUser();
@@ -58,7 +60,7 @@ class Emulator {
 
   public:
     explicit Emulator(emu_launch launchState);
-    int launch(int argc, char **argv);
+    int launch(int argc, char** argv);
 };
 
 #endif // EMU_H

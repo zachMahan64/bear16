@@ -1,7 +1,7 @@
                                                THANK YOU FOR USING BEAR16
 ========================================================================================================================
-WHAT TO DO
-----------
+WHAT TO DO IN THE BEAR16 TERMINAL USER INTERFACE
+------------------------------------------------
 - You can use the assembler and emulator to run:
     - Standalone programs
     - Apps for the Bear16 OS
@@ -9,7 +9,7 @@ WHAT TO DO
 
 MAKING A NEW PROJECT
 --------------------
-    1.) Create a new directory inside `projects_b16` and set it as your open project
+    1.) Create a new directory inside `projects_b16` or another location if you prefer and set it as your open project
     2.) Create at least one `.asm` file to be used as your entry point and set it as such in the project config.
     3.) You can create and link as many `.asm` files as you want (use the` @include` directive; see README for details).
     4.) Make sure to follow the opcode syntax in the ISA spreadsheet and the directive syntax section in the README.

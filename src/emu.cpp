@@ -38,7 +38,7 @@ int Emulator::assembleAndRunWithoutSavingExecutable() {
     std::cout << std::endl;
     return exitCode;
 }
-int Emulator::launch(int argc, char **argv) {
+int Emulator::launch(int argc, char** argv) {
     int exitCode = 0;
     if (launchState == emu_launch::tui) {
         enterTUI();
@@ -48,7 +48,7 @@ int Emulator::launch(int argc, char **argv) {
     }
     return exitCode;
 }
-int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
+int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
     int exitCode = 0;
     std::unordered_set<cli_error_e> errors{};
     std::unordered_set<cli_flag> flags = parseFlags(args, errors);
@@ -98,7 +98,6 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
         if (args.size() > 2) {
             errors.insert(cli_error_e::too_many_arguments);
         }
-        std::cout << args.size();
         if (!errors.empty()) enumerateErrorsAndTerminate(errors);
     };
 
@@ -107,19 +106,24 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
         enterTUI();
     }
 
+    if (doHelp) {
+        guardNoArgFlagCommands();
+        printMsgFile(HELP_MESSAGE_CLI);
+    }
+
     return exitCode;
 }
 
 [[noreturn]] void
 Emulator::enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e> errors, int exitCode) {
     std::cerr << "Bear16 found critical errors. \n";
-    for (const auto &error : errors) {
+    for (const auto& error : errors) {
         std::cerr << " -> " << errMsgMap.at(error) << '\n';
     }
     std::exit(exitCode);
 }
 
-int Emulator::runMentionedExecutable(const std::string &executableFileName) {
+int Emulator::runMentionedExecutable(const std::string& executableFileName) {
     std::vector<uint8_t> userRom{};
 
     // init emulated system
@@ -189,7 +193,7 @@ void Emulator::enterTUI() {
             break;
         }
         case 'h': {
-            printHelpMessage();
+            printMsgFile(HELP_MESSAGE_TUI);
             break;
         }
         case 'q': {
@@ -255,7 +259,7 @@ void Emulator::assembleAndSaveExecutable(std::filesystem::path executablePath) {
         return;
     }
 
-    executableFile.write(reinterpret_cast<const char *>(userRom.data()), userRom.size());
+    executableFile.write(reinterpret_cast<const char*>(userRom.data()), userRom.size());
     if (!executableFile) {
         std::cerr << "Failed to write to file: " << executablePath << std::endl;
         return;
@@ -345,8 +349,8 @@ void Emulator::printConfigMenu() {
     cout << " [C] Cancel" << "\n";
 }
 
-void Emulator::printHelpMessage() {
-    std::ifstream helpMessageFile(std::filesystem::path(TUI_PATH / HELP_MESSAGE));
+void Emulator::printMsgFile(const std::filesystem::path& messageFileToPrint) {
+    std::ifstream helpMessageFile(std::filesystem::path(RESOURCES_PATH / messageFileToPrint));
     if (helpMessageFile) {
         std::string helpMessageBuffer((std::istreambuf_iterator<char>(helpMessageFile)),
                                       std::istreambuf_iterator<char>());
@@ -380,19 +384,19 @@ void Emulator::saveEmuStateToConfigFile() {
         j["entry"] = entryFileName;
         j["diskPath"] = snipBear16RootDir(diskPath);
 
-        std::ofstream outStream(std::filesystem::path(TUI_PATH / CONFIG));
+        std::ofstream outStream(std::filesystem::path(CONFIG_ROOT / CONFIG_FILE));
         if (!outStream) {
             std::cerr << "ERROR: Could not open config file." << std::endl;
             return;
         }
         outStream << j.dump(4);
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         std::cerr << "ERROR: Could not save to config file: " << e.what() << std::endl;
     }
 }
 
 void Emulator::getEmuStateFromConfigFile() {
-    std::filesystem::path configPath = std::filesystem::path(TUI_PATH / CONFIG);
+    std::filesystem::path configPath = std::filesystem::path(CONFIG_ROOT / CONFIG_FILE);
     try {
         if (!std::filesystem::exists(configPath)) {
             std::cout << "Oh, it's your first time using Bear16? Let's do some "
@@ -417,11 +421,11 @@ void Emulator::getEmuStateFromConfigFile() {
         projectPath = bear16RootDir / std::filesystem::path(j["projectPath"]);
         entryFileName = j["entry"];
         diskPath = bear16RootDir / std::filesystem::path(j["diskPath"]);
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         std::cerr << "ERROR: Could not read config file: " << e.what() << std::endl;
     }
 }
-std::filesystem::path Emulator::snipBear16RootDir(const std::filesystem::path &path) {
+std::filesystem::path Emulator::snipBear16RootDir(const std::filesystem::path& path) {
     std::string snippedOfHomeDir = snipHomeDir(path.string());
     size_t pos = snippedOfHomeDir.find_first_of("/\\");
     std::string snippedOfBear16RootDir{};
