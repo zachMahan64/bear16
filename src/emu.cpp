@@ -64,33 +64,49 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string> &args) {
     bool errorFlag = parseForUnrecognizedArgs(args, errors);
     bool doAssemble = flags.contains(cli_flag::assemble);
     bool doRun = flags.contains(cli_flag::run);
+    bool doTUI = flags.contains(cli_flag::tui);
+    bool doHelp = flags.contains(cli_flag::help);
+
     if (doAssemble) {
         // if no bin -> assemble to a default-named binary of format <project_name>.bin
         if (mentionedFiles.asmFile.empty()) errors.insert(cli_error_e::missing_asm_file);
         if (!errors.empty()) enumerateErrorsAndTerminate(errors);
-        // TODO change assembler api to allow the note above ^
         projectPath = std::filesystem::canonical(mentionedFiles.asmFile).parent_path();
         entryFileName = std::filesystem::path(mentionedFiles.asmFile).filename();
         std::filesystem::path execPath = (mentionedFiles.binFile.empty())
                                              ? computeDefaultExecutablePath()
                                              : std::filesystem::path(mentionedFiles.binFile);
         assembleAndSaveExecutable(execPath);
-        mentionedFiles.binFileState = bin_file_state::exists; // always becuz we just assembled it
+        mentionedFiles.binFileState =
+            bin_file_state::exists; // always becuz we just assembled it into a binary
     }
+
     if (doRun) {
         if (mentionedFiles.binFile.empty()) errors.insert(cli_error_e::missing_bin_file);
-        if (mentionedFiles.binFileState == bin_file_state::does_not_exist) {
-            if (!errors.contains(
-                    cli_error_e::missing_asm_file)) { // condition simply avoids redundancy in error
-                                                      // enumeration
-                errors.insert(cli_error_e::bin_file_does_not_exist);
-            }
+        if (mentionedFiles.binFileState == bin_file_state::does_not_exist &&
+            !errors.contains(cli_error_e::missing_bin_file)) {
+            // condition simply avoids redundancy in error enumeration
+            errors.insert(cli_error_e::bin_file_does_not_exist);
         }
         if (!errors.empty()) enumerateErrorsAndTerminate(errors);
         runMentionedExecutable(mentionedFiles.binFile);
     }
-    if (!errors.empty()) enumerateErrorsAndTerminate(errors);
-    // TODO -> help, disk, version
+
+    if (!errors.empty()) enumerateErrorsAndTerminate(errors); // guard after assemble or run
+
+    auto guardNoArgFlagCommands = [&errors, &args]() {
+        if (args.size() > 2) {
+            errors.insert(cli_error_e::too_many_arguments);
+        }
+        std::cout << args.size();
+        if (!errors.empty()) enumerateErrorsAndTerminate(errors);
+    };
+
+    if (doTUI) {
+        guardNoArgFlagCommands();
+        enterTUI();
+    }
+
     return exitCode;
 }
 
@@ -342,6 +358,7 @@ void Emulator::printHelpMessage() {
     enterToContinue();
 }
 std::filesystem::path Emulator::computeDefaultExecutablePath() const {
+    std::string DEFAULT_BUILD_DIR = "build"; // lives inside project root
     // Ensure projectPath is a valid path
     std::filesystem::path curProjectPath(projectPath);
     if (!std::filesystem::exists(curProjectPath)) {
@@ -350,7 +367,8 @@ std::filesystem::path Emulator::computeDefaultExecutablePath() const {
     }
     // compute the output binary path
     std::filesystem::path executableName = curProjectPath.stem(); // filename w/o extension
-    std::filesystem::path executablePath = curProjectPath / (executableName.string() + ".bin");
+    std::filesystem::path executablePath =
+        curProjectPath / DEFAULT_BUILD_DIR / (executableName.string() + ".bin");
     return executablePath;
 }
 

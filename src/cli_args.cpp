@@ -5,11 +5,22 @@
 #include <vector>
 
 const std::unordered_map<std::string, cli_flag> stringToArgFlagMap{
-    {"-a", cli_flag::assemble}, {"-r", cli_flag::run},          {"-h", cli_flag::help},
-    {"-v", cli_flag::version},  {"-u", cli_flag::ui},           {"--assemble", cli_flag::assemble},
-    {"--run", cli_flag::run},   {"--help", cli_flag::help},     {"--version", cli_flag::version},
-    {"--ui", cli_flag::ui},     {"-ar", cli_flag::valid_multi}, {"-ar", cli_flag::valid_multi},
-    {"-d", cli_flag::set_disk}, {"--disk", cli_flag::set_disk}, {"--set-disk", cli_flag::set_disk}};
+    {"-a", cli_flag::assemble},
+    {"-r", cli_flag::run},
+    {"-h", cli_flag::help},
+    {"-v", cli_flag::version},
+    {"-u", cli_flag::tui},
+    {"--assemble", cli_flag::assemble},
+    {"--run", cli_flag::run},
+    {"--help", cli_flag::help},
+    {"--version", cli_flag::version},
+    {"--ui", cli_flag::tui},
+    {"--tui", cli_flag::tui},
+    {"-ar", cli_flag::valid_multi},
+    {"-ar", cli_flag::valid_multi},
+    {"-d", cli_flag::set_disk},
+    {"--disk", cli_flag::set_disk},
+    {"--set-disk", cli_flag::set_disk}};
 
 const std::unordered_map<cli_error_e, std::string> errMsgMap{
     {cli_error_e::multiple_incompatible_flags, "Multiple incompatible flags provided"},
@@ -18,7 +29,8 @@ const std::unordered_map<cli_error_e, std::string> errMsgMap{
     {cli_error_e::missing_asm_file, "Missing required assembly file"},
     {cli_error_e::missing_bin_file, "Missing required binary file"},
     {cli_error_e::unrecognized_arg, "Unrecognized argument(s)"},
-    {cli_error_e::bin_file_does_not_exist, "Binary file does not exist"}};
+    {cli_error_e::bin_file_does_not_exist, "Binary file does not exist"},
+    {cli_error_e::too_many_arguments, "Too many arguments with given flags"}};
 
 std::vector<std::string> vectorizeArgs(int argc, char **argv) {
     std::vector<std::string> args = {};

@@ -11,10 +11,10 @@ enum class cli_flag {
     run,
     help,
     version,
-    ui,
+    tui,
     valid_multi,
     set_disk
-}; // valid multi currently redundant 20250809
+}; // valid_multi currently redundant as of 20250809
 extern const std::unordered_map<std::string, cli_flag> stringToArgFlagMap;
 // ERRORS
 enum class cli_error_e {
@@ -24,7 +24,8 @@ enum class cli_error_e {
     missing_asm_file,
     missing_bin_file,
     unrecognized_arg,
-    bin_file_does_not_exist
+    bin_file_does_not_exist,
+    too_many_arguments
 };
 extern const std::unordered_map<cli_error_e, std::string> errMsgMap;
 // FILE EXTENSIONS/STRING CONSTANTS
