@@ -119,7 +119,12 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
 
     if (doCheckDisk) {
         guardNoArgFlagCommands();
-        std::cout << "Loaded Disk: " << diskPath << "\n";
+        std::cout << "-> loaded disk: " << diskPath << "\n";
+        if (std::filesystem::exists(diskPath))
+            std::cout << "-> exists, valid path \n";
+        else
+            std::cout << "-> ERROR: does not exist, invalid path";
+        std::cout << "[!] hint: use \"b16 --set-disk\" or \"b16 -sd\" to change the disk\n";
     }
 
     if (doHelp) {
@@ -494,7 +499,7 @@ void Emulator::getProjectPathFromUser() {
                 std::cout << "Project directory created at " << projectPath << std::endl;
                 madeValidChoice = true;
                 saveChanges();
-            } else if (choice == "2" || choice == "C") {
+            } else if (choice == "2" || choice == "C" || choice == "c") {
                 madeValidChoice = true;
             }
         } while (!madeValidChoice);

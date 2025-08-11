@@ -6,7 +6,7 @@ options:
   -u, --ui, --tui                start terminal user interface
   -ar, -ra                       assemble and run
   -sd, --set-disk                set the active disk image
-  -cd, --check-disk              check if disk exists and is valid
+  -cd, --check-disk              check the path of the current disk
   <no-args>                      start termnial user interface
                                  *note: all args and flags are order-agnostic
 
@@ -37,5 +37,3 @@ example flows: ~ project set-up ~
                b16 --assemble main.asm --run build/my_executable.bin
                ~~~~~~~~ or ~~~~~~~~
                b16 -ar my_project_entry.asm my_executable.bin
-
-
