@@ -76,7 +76,7 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
         if (mentionedFiles.asmFile.empty()) errors.insert(cli_error_e::missing_asm_file);
         if (!errors.empty()) enumerateErrorsAndTerminate(errors);
         projectPath = std::filesystem::canonical(mentionedFiles.asmFile).parent_path();
-        entryFileName = std::filesystem::path(mentionedFiles.asmFile).filename();
+        entryFileName = std::filesystem::path(mentionedFiles.asmFile).filename().string();
         std::filesystem::path execPath = (mentionedFiles.binFile.empty())
                                              ? computeDefaultExecutablePath()
                                              : std::filesystem::path(mentionedFiles.binFile);
@@ -232,12 +232,13 @@ void Emulator::enterTUI() {
     } while (choice != "q" && !hasLaunchedEmu);
 }
 void Emulator::printTUIMainMenu() {
-    size_t LINE_LEN = 61;
+    size_t LINE_LEN = 80;
+    size_t FORMAT_LINE_LEN = LINE_LEN - 4;
     std::string emuTitle =
-        std::format("| {:^57} |", std::string("BEAR16 Emulator & Assembler - v" + version + " (" +
+        std::format("| {:^76} |", std::string("BEAR16 Emulator & Assembler - v" + version + " (" +
                                               dateOfLastVersion + ")"));
     std::string author = "Made by Zach Mahan";
-    std::string authorLine = std::format("| {:^57} |", author);
+    std::string authorLine = std::format("| {:^76} |", author);
     std::string emuTitleBar = std::string(emuTitle.size(), '=');
     std::string emuDivideBar = std::string(emuTitle.size(), '-');
     std::string emuBorderDivLine = std::format("|{}|", std::string(emuTitle.size() - 2, '-'));
@@ -245,8 +246,8 @@ void Emulator::printTUIMainMenu() {
         return projectPath.string().substr(projectPath.string().find_last_of("/") + 1);
     };
     std::string openProject = "Open Project: " + getProjPathSubtitle();
-    std::string openProjectLine = std::format("| {:^57} |", openProject);
-    std::string fullPath = std::format("| {:^57} |", "(" + projectPath.string() + ")");
+    std::string openProjectLine = std::format("| {:^76} |", openProject);
+    std::string fullPath = std::format("| {:^76} |", "(" + projectPath.string() + ")");
 #define PRINT_TITLE_BAR() std::cout << emuTitleBar << std::endl
 #define PRINT_DIVIDE_BAR() std::cout << emuDivideBar << std::endl
 #define PRINT_BORDER_DIV_LINE() std::cout << emuBorderDivLine << std::endl
@@ -260,16 +261,16 @@ void Emulator::printTUIMainMenu() {
         std::cout << fullPath << std::endl;
     }
     PRINT_TITLE_BAR();
-    std::cout << std::format("| {:<57} |", "[1] Assemble & Run Without Saving Executable")
+    std::cout << std::format("| {:<76} |", "[1] Assemble & Run Without Saving Executable")
               << std::endl;
-    std::cout << std::format("| {:<57} |", "[2] Assemble & Save Executable") << std::endl;
-    std::cout << std::format("| {:<57} |", "[3] Run Saved Executable") << std::endl;
-    std::cout << std::format("| {:<57} |", "[4] Assemble, Save, & Run Executable") << std::endl;
+    std::cout << std::format("| {:<76} |", "[2] Assemble & Save Executable") << std::endl;
+    std::cout << std::format("| {:<76} |", "[3] Run Saved Executable") << std::endl;
+    std::cout << std::format("| {:<76} |", "[4] Assemble, Save, & Run Executable") << std::endl;
     PRINT_BORDER_DIV_LINE();
-    std::cout << std::format("| {:<57} |", "[P] Open a Different Project") << std::endl;
-    std::cout << std::format("| {:<57} |", "[C] Configure") << std::endl;
-    std::cout << std::format("| {:<57} |", "[H] Help") << std::endl;
-    std::cout << std::format("| {:<57} |", "[Q] Quit") << std::endl;
+    std::cout << std::format("| {:<76} |", "[P] Open a Different Project") << std::endl;
+    std::cout << std::format("| {:<76} |", "[C] Configure") << std::endl;
+    std::cout << std::format("| {:<76} |", "[H] Help") << std::endl;
+    std::cout << std::format("| {:<76} |", "[Q] Quit") << std::endl;
     PRINT_DIVIDE_BAR();
     std::cout << "Make a selection: ";
 }
@@ -556,7 +557,7 @@ void Emulator::getEntryFromUser() {
         return;
     }
     this->entryFileName = entryFileName;
-    std::cout << "Entry set to: \"" << snipHomeDir(entryFilePath) << "\"\n";
+    std::cout << "Entry set to: \"" << snipHomeDir(entryFilePath.string()) << "\"\n";
     saveEmuStateToConfigFile();
     enterToContinue();
 }
