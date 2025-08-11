@@ -17,9 +17,11 @@ class Emulator {
     const emu_launch launchState;
     // PATHING
     std::filesystem::path bear16RootDir = getBear16DefaultRootDir();
-    std::filesystem::path projectPath = bear16RootDir / "projects_b16" / "bear16_os";
+    std::filesystem::path projectsRootDir = "projects_b16";
+    std::filesystem::path projectPath = bear16RootDir / projectsRootDir / "bear16_os";
     std::string entryFileName = "main.asm";
-    std::filesystem::path diskPath = bear16RootDir / "disks_b16" / "default_disk.bin";
+    std::filesystem::path disksRootDir = "disks_b16";
+    std::filesystem::path diskPath = bear16RootDir / disksRootDir / "default_disk.bin";
     // user-facing data paths
     const std::filesystem::path CONFIG_ROOT = bear16RootDir / "config_b16";
     const std::filesystem::path RESOURCES_PATH = bear16RootDir / "resources";

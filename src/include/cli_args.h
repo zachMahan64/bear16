@@ -30,7 +30,7 @@ enum class cli_error_e {
 };
 extern const std::unordered_map<cli_error_e, std::string> errMsgMap;
 // FILE EXTENSIONS/STRING CONSTANTS
-static std::string asm_suffix = ".asm", bin_suffix = ".bin", bear16_executable_name = "b16";
+static std::string ASM_SUFFIX = ".asm", BIN_SUFFIX = ".bin", BEAR16_EXECUTABLE_NAME = "b16";
 // FN's
 std::vector<std::string> vectorizeArgs(int argc, char** argv);
 

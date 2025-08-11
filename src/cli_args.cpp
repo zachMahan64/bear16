@@ -19,7 +19,8 @@ const std::unordered_map<std::string, cli_flag> stringToArgFlagMap{
     {"--tui", cli_flag::tui},
     {"-ar", cli_flag::valid_multi},
     {"-ar", cli_flag::valid_multi},
-    {"-d", cli_flag::set_disk},
+    {"-sd", cli_flag::set_disk},
+    {"-cd", cli_flag::check_disk},
     {"--check-disk", cli_flag::check_disk},
     {"--set-disk", cli_flag::set_disk}};
 
@@ -71,20 +72,20 @@ MentionedFiles parseArgsForMentionedFiles(const std::vector<std::string>& args,
                                           std::unordered_set<cli_error_e>& cliErrorState) {
     MentionedFiles mentionedFiles{};
     for (const auto& arg : args) {
-        if (fileExistsAndIsValid(arg, asm_suffix)) {
+        if (fileExistsAndIsValid(arg, ASM_SUFFIX)) {
             if (mentionedFiles.asmFile.empty()) {
                 mentionedFiles.asmFile = arg;
             } else {
                 cliErrorState.insert(cli_error_e::too_many_asm_files);
             }
-        } else if (fileExistsAndIsValid(arg, bin_suffix)) {
+        } else if (fileExistsAndIsValid(arg, BIN_SUFFIX)) {
             if (mentionedFiles.binFile.empty()) {
                 mentionedFiles.binFile = arg;
                 mentionedFiles.binFileState = bin_file_state::exists;
             } else {
                 cliErrorState.insert(cli_error_e::too_many_bin_files);
             }
-        } else if (arg.ends_with(bin_suffix)) {
+        } else if (arg.ends_with(BIN_SUFFIX)) {
             if (mentionedFiles.binFile.empty()) {
                 mentionedFiles.binFile = arg;
                 mentionedFiles.binFileState = bin_file_state::does_not_exist;
@@ -100,8 +101,8 @@ bool parseForUnrecognizedArgs(const std::vector<std::string>& args,
                               std::unordered_set<cli_error_e>& cliErrorState) {
     bool errFlag = false;
     auto isUnreckonized = [](std::string arg) {
-        return (!stringToArgFlagMap.contains(arg) && !arg.ends_with(asm_suffix) &&
-                !arg.ends_with(bin_suffix) && arg != bear16_executable_name);
+        return (!stringToArgFlagMap.contains(arg) && !arg.ends_with(ASM_SUFFIX) &&
+                !arg.ends_with(BIN_SUFFIX) && arg != BEAR16_EXECUTABLE_NAME);
     };
     for (const auto& arg : args) {
         if (isUnreckonized(arg)) {

@@ -7,6 +7,7 @@
 #include "core.h"
 #include "json.hpp"
 #include "path_manager.h"
+#include <complex>
 #include <exception>
 #include <filesystem>
 #include <format>
@@ -57,15 +58,19 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
         errors.insert(cli_error_e::missing_asm_file);
     }
     if (mentionedFiles.binFile.empty() &&
-        (flags.contains(cli_flag::assemble) ||
-         (flags.contains(cli_flag::run) || flags.contains(cli_flag::set_disk)))) {
+        (flags.contains(cli_flag::assemble) || flags.contains(cli_flag::run))) {
         errors.insert(cli_error_e::missing_bin_file);
     }
     bool errorFlag = parseForUnrecognizedArgs(args, errors);
     bool doAssemble = flags.contains(cli_flag::assemble);
     bool doRun = flags.contains(cli_flag::run);
     bool doTUI = flags.contains(cli_flag::tui);
+    bool doSetDisk = flags.contains(cli_flag::set_disk);
+    bool doCheckDisk = flags.contains(cli_flag::check_disk);
     bool doHelp = flags.contains(cli_flag::help);
+
+    getEmuStateFromConfigFile(); // for getting disk, everything else will be ignored while using
+                                 // CLI
 
     if (doAssemble) {
         // if no bin -> assemble to a default-named binary of format <project_name>.bin
@@ -104,6 +109,16 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
     if (doTUI) {
         guardNoArgFlagCommands();
         enterTUI();
+    }
+
+    if (doSetDisk) {
+        guardNoArgFlagCommands();
+        getDiskPathFromUser();
+    }
+
+    if (doCheckDisk) {
+        guardNoArgFlagCommands();
+        std::cout << "Loaded Disk: " << diskPath << "\n";
     }
 
     if (doHelp) {
@@ -310,6 +325,8 @@ void Emulator::enterConfigMenu() {
         char selection = line.at(0);
         switch (selection) {
         case ('1'): {
+            std::cout << "NOT CURRENTLY SUPPORTED\n";
+            enterToContinue();
             break;
         }
         case ('2'): {
@@ -317,13 +334,12 @@ void Emulator::enterConfigMenu() {
             break;
         }
         case ('3'): {
+            getEntryFromUser();
             break;
         }
         case ('4'): {
             getDiskPathFromUser();
             break;
-        }
-        case ('5'): {
         }
         case ('c'): {
             break;
@@ -343,10 +359,9 @@ void Emulator::printConfigMenu() {
     cout << " Enter a [#] to make a change" << "\n";
     cout << "==============================" << "\n";
     cout << " [1] Bear16 Root Directory: " << bear16RootDir << "\n";
-    cout << " [2] Project Directory: " << projectPath << "\n";
-    cout << " [3] Entry .asm file: \"" << entryFileName << "\"\n";
-    cout << " [4] Disk Path: " << diskPath << "\n";
-    cout << " [5] Restore defaults" << "\n";
+    cout << " [2] Project Directory:     " << projectPath << "\n";
+    cout << " [3] Entry .asm file:       \"" << entryFileName << "\"\n";
+    cout << " [4] Disk Path:             " << diskPath << "\n";
     cout << " [C] Cancel" << "\n";
 }
 
@@ -440,14 +455,14 @@ std::filesystem::path Emulator::snipBear16RootDir(const std::filesystem::path& p
 void Emulator::getProjectPathFromUser() {
     std::string projectDir;
     std::cout << "Enter the name of the project directory: " << "\n";
-    std::cout << bear16RootDir.string() << '/';
+    std::cout << (bear16RootDir / projectsRootDir).string() << '/';
     std::getline(std::cin, projectDir);
     if (projectDir.empty()) {
         std::cout << "ERROR: Project path cannot be empty." << std::endl;
         enterToContinue();
         return;
     }
-    std::string projectPath((bear16RootDir / projectDir).string());
+    std::string projectPath((bear16RootDir / projectsRootDir / projectDir).string());
 
     auto saveChanges = [this, &projectPath, &projectDir]() {
         this->projectPath = projectPath;
@@ -461,11 +476,11 @@ void Emulator::getProjectPathFromUser() {
         bool madeValidChoice = false;
         do {
             std::cout << " [1] Create new project directory" << std::endl;
-            std::cout << " [2] Cancel" << std::endl;
+            std::cout << " [2|C] Cancel" << std::endl;
             std::cout << "Make a selection: ";
             std::string choice;
             std::getline(std::cin, choice);
-            if (!(choice == "1" || choice == "2")) {
+            if (!(choice == "1" || choice == "2" || choice == "C")) {
                 std::cout << "Invalid choice. Please try again." << std::endl;
             }
             if (choice == "1") {
@@ -473,7 +488,7 @@ void Emulator::getProjectPathFromUser() {
                 std::cout << "Project directory created at " << projectPath << std::endl;
                 madeValidChoice = true;
                 saveChanges();
-            } else if (choice == "2") {
+            } else if (choice == "2" || choice == "C") {
                 madeValidChoice = true;
             }
         } while (!madeValidChoice);
@@ -483,30 +498,55 @@ void Emulator::getProjectPathFromUser() {
 }
 
 void Emulator::getDiskPathFromUser() {
-    std::string diskPath;
+    std::string diskFileName;
     std::cout << "Enter the name of the disk: " << "\n";
-    std::cout << bear16RootDir.string() << '/';
-    std::getline(std::cin, diskPath);
-    if (diskPath.empty()) {
+    std::cout << std::filesystem::path(bear16RootDir / disksRootDir).string() << '/';
+    std::getline(std::cin, diskFileName);
+    if (diskFileName.empty()) {
         std::cout << "ERROR: Disk cannot be empty." << std::endl;
         enterToContinue();
         return;
-    } else if (!diskPath.ends_with(bin_suffix)) {
+    } else if (!diskFileName.ends_with(BIN_SUFFIX)) {
         std::cout << "ERROR: Disk must be a \".bin\" file." << std::endl;
         enterToContinue();
         return;
     }
-    std::string fullDiskPath((bear16RootDir / diskPath).string());
-    if (!std::filesystem::exists(fullDiskPath)) {
-        std::fstream createFileStream(fullDiskPath, std::ios::out);
+    std::string diskPath((bear16RootDir / disksRootDir / diskFileName).string());
+    if (!std::filesystem::exists(diskPath)) {
+        std::fstream createFileStream(diskPath, std::ios::out);
         if (!createFileStream) {
-            std::cout << "ERROR: Failed to create new disk file \"" << fullDiskPath << "\"";
+            std::cout << "ERROR: Failed to create new disk file \"" << diskPath << "\"";
             return;
         }
         std::cout << "Created new disk file \n";
     }
-    this->diskPath = fullDiskPath;
-    std::cout << "Disk set to: " << diskPath << std::endl;
+    this->diskPath = diskPath;
+    std::cout << "Disk set to: \"" << diskFileName << "\"\n";
+    saveEmuStateToConfigFile();
+    enterToContinue();
+}
+
+void Emulator::getEntryFromUser() {
+    std::string entryFileName;
+    std::cout << "Enter the name of the disk: " << "\n";
+    std::cout << projectPath.string() << '/';
+    std::getline(std::cin, entryFileName);
+    if (entryFileName.empty()) {
+        std::cout << "ERROR: Entry file name cannot be empty." << std::endl;
+        enterToContinue();
+        return;
+    } else if (!entryFileName.ends_with(ASM_SUFFIX)) {
+        std::cout << "ERROR: Entry must be a \".asm\" file." << std::endl;
+        enterToContinue();
+        return;
+    }
+    std::filesystem::path entryFilePath(projectPath / entryFileName);
+    if (!std::filesystem::exists(entryFilePath)) {
+        std::cout << "ERROR: Specified entry file does not exist";
+        return;
+    }
+    this->entryFileName = entryFileName;
+    std::cout << "Entry set to: \"" << snipHomeDir(entryFilePath) << "\"\n";
     saveEmuStateToConfigFile();
     enterToContinue();
 }
