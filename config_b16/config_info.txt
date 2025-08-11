@@ -1,0 +1,5 @@
+"config_b16" is where your config.json file will live.
+- Bear16 will automatically build your config file once you boot it up for the first time.
+- You can manually edit the json file or you can use the terminal interface to make changes.
+- You can store premade configs for quick set-up in this directory, but b16 will always load
+from "config.json", so you'll have to copy contents into that file.

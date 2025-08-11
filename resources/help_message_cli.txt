@@ -1,1 +1,41 @@
-THIS SECTION IS WIP
+options:
+  -a, --assemble, assemble       assemble source file(s)
+  -r, --run, run                 run the specified disk image
+  -h, --help, help               show help message
+  -v, --version                  show version information
+  -u, --ui, --tui                start terminal user interface
+  -ar, -ra                       assemble and run
+  -sd, --set-disk                set the active disk image
+  -cd, --check-disk              check if disk exists and is valid
+  <no-args>                      start termnial user interface
+                                 *note: all args and flags are order-agnostic
+
+usage: b16 [-h | --help]
+       b16 [--assemble | assemble | -a] <assembly_file> <target_binary_file>
+       b16 [--run | run | -r] <binary_file>
+       b16 [-ar | -ra] <assembly_file> <binary_file>
+       b16 [--ui | --tui]
+       b16 -sd <disk>
+       b16 -cd
+       b16 [--version]
+       b16 [help]
+       b16 <no-args>
+
+example flows: ~ project set-up ~
+               cd ~/bear16/projects_b16/
+               mkdir my_project
+               cd my_project
+               touch main.asm
+               touch file_to_be_included.asm  # make sure to include this in your entry file!
+               nvim main.asm                  # edit in neovim (or your editor of choice)!
+               mkdir build
+
+               ~ assemble and run ~
+               b16 assemble main.asm build/my_executable.bin
+               b16 run my_executable.bin
+               ~~~~~~~~ or ~~~~~~~~
+               b16 --assemble main.asm --run build/my_executable.bin
+               ~~~~~~~~ or ~~~~~~~~
+               b16 -ar my_project_entry.asm my_executable.bin
+
+

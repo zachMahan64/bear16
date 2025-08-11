@@ -11,7 +11,9 @@ const std::unordered_map<std::string, cli_flag> stringToArgFlagMap{
     {"-v", cli_flag::version},
     {"-u", cli_flag::tui},
     {"--assemble", cli_flag::assemble},
+    {"assemble", cli_flag::assemble}, // alias
     {"--run", cli_flag::run},
+    {"run", cli_flag::run}, // alias
     {"--help", cli_flag::help},
     {"help", cli_flag::help}, // overload for those who truly are clueless
     {"--version", cli_flag::version},
@@ -107,7 +109,7 @@ bool parseForUnrecognizedArgs(const std::vector<std::string>& args,
     for (const auto& arg : args) {
         if (isUnreckonized(arg)) {
             cliErrorState.insert(cli_error_e::unrecognized_arg);
-            std::cerr << "Unrecognized argument: \" << arg << \"\n";
+            std::cerr << "Unrecognized argument: \"" << arg << "\"\n";
             errFlag = true;
         }
     }

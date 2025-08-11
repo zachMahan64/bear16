@@ -68,6 +68,7 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
     bool doSetDisk = flags.contains(cli_flag::set_disk);
     bool doCheckDisk = flags.contains(cli_flag::check_disk);
     bool doHelp = flags.contains(cli_flag::help);
+    bool doVersion = flags.contains(cli_flag::version);
 
     getEmuStateFromConfigFile(); // for getting disk, everything else will be ignored while using
                                  // CLI
@@ -124,6 +125,11 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
     if (doHelp) {
         guardNoArgFlagCommands();
         printMsgFile(HELP_MESSAGE_CLI);
+    }
+
+    if (doVersion) {
+        guardNoArgFlagCommands();
+        std::cout << "bear16 version " + version << "\n";
     }
 
     return exitCode;
