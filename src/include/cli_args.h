@@ -13,6 +13,7 @@ enum class cli_flag {
     version,
     tui,
     valid_multi,
+    check_disk,
     set_disk
 }; // valid_multi currently redundant as of 20250809
 extern const std::unordered_map<std::string, cli_flag> stringToArgFlagMap;

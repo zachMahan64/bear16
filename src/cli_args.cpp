@@ -13,13 +13,14 @@ const std::unordered_map<std::string, cli_flag> stringToArgFlagMap{
     {"--assemble", cli_flag::assemble},
     {"--run", cli_flag::run},
     {"--help", cli_flag::help},
+    {"help", cli_flag::help}, // overload for those who truly are clueless
     {"--version", cli_flag::version},
     {"--ui", cli_flag::tui},
     {"--tui", cli_flag::tui},
     {"-ar", cli_flag::valid_multi},
     {"-ar", cli_flag::valid_multi},
     {"-d", cli_flag::set_disk},
-    {"--disk", cli_flag::set_disk},
+    {"--check-disk", cli_flag::check_disk},
     {"--set-disk", cli_flag::set_disk}};
 
 const std::unordered_map<cli_error_e, std::string> errMsgMap{

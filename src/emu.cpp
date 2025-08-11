@@ -320,6 +320,7 @@ void Emulator::enterConfigMenu() {
             break;
         }
         case ('4'): {
+            getDiskPathFromUser();
             break;
         }
         case ('5'): {
@@ -343,7 +344,7 @@ void Emulator::printConfigMenu() {
     cout << "==============================" << "\n";
     cout << " [1] Bear16 Root Directory: " << bear16RootDir << "\n";
     cout << " [2] Project Directory: " << projectPath << "\n";
-    cout << " [3] Entry .asm file: " << entryFileName << "\n";
+    cout << " [3] Entry .asm file: \"" << entryFileName << "\"\n";
     cout << " [4] Disk Path: " << diskPath << "\n";
     cout << " [5] Restore defaults" << "\n";
     cout << " [C] Cancel" << "\n";
@@ -399,8 +400,8 @@ void Emulator::getEmuStateFromConfigFile() {
     std::filesystem::path configPath = std::filesystem::path(CONFIG_ROOT / CONFIG_FILE);
     try {
         if (!std::filesystem::exists(configPath)) {
-            std::cout << "Oh, it's your first time using Bear16? Let's do some "
-                         "automatic set up.\n";
+            std::cout << "It's your first time using the Bear16 Terminal Interface so we'll do "
+                         "some automatic set up.\n";
             std::cout << "Generating default config.json ...\n";
             enterToContinue();
             saveEmuStateToConfigFile(); // saves the defaults, which the emu
@@ -447,6 +448,14 @@ void Emulator::getProjectPathFromUser() {
         return;
     }
     std::string projectPath((bear16RootDir / projectDir).string());
+
+    auto saveChanges = [this, &projectPath, &projectDir]() {
+        this->projectPath = projectPath;
+        std::cout << "Project path set to: " << projectDir << std::endl;
+        saveEmuStateToConfigFile();
+        enterToContinue();
+    };
+
     if (!std::filesystem::exists(projectPath)) {
         std::cout << "Project path does not exist: " << projectPath << std::endl;
         bool madeValidChoice = false;
@@ -463,18 +472,45 @@ void Emulator::getProjectPathFromUser() {
                 std::filesystem::create_directory(projectPath);
                 std::cout << "Project directory created at " << projectPath << std::endl;
                 madeValidChoice = true;
-                enterToContinue();
+                saveChanges();
             } else if (choice == "2") {
                 madeValidChoice = true;
             }
         } while (!madeValidChoice);
         return;
     }
-    this->projectPath = projectPath;
-    std::cout << "Project path set to: " << projectDir << std::endl;
+    saveChanges();
+}
+
+void Emulator::getDiskPathFromUser() {
+    std::string diskPath;
+    std::cout << "Enter the name of the disk: " << "\n";
+    std::cout << bear16RootDir.string() << '/';
+    std::getline(std::cin, diskPath);
+    if (diskPath.empty()) {
+        std::cout << "ERROR: Disk cannot be empty." << std::endl;
+        enterToContinue();
+        return;
+    } else if (!diskPath.ends_with(bin_suffix)) {
+        std::cout << "ERROR: Disk must be a \".bin\" file." << std::endl;
+        enterToContinue();
+        return;
+    }
+    std::string fullDiskPath((bear16RootDir / diskPath).string());
+    if (!std::filesystem::exists(fullDiskPath)) {
+        std::fstream createFileStream(fullDiskPath, std::ios::out);
+        if (!createFileStream) {
+            std::cout << "ERROR: Failed to create new disk file \"" << fullDiskPath << "\"";
+            return;
+        }
+        std::cout << "Created new disk file \n";
+    }
+    this->diskPath = fullDiskPath;
+    std::cout << "Disk set to: " << diskPath << std::endl;
     saveEmuStateToConfigFile();
     enterToContinue();
 }
+
 void Emulator::enterToContinue() {
     std::cout << "[ENTER] to continue" << std::endl;
     std::cin.get();
