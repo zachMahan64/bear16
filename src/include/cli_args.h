@@ -58,6 +58,4 @@ MentionedFiles parseArgsForMentionedFiles(const std::vector<std::string>& args,
 bool parseForUnrecognizedArgs(const std::vector<std::string>& args,
                               std::unordered_set<cli_error_e>& cliErrorState);
 
-void throwAnyErrorsFromArgParsing(const std::unordered_set<cli_error_e>& errors);
-
 #endif

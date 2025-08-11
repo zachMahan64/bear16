@@ -7,7 +7,6 @@
 #include "core.h"
 #include "json.hpp"
 #include "path_manager.h"
-#include <complex>
 #include <exception>
 #include <filesystem>
 #include <format>
@@ -74,7 +73,6 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
                                  // CLI
 
     if (doAssemble) {
-        // if no bin -> assemble to a default-named binary of format <project_name>.bin
         if (mentionedFiles.asmFile.empty()) errors.insert(cli_error_e::missing_asm_file);
         if (!errors.empty()) enumerateErrorsAndTerminate(errors);
         projectPath = std::filesystem::canonical(mentionedFiles.asmFile).parent_path();
@@ -82,9 +80,9 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
         std::filesystem::path execPath = (mentionedFiles.binFile.empty())
                                              ? computeDefaultExecutablePath()
                                              : std::filesystem::path(mentionedFiles.binFile);
-        assembleAndSaveExecutable(execPath);
-        mentionedFiles.binFileState =
-            bin_file_state::exists; // always becuz we just assembled it into a binary
+        if (assembleAndSaveExecutable(execPath)) {
+            mentionedFiles.binFileState = bin_file_state::exists; // if assembly succeeds
+        }
     }
 
     if (doRun) {
@@ -275,26 +273,27 @@ void Emulator::printTUIMainMenu() {
     PRINT_DIVIDE_BAR();
     std::cout << "Make a selection: ";
 }
-void Emulator::assembleAndSaveExecutable(std::filesystem::path executablePath) {
+bool Emulator::assembleAndSaveExecutable(std::filesystem::path executablePath) {
     testAssembler.openProject(projectPath, entryFileName);
     auto userRom = testAssembler.assembleOpenedProject();
 
     std::ofstream executableFile(executablePath, std::ios::binary);
     if (!executableFile) {
         std::cerr << "Failed to open output file: " << executablePath << std::endl;
-        return;
+        return false;
     }
 
     executableFile.write(reinterpret_cast<const char*>(userRom.data()), userRom.size());
     if (!executableFile) {
         std::cerr << "Failed to write to file: " << executablePath << std::endl;
-        return;
+        return false;
     }
     executableFile.flush();
     executableFile.close();
 
     std::cout << "Executable saved to " << executablePath << std::endl;
     enterToContinue();
+    return true;
 }
 void Emulator::runSavedExecutable() {
     std::vector<uint8_t> userRom{};

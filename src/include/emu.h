@@ -42,7 +42,7 @@ class Emulator {
     void enterTUI();
     void printTUIMainMenu();
     // submenus/methods
-    void assembleAndSaveExecutable(std::filesystem::path executablePath);
+    bool assembleAndSaveExecutable(std::filesystem::path executablePath);
     void runSavedExecutable();
     // config menu
     void enterConfigMenu();
