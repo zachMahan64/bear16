@@ -9,13 +9,14 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <sys/types.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <variant>
 #include <vector>
 
 // macros
-//#define DO_LOG_ASM
+// #define DO_LOG_ASM
 #ifdef DO_LOG_ASM
 #define LOG_ASM(x) std::cout << x << "\n"
 #else
@@ -29,7 +30,7 @@
 #endif
 
 namespace assembly {
-enum class TokenType;
+enum class TokenType : uint8_t;
 class Token;
 class TokenizedInstruction;
 class TokenizedData;
@@ -45,15 +46,11 @@ extern const std::unordered_map<std::string, uint16_t> namedOperandToBinMap;
 extern const std::vector<std::string> namedOperandsInOrder;
 // Enum maps
 extern const std::unordered_map<std::string, isa::Opcode_E> stringToOpcodeMap;
-extern const std::unordered_map<isa::Opcode_E, int>
-    opcodeToOperandMinimumCountMap;
-extern const std::unordered_set<isa::Opcode_E>
-    opCodesWithOptionalSrc2OffsetArgument;
-extern const std::unordered_set<isa::Opcode_E>
-    opCodesWithOptionalSrc1OffsetArgument;
+extern const std::unordered_map<isa::Opcode_E, int> opcodeToOperandMinimumCountMap;
+extern const std::unordered_set<isa::Opcode_E> opCodesWithOptionalSrc2OffsetArgument;
+extern const std::unordered_set<isa::Opcode_E> opCodesWithOptionalSrc1OffsetArgument;
 extern const std::unordered_map<std::string, TokenType> stringToDataDirectives;
-extern const std::unordered_map<TokenType, size_t>
-    dataDirectivesToSizeMap; // in bytes
+extern const std::unordered_map<TokenType, size_t> dataDirectivesToSizeMap; // in bytes
 extern const std::unordered_set<char> validSymbols;
 extern const std::unordered_set<TokenType> validDataTokenTypes;
 extern const std::unordered_map<TokenType, size_t> fixedDirectivesToSizeMap;
@@ -70,52 +67,41 @@ class Assembler {
     [[nodiscard]] std::vector<uint8_t> assembleOpenedProject();
 
   private:
-    preprocess::Preprocessor preprocessor{};
-    std::filesystem::path projectPath{};
-    std::string entry{};
-    static std::vector<Token>
-    tokenizeAsmFirstPass(const std::string &processedAsm);
+    preprocess::Preprocessor preprocessor;
+    std::filesystem::path projectPath;
+    std::string entry;
+    static std::vector<Token> tokenizeAsmFirstPass(const std::string& processedAsm);
 
-    static void writeToFile(const std::string &filename,
-                            const std::vector<uint8_t> &data);
+    static void writeToFile(const std::string& filename, const std::vector<uint8_t>& data);
     [[nodiscard]] std::vector<TokenizedRomLine>
-    parseListOfTokensIntoTokenizedRomLines(
-        const std::vector<Token> &tokens) const;
-    [[nodiscard]] TokenizedInstruction
-    parseLineOfTokensIntoTokenizedInstruction(
-        const std::vector<Token> &line,
-        const std::unordered_map<std::string, uint16_t> &labelMap,
-        const std::unordered_map<std::string, uint16_t> &constMap,
-        const int &instructionIndex) const;
+    parseListOfTokensIntoTokenizedRomLines(const std::vector<Token>& tokens) const;
+    [[nodiscard]] TokenizedInstruction parseLineOfTokensIntoTokenizedInstruction(
+        const std::vector<Token>& line, const std::unordered_map<std::string, uint16_t>& labelMap,
+        const std::unordered_map<std::string, uint16_t>& constMap,
+        const int& instructionIndex) const;
     [[nodiscard]] TokenizedData parseLineOfTokensIntoTokenizedData(
-        const std::vector<Token> &line,
-        const std::unordered_map<std::string, uint16_t> &labelMap,
-        const std::unordered_map<std::string, uint16_t> &constMap,
-        int byteIndex) const;
-    std::vector<uint8_t> parseTokenizedDataIntoByteVec(
-        std::vector<TokenizedRomLine> &allTokenizedData) const;
-    [[nodiscard]] std::vector<uint8_t>
-    parseDataLineIntoBytes(const TokenizedData &dataLine) const;
-    [[nodiscard]] std::vector<uint8_t>
-    parsePieceOfDataIntoBytes(const Token &pieceOfData,
-                              const Token &directive) const;
+        const std::vector<Token>& line, const std::unordered_map<std::string, uint16_t>& labelMap,
+        const std::unordered_map<std::string, uint16_t>& constMap, int byteIndex) const;
+    std::vector<uint8_t>
+    parseTokenizedDataIntoByteVec(std::vector<TokenizedRomLine>& allTokenizedData) const;
+    [[nodiscard]] std::vector<uint8_t> parseDataLineIntoBytes(const TokenizedData& dataLine) const;
+    [[nodiscard]] std::vector<uint8_t> parsePieceOfDataIntoBytes(const Token& pieceOfData,
+                                                                 const Token& directive) const;
     static std::vector<parts::Instruction>
-    getLiteralInstructions(const std::vector<TokenizedRomLine> &tknRomLines);
-    static void
-    printLiteralInstruction(const parts::Instruction &litInstr); // debug
-    static std::vector<uint8_t> buildByteVecFromLiteralInstructions(
-        const std::vector<parts::Instruction> &literalInstructions);
-    static std::vector<uint8_t> build8ByteVecFromSingleLiteralInstruction(
-        const parts::Instruction &literalInstruction);
+    getLiteralInstructions(const std::vector<TokenizedRomLine>& tknRomLines);
+    static void printLiteralInstruction(const parts::Instruction& litInstr); // debug
+    static std::vector<uint8_t>
+    buildByteVecFromLiteralInstructions(const std::vector<parts::Instruction>& literalInstructions);
+    static std::vector<uint8_t>
+    build8ByteVecFromSingleLiteralInstruction(const parts::Instruction& literalInstruction);
 
-    static void throwAFit(const std::string &ref) {
-        std::cerr << "MISTAKE MADE IN USAGE OR DEFINITION OF " << ref
-                  << std::endl;
+    static void throwAFit(const std::string& ref) {
+        std::cerr << "MISTAKE MADE IN USAGE OR DEFINITION OF " << ref << '\n';
     }
 };
 
 // gen tokens
-enum class TokenType {
+enum class TokenType : uint8_t {
     MISTAKE, // obvious error
 
     GEN_REG,       // s1, s2
@@ -234,16 +220,15 @@ inline std::string toString(TokenType type) {
     }
 }
 inline const std::unordered_set<TokenType> validOperandArguments = {
-    TokenType::REF,        TokenType::STRING,        TokenType::GEN_REG,
-    TokenType::SPEC_REG,   TokenType::IO_PSEUDO_REG, TokenType::DECIMAL,
-    TokenType::HEX,        TokenType::BIN,           TokenType::CHAR,
-    TokenType::CHAR_SPACE, TokenType::FIXED_PT};
+    TokenType::REF,           TokenType::STRING,     TokenType::GEN_REG, TokenType::SPEC_REG,
+    TokenType::IO_PSEUDO_REG, TokenType::DECIMAL,    TokenType::HEX,     TokenType::BIN,
+    TokenType::CHAR,          TokenType::CHAR_SPACE, TokenType::FIXED_PT};
 
 class Token {
   public:
     TokenType type;
     std::string body;
-    explicit Token(const std::string &text) : body(text) {
+    explicit Token(const std::string& text) : body(text) {
         type = deduceTokenType(text);
         correctNullChar();
     }
@@ -251,23 +236,21 @@ class Token {
         body = std::string(1, c);
         type = deduceTokenType(body);
     }
-    static TokenType deduceTokenType(const std::string &text);
+    static TokenType deduceTokenType(const std::string& text);
     void correctNullChar();
-    void resolveExpression(
-        const std::unordered_map<std::string, uint16_t> &labelMap,
-        const std::unordered_map<std::string, uint16_t> &constMap);
+    void resolveExpression(const std::unordered_map<std::string, uint16_t>& labelMap,
+                           const std::unordered_map<std::string, uint16_t>& constMap);
 };
 // string to TokenType Map
 inline const std::unordered_map<std::string, TokenType> symbolToTokenMap = {
-    {",", TokenType::COMMA},      {":", TokenType::COLON},
-    {"=", TokenType::EQUALS},     {"+", TokenType::PLUS},
-    {"'", TokenType::SING_QUOTE}, {"\"", TokenType::DOUB_QUOTE},
-    {"]", TokenType::RBRACKET},   {"[", TokenType::LBRACKET},
+    {",", TokenType::COMMA},    {":", TokenType::COLON},      {"=", TokenType::EQUALS},
+    {"+", TokenType::PLUS},     {"'", TokenType::SING_QUOTE}, {"\"", TokenType::DOUB_QUOTE},
+    {"]", TokenType::RBRACKET}, {"[", TokenType::LBRACKET},
 };
 // specific tokens
-enum class Resolution { RESOLVED, UNRESOLVED, SYMBOLIC };
-enum class ImmType { NO_IM, I, I1, I2 };
-enum class ValueType { IMM, NAMED };
+enum class Resolution : uint8_t { RESOLVED, UNRESOLVED, SYMBOLIC };
+enum class ImmType : uint8_t { NO_IM, I, I1, I2 };
+enum class ValueType : uint8_t { IMM, NAMED };
 class OpCode {
   public:
     Token token;
@@ -297,21 +280,19 @@ class TokenizedInstruction {
     std::optional<Operand> dest;
     std::optional<Operand> src1; // not needed for a couple Ops
     std::optional<Operand> src2; // optional for many Ops
-    TokenizedInstruction(OpCode opcode, std::optional<Operand> dest,
-                         std::optional<Operand> src1,
+    TokenizedInstruction(OpCode opcode, std::optional<Operand> dest, std::optional<Operand> src1,
                          std::optional<Operand> src2)
-        : opcode(std::move(opcode)), dest(std::move(dest)),
-          src1(std::move(src1)), src2(std::move(src2)) {}
+        : opcode(std::move(opcode)), dest(std::move(dest)), src1(std::move(src1)),
+          src2(std::move(src2)) {}
     explicit TokenizedInstruction(OpCode opcode) : opcode(std::move(opcode)) {}
-    void
-    setOperandsAndAutocorrectImmediates(const bool &doNotAutoCorrectImmediates,
-                                        std::vector<Operand> operands);
+    void setOperandsAndAutocorrectImmediates(const bool& doNotAutoCorrectImmediates,
+                                             std::vector<Operand> operands);
     void resolve();
     [[nodiscard]] parts::Instruction getLiteralInstruction() const;
 };
 std::pair<std::string, std::string> splitOpcodeStr(std::string opcodeStr);
 template <typename K, typename V>
-std::string unorderedMapToString(const std::unordered_map<K, V> &map) {
+std::string unorderedMapToString(const std::unordered_map<K, V>& map) {
     std::ostringstream oss;
     oss << "{ ";
     for (auto it = map.begin(); it != map.end(); ++it) {
@@ -323,8 +304,8 @@ std::string unorderedMapToString(const std::unordered_map<K, V> &map) {
     return oss.str();
 }
 template <typename MapType, typename ValueType>
-bool containsValue(const MapType &map, const ValueType &value) {
-    for (const auto &[key, val] : map) {
+bool containsValue(const MapType& map, const ValueType& value) {
+    for (const auto& [key, val] : map) {
         if (val == value) {
             return true;
         }
@@ -336,7 +317,7 @@ class TokenizedData {
     Token directive;
     std::vector<Token> dataTokens;
     explicit TokenizedData(Token directive);
-    void setDataTokens(const std::vector<Token> &dataTokens);
+    void setDataTokens(const std::vector<Token>& dataTokens);
 };
 // helper
 inline std::vector<uint8_t> convertWordToBytePair(uint16_t val) {

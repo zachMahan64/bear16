@@ -6,10 +6,11 @@
 #include "assembly.h"
 #include "cli_args.h"
 #include "path_manager.h"
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
-enum class emu_launch { cli_args, tui };
+enum class emu_launch : uint8_t { cli_args, tui };
 class Emulator {
     // version info & constant state
     const std::string version = "0.0.6";
@@ -29,12 +30,12 @@ class Emulator {
     const std::filesystem::path HELP_MESSAGE_CLI = "help_message_cli.txt";
     const std::filesystem::path CONFIG_FILE = "config.json";
     // assembler
-    assembly::Assembler testAssembler{};
+    assembly::Assembler testAssembler;
     // CLI
     int performActionBasedOnArgs(const std::vector<std::string>& args);
     int runMentionedExecutable(const std::string& executableFileName);
     [[noreturn]] static void
-    enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e> errors,
+    enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e>& errors,
                                 int exitCode = EXIT_FAILURE);
     // TUI
     int assembleAndRunWithoutSavingExecutable();
@@ -42,7 +43,7 @@ class Emulator {
     void enterTUI();
     void printTUIMainMenu();
     // submenus/methods
-    bool assembleAndSaveExecutable(std::filesystem::path executablePath);
+    bool assembleAndSaveExecutable(const std::filesystem::path& executablePath);
     void runSavedExecutable();
     // config menu
     void enterConfigMenu();
@@ -53,12 +54,12 @@ class Emulator {
     [[nodiscard]] std::filesystem::path computeDefaultExecutablePath() const;
     void saveEmuStateToConfigFile();
     void getEmuStateFromConfigFile();
-    std::filesystem::path snipBear16RootDir(const std::filesystem::path& path);
+    static std::filesystem::path snipBear16RootDir(const std::filesystem::path& path);
     // getting input from user
     void getProjectPathFromUser();
     void getEntryFromUser();
     void getDiskPathFromUser();
-    void enterToContinue();
+    static void enterToContinue();
 
   public:
     explicit Emulator(emu_launch launchState);

@@ -9,16 +9,16 @@
 namespace expr_res {
 // meat of the operation
 const std::unordered_set<char> monoChars{'(', ')', '+', '-', '*', '/'};
-ResolutionResult
-resolveStrExpr(const std::string &input,
-               const std::unordered_map<std::string, uint16_t> &labelMap,
-               const std::unordered_map<std::string, uint16_t> &constMap) {
+ResolutionResult resolveStrExpr(const std::string& input,
+                                const std::unordered_map<std::string, uint16_t>& labelMap,
+                                const std::unordered_map<std::string, uint16_t>& constMap) {
 
     std::vector<Token> tokenizedInput{};
     std::string curr{};
     auto emplaceToken = [&](std::string_view inp) {
-        if (!inp.empty())
+        if (!inp.empty()) {
             tokenizedInput.emplace_back(inp, labelMap, constMap);
+        }
     };
     for (char c : input) {
         if (c == ' ') {
@@ -35,10 +35,10 @@ resolveStrExpr(const std::string &input,
         }
     }
     emplaceToken(curr);
-    for (const auto &tkn : tokenizedInput) {
+    for (const auto& tkn : tokenizedInput) {
         if (tkn.getType() == TokenType::MISTAKE) {
-            std::cerr << "MISTAKE declared in expression: " << tkn.getStr()
-                      << " | " << input << " " << std::endl;
+            std::cerr << "MISTAKE declared in expression: " << tkn.getStr() << " | " << input << " "
+                      << "\n";
             return {"0"};
         }
     }
@@ -50,31 +50,25 @@ resolveStrExpr(const std::string &input,
     if (tokenizedResult.getType() == TokenType::REAL) {
         fixpt8_8_t fixptRep(tokenizedResult.asFloat());
         result.raw = static_cast<uint16_t>(fixptRep);
-        if (*tokenizedResult.getValue() > 127.996 ||
-            *tokenizedResult.getValue() < -128.000) {
-            std::cerr
-                << "WARNING: result of expression " << input
-                << " is outside of 8.8-bit fixpt range (-128.000 to 127.996)"
-                << std::endl;
+        if (*tokenizedResult.getValue() > 127.996 || *tokenizedResult.getValue() < -128.000) {
+            std::cerr << "WARNING: result of expression " << input
+                      << " is outside of 8.8-bit fixpt range (-128.000 to 127.996)"
+                      << "\n";
         }
     } else if (tokenizedResult.getType() == TokenType::INTEGER) {
         if (*tokenizedResult.getValue() < 0) {
-            result.raw = static_cast<uint16_t>(
-                static_cast<int16_t>(*tokenizedResult.getValue()));
-            if (*tokenizedResult.getValue() > 32767 ||
-                *tokenizedResult.getValue() < -32768) {
-                std::cerr
-                    << "WARNING: result of expression " << input
-                    << " is outside of signed 16-bit range (-32768 to 32767)"
-                    << std::endl;
+            result.raw = static_cast<uint16_t>(static_cast<int16_t>(*tokenizedResult.getValue()));
+            if (*tokenizedResult.getValue() > 32767 || *tokenizedResult.getValue() < -32768) {
+                std::cerr << "WARNING: result of expression " << input
+                          << " is outside of signed 16-bit range (-32768 to 32767)"
+                          << "\n";
             }
         } else {
             result.raw = static_cast<uint16_t>(tokenizedResult.asInt());
-            if (*tokenizedResult.getValue() > 65356 ||
-                *tokenizedResult.getValue() < 0) {
+            if (*tokenizedResult.getValue() > 65356 || *tokenizedResult.getValue() < 0) {
                 std::cerr << "WARNING: result of expression " << input
                           << " is outside of unsigned 16-bit range (0 to 65536)"
-                          << std::endl;
+                          << "\n";
             }
         }
     }
@@ -96,11 +90,9 @@ std::optional<float> deduceValue(const std::string_view inp) {
     std::optional<float> deducedValue = std::nullopt;
     try {
         if (inp.substr(0, 2) == "0x") {
-            deducedValue =
-                static_cast<float>(std::stoi(std::string(inp), nullptr, 16));
+            deducedValue = static_cast<float>(std::stoi(std::string(inp), nullptr, 16));
         } else if (inp.substr(0, 2) == "0b") {
-            deducedValue =
-                static_cast<float>(std::stoi(std::string(inp), nullptr, 2));
+            deducedValue = static_cast<float>(std::stoi(std::string(inp), nullptr, 2));
         } else {
             deducedValue = static_cast<float>(std::stoi(std::string(inp)));
         }
@@ -111,22 +103,30 @@ std::optional<float> deduceValue(const std::string_view inp) {
 
 // tokens
 TokenType Token::deduceTokenType() const {
-    if (str == "+")
+    if (str == "+") {
         return TokenType::PLUS;
-    if (str == "-")
+    }
+    if (str == "-") {
         return TokenType::MIN;
-    if (str == "*")
+    }
+    if (str == "*") {
         return TokenType::MULT;
-    if (str == "/")
+    }
+    if (str == "/") {
         return TokenType::DIV;
-    if (str == "(")
+    }
+    if (str == "(") {
         return TokenType::LPAREN;
-    if (str == ")")
+    }
+    if (str == ")") {
         return TokenType::RPAREN;
-    if (labelMap && labelMap->contains(str))
+    }
+    if (labelMap && labelMap->contains(str)) {
         return TokenType::LABEL;
-    if (constMap && constMap->contains(str))
+    }
+    if (constMap && constMap->contains(str)) {
         return TokenType::CONSTANT;
+    }
 
     if (const auto valOpt = deduceValue(str)) {
         // Check if integer-valued float or real
@@ -155,19 +155,18 @@ Token::Token(std::string_view inp) {
     value = deduceValue(inp);
 }
 
-Token::Token(const std::string_view inp,
-             const std::unordered_map<std::string, uint16_t> &labelMap,
-             const std::unordered_map<std::string, uint16_t> &constMap)
+Token::Token(const std::string_view inp, const std::unordered_map<std::string, uint16_t>& labelMap,
+             const std::unordered_map<std::string, uint16_t>& constMap)
     : str(inp), labelMap(labelMap), constMap(constMap) {
     type = deduceTokenType();
 
     if (type == TokenType::LABEL) {
-        const auto it = labelMap.find(str);
-        value = it->second;
+        const auto iter = labelMap.find(str);
+        value = iter->second;
         type = TokenType::INTEGER;
     } else if (type == TokenType::CONSTANT) {
-        const auto it = constMap.find(str);
-        value = it->second;
+        const auto iter = constMap.find(str);
+        value = iter->second;
         type = TokenType::INTEGER;
     } else {
         value = deduceValue(str);
@@ -175,39 +174,34 @@ Token::Token(const std::string_view inp,
 }
 
 // expressions
-Expression::Expression(
-    const std::vector<Token> &tokenizedInput,
-    const std::unordered_map<std::string, uint16_t> &labelMap,
-    const std::unordered_map<std::string, uint16_t> &constMap)
+Expression::Expression(const std::vector<Token>& tokenizedInput,
+                       const std::unordered_map<std::string, uint16_t>& labelMap,
+                       const std::unordered_map<std::string, uint16_t>& constMap)
     : labelMap(labelMap), constMap(constMap), exprTokens(tokenizedInput) {}
 
 Token Expression::solve() const {
     std::vector<Term> terms{};
-    auto isNum = [](const Token &tkn) {
-        return tkn.getType() == TokenType::INTEGER ||
-               tkn.getType() == TokenType::REAL;
+    auto isNum = [](const Token& tkn) {
+        return tkn.getType() == TokenType::INTEGER || tkn.getType() == TokenType::REAL;
     };
-    auto isPlusOrMinus = [](const Token &tkn) {
-        return tkn.getType() == TokenType::PLUS ||
-               tkn.getType() == TokenType::MIN;
+    auto isPlusOrMinus = [](const Token& tkn) {
+        return tkn.getType() == TokenType::PLUS || tkn.getType() == TokenType::MIN;
     };
-    auto isParen = [](const Token &tkn) {
-        return tkn.getType() == TokenType::LPAREN ||
-               tkn.getType() == TokenType::RPAREN;
+    auto isParen = [](const Token& tkn) {
+        return tkn.getType() == TokenType::LPAREN || tkn.getType() == TokenType::RPAREN;
     };
 
     std::vector<Token> currFactors{};
     TokenType startingTermSign = TokenType::PLUS;
     int leftParenCount = 0;
     // split tokens into additive terms
-    for (const auto &tkn : exprTokens) {
+    for (const auto& tkn : exprTokens) {
         if (isParen(tkn)) {
             if (tkn.getType() == TokenType::LPAREN) {
                 if (leftParenCount == 1) {
-                    std::cerr
-                        << "WARNING: Nested expression detected. This is not "
-                           "supported on the current assembler version."
-                        << std::endl;
+                    std::cerr << "WARNING: Nested expression detected. This is not "
+                                 "supported on the current assembler version."
+                              << "\n";
                 }
                 leftParenCount++;
             }
@@ -229,10 +223,10 @@ Token Expression::solve() const {
 
     // eval each term
     bool resultIsReal = false;
-    for (auto &term : terms) {
+    for (auto& term : terms) {
         if (term.tokens.empty()) {
-            std::cerr << "ERROR: empty term." << std::endl;
-            return {0.0f, TokenType::INTEGER};
+            std::cerr << "ERROR: empty term." << "\n";
+            return {0.0F, TokenType::INTEGER};
         }
 
         // eval the left-associative product/division chain
@@ -240,17 +234,18 @@ Token Expression::solve() const {
         TokenType prevType = TokenType::MISTAKE;
 
         for (size_t i = 0; i < term.tokens.size(); ++i) {
-            const Token &tkn = term.tokens[i];
+            const Token& tkn = term.tokens[i];
 
             if (i % 2 == 0) { // number
                 if (!isNum(tkn)) {
-                    std::cerr << "ERROR: expected number in term." << std::endl;
-                    return {0.0f, TokenType::INTEGER};
+                    std::cerr << "ERROR: expected number in term." << "\n";
+                    return {0.0F, TokenType::INTEGER};
                 }
 
                 float num = tkn.getValue().value_or(0.0f);
-                if (tkn.getType() == TokenType::REAL)
+                if (tkn.getType() == TokenType::REAL) {
                     resultIsReal = true;
+                }
 
                 if (!value.has_value()) {
                     value = num;
@@ -260,47 +255,46 @@ Token Expression::solve() const {
                         value = *value * num;
                         break;
                     case TokenType::DIV:
-                        if (num == 0.0f) {
+                        if (num == 0.0F) {
                             std::cerr << "ERROR: division by zero."
-                                      << std::endl;
-                            return {0.0f, TokenType::INTEGER};
+                                      << "\n";
+                            return {0.0F, TokenType::INTEGER};
                         }
                         value = *value / num;
                         break;
                     default:
                         std::cerr << "ERROR: unexpected operator before number."
-                                  << std::endl;
-                        return {0.0f, TokenType::INTEGER};
+                                  << "\n";
+                        return {0.0F, TokenType::INTEGER};
                     }
                 }
             } else { // operator
-                if (tkn.getType() != TokenType::MULT &&
-                    tkn.getType() != TokenType::DIV) {
-                    std::cerr << "ERROR: expected * or / in term." << std::endl;
-                    return {0.0f, TokenType::INTEGER};
+                if (tkn.getType() != TokenType::MULT && tkn.getType() != TokenType::DIV) {
+                    std::cerr << "ERROR: expected * or / in term." << "\n";
+                    return {0.0F, TokenType::INTEGER};
                 }
                 prevType = tkn.getType();
             }
         }
 
         if (!value.has_value()) {
-            std::cerr << "ERROR: no value computed for term." << std::endl;
-            return {0.0f, TokenType::INTEGER};
+            std::cerr << "ERROR: no value computed for term." << "\n";
+            return {0.0F, TokenType::INTEGER};
         }
 
         term.value = *value;
     }
 
     // Sum or subtract all evaluated terms
-    float resultVal = 0.0f;
-    for (const auto &term : terms) {
+    float resultVal = 0.0F;
+    for (const auto& term : terms) {
         if (term.sign == TokenType::PLUS) {
             resultVal += term.value;
         } else if (term.sign == TokenType::MIN) {
             resultVal -= term.value;
         } else {
-            std::cerr << "ERROR: unexpected term sign." << std::endl;
-            return {0.0f, TokenType::INTEGER};
+            std::cerr << "ERROR: unexpected term sign." << "\n";
+            return {0.0F, TokenType::INTEGER};
         }
     }
 

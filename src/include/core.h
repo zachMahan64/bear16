@@ -22,9 +22,9 @@ class CPU16 {
     const size_t NUM_GEN_REGS = isa::GEN_REG_COUNT;
     const short NUM_IO = isa::IO_COUNT;
     // MEMORY
-    std::array<uint8_t, isa::SRAM_SIZE> &sram;
-    std::array<uint8_t, isa::ROM_SIZE> &userRom;
-    std::array<uint8_t, isa::ROM_SIZE> &kernelRom;
+    std::array<uint8_t, isa::SRAM_SIZE>& sram;
+    std::array<uint8_t, isa::ROM_SIZE>& userRom;
+    std::array<uint8_t, isa::ROM_SIZE>& kernelRom;
     std::span<uint8_t, isa::ROM_SIZE> activeRom;
     // DISK
     std::span<uint8_t, isa::DISK_SIZE> disk;
@@ -38,28 +38,22 @@ class CPU16 {
     std::array<uint16_t, isa::IO_COUNT> outs{};
     // REG
     std::array<parts::GenRegister, isa::GEN_REG_COUNT> genRegs{};
-    parts::FlagRegister flagReg = parts::FlagRegister();
-    parts::GenRegister stackPtr = parts::GenRegister(
-        isa::MAX_UINT16_T); // sp stacks at end of RAM for downward growth
+    parts::FlagRegister flagReg{};
+    parts::GenRegister stackPtr =
+        parts::GenRegister(isa::MAX_UINT16_T); // sp stacks at end of RAM for downward growth
     parts::GenRegister framePtr = parts::GenRegister(isa::MAX_UINT16_T);
     parts::GenRegister trapRetAddr = parts::GenRegister(isa::MAX_UINT16_T);
     [[nodiscard]] uint64_t fetchInstruction() const;
     void execute(parts::Instruction instr);
-    void performOp(const parts::Instruction &instr, uint16_t src1Val,
-                   uint16_t src2Val);
-    void doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val,
-                 uint16_t dest);
-    void doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val,
-                uint16_t dest);
-    void doDataTrans(parts::Instruction instr, uint16_t src1Val,
-                     uint16_t src2Val);
-    void doCtrlFlow(parts::Instruction instr, uint16_t src1Val,
-                    uint16_t src2Val);
+    void performOp(const parts::Instruction& instr, uint16_t src1Val, uint16_t src2Val);
+    void doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest);
+    void doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest);
+    void doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val);
+    void doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val);
     void writeback(uint16_t dest, uint16_t val);
     [[nodiscard]] uint16_t fetchByteAsWordFromRam(uint16_t addr) const;
     [[nodiscard]] uint8_t fetchByteFromRam(uint16_t addr) const;
-    [[nodiscard]] uint16_t
-    fetchWordFromRam(uint16_t addr) const; // little endian
+    [[nodiscard]] uint16_t fetchWordFromRam(uint16_t addr) const; // little endian
     static std::array<uint8_t, 2> convertWordToBytePair(uint16_t val);
     void writeWordToRam(uint16_t addr, uint16_t val); // little endian
     void writeByteToRam(uint16_t addr, uint8_t val);
@@ -74,10 +68,9 @@ class CPU16 {
     // PC
     uint16_t pc = 0;
     // CONSTRUCTOR
-    CPU16(std::array<uint8_t, isa::SRAM_SIZE> &sram,
-          std::array<uint8_t, isa::ROM_SIZE> &userRom,
-          std::array<uint8_t, isa::ROM_SIZE> &kernelRom,
-          std::vector<uint8_t> &disk, bool enableDebug);
+    CPU16(std::array<uint8_t, isa::SRAM_SIZE>& sram, std::array<uint8_t, isa::ROM_SIZE>& userRom,
+          std::array<uint8_t, isa::ROM_SIZE>& kernelRom, std::vector<uint8_t>& disk,
+          bool enableDebug);
     // EXECUTION
     void step();
     // INTERRUPT COMMUNICATION INTERFACE
@@ -86,8 +79,7 @@ class CPU16 {
     void setTrapReturnAddress(uint16_t trapRetAddr);
     // DIAGNOSTIC
     [[nodiscard]] uint16_t getValInReg(uint16_t reg) const;
-    void printSectionOfRam(uint16_t &startingAddr, uint16_t &numBytes,
-                           bool asChars) const;
+    void printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool asChars) const;
 };
 
 // scr helper
@@ -97,29 +89,26 @@ constexpr uint32_t makeRGBA8888(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 }
 
 class Screen {
-    static constexpr int WIDTH = 256;
-    static constexpr int HEIGHT = 192;
-    static constexpr int SCALE = 4;
+    static constexpr size_t WIDTH = 256;
+    static constexpr size_t HEIGHT = 192;
+    static constexpr size_t SCALE = 4;
 
     static constexpr uint32_t FB_COLOR = makeRGBA8888(0, 255, 0, 255); // green
-    static constexpr uint16_t FB_ADDR =
-        0x0000; // framebuffer base address in SRAM
+    static constexpr uint16_t FB_ADDR = 0x0000; // framebuffer base address in SRAM
 
     std::array<uint32_t, WIDTH * HEIGHT> framebuffer{};
 
-    std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> window{
-        nullptr, SDL_DestroyWindow};
-    std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> renderer{
-        nullptr, SDL_DestroyRenderer};
-    std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> texture{
-        nullptr, SDL_DestroyTexture};
+    std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> window{nullptr, SDL_DestroyWindow};
+    std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> renderer{nullptr,
+                                                                           SDL_DestroyRenderer};
+    std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> texture{nullptr,
+                                                                        SDL_DestroyTexture};
 
   public:
     Screen();
     ~Screen();
     void updateFB();
-    void renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE> &sram,
-                        uint16_t fbAddr = FB_ADDR);
+    void renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE>& sram, uint16_t fbAddr = FB_ADDR);
 };
 
 class InputController {
@@ -127,12 +116,12 @@ class InputController {
     static constexpr uint8_t ARROW_DOWN_MASK = 0x02;
     static constexpr uint8_t ARROW_LEFT_MASK = 0x04;
     static constexpr uint8_t ARROW_RIGHT_MASK = 0x08;
-    std::array<uint8_t, isa::SRAM_SIZE> &sram;
+    std::array<uint8_t, isa::SRAM_SIZE>& sram;
 
   public:
-    explicit InputController(std::array<uint8_t, isa::SRAM_SIZE> &sramRef);
-    void handleKeyboardPress(const SDL_Event &e) const;
-    void handleKeyboardRelease(const SDL_Event &e) const;
+    explicit InputController(std::array<uint8_t, isa::SRAM_SIZE>& sramRef);
+    void handleKeyboardPress(const SDL_Event& event) const;
+    void handleKeyboardRelease(const SDL_Event& event) const;
 };
 
 class InterruptController {
@@ -143,7 +132,7 @@ class InterruptController {
 class DiskController {
     uint32_t addrPtr = 0;
     std::span<uint8_t, isa::DISK_SIZE> disk;
-    std::array<uint8_t, isa::SRAM_SIZE> &sram;
+    std::array<uint8_t, isa::SRAM_SIZE>& sram;
     // disk operations
     static constexpr uint8_t NO_OP = 0x00;
     static constexpr uint8_t READ_BYTE_OP = 0x01;
@@ -158,8 +147,8 @@ class DiskController {
     static constexpr uint8_t WRITE_DONE = 0x08;
 
   public:
-    explicit DiskController(std::array<uint8_t, isa::SRAM_SIZE> &sramRef,
-                            std::vector<uint8_t> &disk);
+    explicit DiskController(std::array<uint8_t, isa::SRAM_SIZE>& sramRef,
+                            std::vector<uint8_t>& disk);
     void handleDiskOperation();
 };
 
@@ -185,8 +174,8 @@ class Board {
     InterruptController interruptController{};
     InputController inputController;
     DiskController diskController;
-    void setKernelRom(std::vector<uint8_t> &rom);
-    void setUserRom(std::vector<uint8_t> &rom);
+    void setKernelRom(std::vector<uint8_t>& rom);
+    void setUserRom(std::vector<uint8_t>& rom);
 
   public:
     // CONSTRUCTOR
@@ -194,24 +183,23 @@ class Board {
     // EXECUTING ROM
     int run();
     // ROM LOADING
-    void loadUserRomFromBinInTxtFile(const std::string &path);
-    void loadUserRomFromHexInTxtFile(const std::string &path);
-    void loadUserRomFromByteVector(std::vector<uint8_t> &rom);
-    void loadKernelRomFromByteVector(std::vector<uint8_t> &rom);
+    void loadUserRomFromBinInTxtFile(const std::string& path);
+    void loadUserRomFromHexInTxtFile(const std::string& path);
+    void loadUserRomFromByteVector(std::vector<uint8_t>& rom);
+    void loadKernelRomFromByteVector(std::vector<uint8_t>& rom);
     // BINARY ROM IO
-    void loadRomFromBinFile(const std::string &path);
-    void saveRomToBinFile(const std::string &path) const;
+    void loadRomFromBinFile(const std::string& path);
+    void saveRomToBinFile(const std::string& path) const;
     // DISK IO
-    void loadDiskFromBinFile(const std::string &path);
-    void saveDiskToBinFile(const std::string &path) const;
+    void loadDiskFromBinFile(const std::string& path);
+    void saveDiskToBinFile(const std::string& path) const;
     // DIAGNOSTICS
     void calcClockSpeedHz(double elapsedMillis);
     void printDiagnostics(bool printMemAsChars) const;
     void printAllRegisterContents() const;
 };
 // helper
-template <typename T>
-void writeToFile(const std::string &filename, const T &data) {
+template <typename T> void writeToFile(const std::string& filename, const T& data) {
     static_assert(
         requires {
             data.data();
@@ -220,10 +208,9 @@ void writeToFile(const std::string &filename, const T &data) {
            "container");
     std::ofstream outFile(filename, std::ios::binary);
     if (!outFile) {
-        throw std::runtime_error("Failed to open file for writing: " +
-                                 filename);
+        throw std::runtime_error("Failed to open file for writing: " + filename);
     }
-    outFile.write(reinterpret_cast<const char *>(data.data()),
+    outFile.write(reinterpret_cast<const char*>(data.data()),
                   static_cast<std::streamsize>(data.size()));
     outFile.close();
 }

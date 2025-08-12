@@ -19,7 +19,7 @@
 
 #ifdef _MSC_VER
 #include <intrin.h>
-#define BSWAP64  _byteswap_uint64
+#define BSWAP64 _byteswap_uint64
 #else
 #define BSWAP64 __builtin_bswap64
 #endif
@@ -27,12 +27,12 @@
 // macros
 // #define DEBUG_MODE
 #ifdef DEBUG_MODE
-#define LOG(x) std::cout << x << std::endl
+#define LOG(x) std::cout << x << "\n"
 #else
 #define LOG(x)
 #endif
 
-#define LOG_ERR(x) std::cerr << x << std::endl
+#define LOG_ERR(x) std::cerr << x << "\n";
 
 // #define ENABLE_KEYBOARD_INTERRUPT
 #ifdef ENABLE_KEYBOARD_INTERRUPT
@@ -42,9 +42,8 @@
 #endif
 
 Board::Board(bool enableDebug)
-    : isEnableDebug(enableDebug),
-      cpu(sram, userRom, kernelRom, disk, enableDebug), inputController(sram),
-      clock(sram), diskController(sram, disk) {}
+    : isEnableDebug(enableDebug), cpu(sram, userRom, kernelRom, disk, enableDebug),
+      inputController(sram), clock(sram), diskController(sram, disk) {}
 
 // Board and loading ROM stuff
 // -------------------------------------------------------
@@ -53,32 +52,28 @@ int Board::run() {
     // init clock & SDL2 timings
     static constexpr int LOOP_SPEED_HZ =
         200'000; // estimated from SDL2 bottleneck, calibrated for 36 MHz
-    static constexpr long long TARGET_CLOCK_SPEED_HZ =
-        36'000'000; // overall target clock speed
-    static constexpr long STEPS_PER_LOOP =
-        TARGET_CLOCK_SPEED_HZ / LOOP_SPEED_HZ;
-    SDL_Event e;
-    clock
-        .resetCycles(); // set clock cycles to zero @ the start of a new process
+    static constexpr long long TARGET_CLOCK_SPEED_HZ = 36'000'000; // overall target clock speed
+    static constexpr long STEPS_PER_LOOP = TARGET_CLOCK_SPEED_HZ / LOOP_SPEED_HZ;
+    SDL_Event event;
+    clock.resetCycles(); // set clock cycles to zero @ the start of a new process
     clock.initMemMappedTime();
 
-    auto startTime =
-        currentTimeMillis(); // for calculating clock speed after running ends
+    auto startTime = currentTimeMillis(); // for calculating clock speed after running ends
     constexpr double TARGET_FRAME_TIME = 1.0 / 60.0; // 60 FPS,
     uint64_t lastFrameTime = SDL_GetPerformanceCounter();
     const uint64_t freq = SDL_GetPerformanceFrequency();
 
     do {
-        while (SDL_PollEvent(&e)) {
-            switch (e.type) {
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
             case SDL_QUIT:
                 exitCode = 130;
                 cpu.isHalted = true;
             case SDL_KEYDOWN:
-                inputController.handleKeyboardPress(e);
+                inputController.handleKeyboardPress(event);
                 break;
             case SDL_KEYUP:
-                inputController.handleKeyboardRelease(e);
+                inputController.handleKeyboardRelease(event);
                 break;
             default:
                 break;
@@ -87,14 +82,15 @@ int Board::run() {
         for (int i = 0; i < STEPS_PER_LOOP; ++i) {
             cpu.step();
             clock.tick();
-            if (cpu.isHalted)
+            if (cpu.isHalted) {
                 break;
+            }
         }
 
         diskController.handleDiskOperation();
 
         const uint64_t now = SDL_GetPerformanceCounter();
-        const double elapsed = static_cast<double>(now - lastFrameTime) / freq;
+        const double elapsed = static_cast<double>(now - lastFrameTime) / static_cast<double>(freq);
 
         if (elapsed >= TARGET_FRAME_TIME) {
             screen.renderSramToFB(sram);
@@ -102,7 +98,7 @@ int Board::run() {
             lastFrameTime = now;
             clock.incMemMappedTime(); // updates VM real-time
         }
-    } while (cpu.isHalted == false);
+    } while (!cpu.isHalted);
 
     auto endTime = currentTimeMillis();
     auto elapsedMillis = static_cast<double>(endTime - startTime);
@@ -112,73 +108,70 @@ int Board::run() {
 }
 void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << std::dec;
-    std::cout << "RESULTS\n========" << std::endl;
-    std::cout << "=====================" << std::endl;
+    std::cout << "RESULTS\n========" << "\n";
+    std::cout << "=====================" << "\n";
     printAllRegisterContents();
-    std::cout << "=====================" << std::endl;
+    std::cout << "=====================" << "\n";
     std::cout << "First 64 bytes of RAM: \n";
     for (int i = 0; i < 64; i++) {
         std::cout << sram.at(i);
     }
-    std::cout << "\n=====================" << std::endl;
+    std::cout << "\n=====================" << "\n";
     uint16_t startingAddr = 0;
     uint16_t numBytes = 100;
     cpu.printSectionOfRam(startingAddr, numBytes, printMemAsChars);
     // startingAddr = 64000;
     // numBytes = isa::MAX_UINT_16BIT - startingAddr;
-    // std::cout << "=====================" << std::endl;
+    // std::cout << "=====================" << "\n";
     // std::cout << "Bottom of stack: \n";
     // cpu.printSectionOfRam(startingAddr, numBytes, true);
-    std::cout << "=====================" << std::endl;
-    std::cout << "FIRST 512 BYTES OF HEAP" << std::endl;
+    std::cout << "=====================" << "\n";
+    std::cout << "FIRST 512 BYTES OF HEAP" << "\n";
     startingAddr = isa::STARTING_HEAP_PTR_VALUE;
     numBytes = 512;
     cpu.printSectionOfRam(startingAddr, numBytes, true);
-    std::cout << std::dec << "Total cycles: " << clock.getCycles() << std::endl;
+    std::cout << std::dec << "Total cycles: " << clock.getCycles() << "\n";
     std::cout << std::dec << "Clock Speed = " << clockSpeedHz << " Hz" << " = "
-              << clockSpeedHz / 1'000'000 << " MHz" << std::endl;
-    std::cout << "=====================" << std::endl;
+              << clockSpeedHz / 1'000'000 << " MHz" << "\n";
+    std::cout << "=====================" << "\n";
     std::cout << "Disk contents: \n";
     for (int i = 0; i < 1024; i++) {
         std::cout << disk.at(i);
         if (i % 128 == 127) {
-            std::cout << std::endl;
+            std::cout << "\n";
         }
     }
-    std::cout << "=====================" << std::endl;
+    std::cout << "=====================" << "\n";
 }
 void Board::printAllRegisterContents() const {
     int cnt = 0;
     std::string printBuffer{};
-    for (const auto &regName : assembly::namedOperandsInOrder) {
+    for (const auto& regName : assembly::namedOperandsInOrder) {
         if (regName.at(0) == 'r' && regName != "ra" && regName != "rv") {
             continue;
         }
         std::ostringstream oss;
-        oss << std::left << std::setw(5) << (regName + ": ") << std::left
-            << std::setw(7)
-            << std::to_string(
-                   cpu.getValInReg(assembly::namedOperandToBinMap.at(regName)));
+        oss << std::left << std::setw(5) << (regName + ": ") << std::left << std::setw(7)
+            << std::to_string(cpu.getValInReg(assembly::namedOperandToBinMap.at(regName)));
         printBuffer += oss.str();
         cnt++;
         if (cnt % 4 == 0) {
-            std::cout << printBuffer << std::endl;
+            std::cout << printBuffer << "\n";
             printBuffer.clear();
         }
     }
     if (!printBuffer.empty()) {
-        std::cout << printBuffer << std::endl;
+        std::cout << printBuffer << "\n";
     }
 }
 
-void Board::loadUserRomFromBinInTxtFile(const std::string &path) {
+void Board::loadUserRomFromBinInTxtFile(const std::string& path) {
     std::ifstream file(path);
     std::vector<uint8_t> byteRom{};
-    std::filesystem::path executableName =
-        std::filesystem::path(path).filename();
+    std::filesystem::path executableName = std::filesystem::path(path).filename();
     if (!file.is_open()) {
-        std::cerr << "ERROR: could not run executable (" << executableName
-                  << " does not exist)" << std::endl;
+        std::cerr << "ERROR: could not run executable (" << executableName << " does not exist)"
+                  << "\n";
         return;
     }
 
@@ -189,12 +182,11 @@ void Board::loadUserRomFromBinInTxtFile(const std::string &path) {
             allBits += c;
         }
     }
-    std::cout << "All bits: " << allBits << std::endl;
+    std::cout << "All bits: " << allBits << "\n";
 
     if (allBits.size() % 8 != 0) {
         std::cout << "ERROR: Bitstream length (" << allBits.size()
-                  << ") is not divisible by 8. File must contain errors."
-                  << std::endl;
+                  << ") is not divisible by 8. File must contain errors." << "\n";
         file.close();
         return;
     }
@@ -203,28 +195,25 @@ void Board::loadUserRomFromBinInTxtFile(const std::string &path) {
     for (size_t i = 0; i < allBits.size(); i += 8) {
         std::string byteStr = allBits.substr(i, 8);
         auto byte = static_cast<uint8_t>(std::stoi(byteStr, nullptr, 2));
-        std::cout << "Byte " << byteNum << ": " << std::to_string(byte)
-                  << std::endl;
+        std::cout << "Byte " << byteNum << ": " << std::to_string(byte) << "\n";
         byteRom.push_back(byte);
         byteNum++;
     }
 
-    std::cout << "------------ROM loaded------------" << std::endl;
+    std::cout << "------------ROM loaded------------" << "\n";
     file.close();
     setUserRom(byteRom);
 }
-void Board::loadUserRomFromHexInTxtFile(const std::string &path) {
+void Board::loadUserRomFromHexInTxtFile(const std::string& path) {
     std::ifstream file(path, std::ios::in | std::ios::binary);
-    std::filesystem::path executableName =
-        std::filesystem::path(path).filename();
+    std::filesystem::path executableName = std::filesystem::path(path).filename();
     if (!file.is_open()) {
-        std::cerr << "ERROR: could not run executable (" << executableName
-                  << " does not exist)" << std::endl;
+        std::cerr << "ERROR: could not run executable (" << executableName << " does not exist)"
+                  << "\n";
         return;
     }
     // read whole file into buffer
-    std::string buffer((std::istreambuf_iterator<char>(file)),
-                       std::istreambuf_iterator<char>());
+    std::string buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
     std::string allDigits;
     allDigits.reserve(buffer.size()); // reserve space
@@ -232,8 +221,9 @@ void Board::loadUserRomFromHexInTxtFile(const std::string &path) {
     bool inComment = false;
     for (char c : buffer) {
         if (inComment) {
-            if (c == '\n')
+            if (c == '\n') {
                 inComment = false;
+            }
             continue;
         }
         if (c == '#') {
@@ -244,12 +234,11 @@ void Board::loadUserRomFromHexInTxtFile(const std::string &path) {
             allDigits += c;
         }
     }
-    std::cout << "All digits (debug): " << allDigits << std::endl;
+    std::cout << "All digits (debug): " << allDigits << "\n";
 
     if (allDigits.size() % 4 != 0) {
         std::cout << "ERROR: Digit stream length (" << allDigits.size()
-                  << ") is not divisible by 4. File must contain errors."
-                  << std::endl;
+                  << ") is not divisible by 4. File must contain errors." << "\n";
         return;
     }
 
@@ -259,38 +248,31 @@ void Board::loadUserRomFromHexInTxtFile(const std::string &path) {
     for (size_t i = 0; i < allDigits.size(); i += 2) {
         std::string byteStr = allDigits.substr(i, 2);
         auto byte = static_cast<uint8_t>(std::stoul(byteStr, nullptr, 16));
-        std::cout << "Byte " << byteNum << ": " << std::to_string(byte)
-                  << std::endl;
+        std::cout << "Byte " << byteNum << ": " << std::to_string(byte) << "\n";
         byteRom.push_back(byte);
         byteNum++;
     }
 
-    std::cout << "------------ROM loaded------------" << std::endl;
+    std::cout << "------------ROM loaded------------" << "\n";
     setUserRom(byteRom);
 }
-void Board::loadUserRomFromByteVector(std::vector<uint8_t> &rom) {
-    setUserRom(rom);
-}
-void Board::setUserRom(std::vector<uint8_t> &rom) {
+void Board::loadUserRomFromByteVector(std::vector<uint8_t>& rom) { setUserRom(rom); }
+void Board::setUserRom(std::vector<uint8_t>& rom) {
     if (rom.size() > isa::ROM_SIZE) {
-        std::cerr << "ERROR: ROM size exceeds " << isa::ROM_SIZE << " bytes"
-                  << std::endl;
+        std::cerr << "ERROR: ROM size exceeds " << isa::ROM_SIZE << " bytes" << "\n";
         return;
     }
     std::ranges::copy(rom, this->userRom.begin());
 }
 
-void Board::loadKernelRomFromByteVector(std::vector<uint8_t> &rom) {
-    setUserRom(rom);
-}
+void Board::loadKernelRomFromByteVector(std::vector<uint8_t>& rom) { setUserRom(rom); }
 
-void Board::loadRomFromBinFile(const std::string &path) {
+void Board::loadRomFromBinFile(const std::string& path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
-    std::filesystem::path executableName =
-        std::filesystem::path(path).filename();
+    std::filesystem::path executableName = std::filesystem::path(path).filename();
     if (!file.is_open()) {
-        std::cerr << "ERROR: could not run executable (" << executableName
-                  << " does not exist)" << std::endl;
+        std::cerr << "ERROR: could not run executable (" << executableName << " does not exist)"
+                  << "\n";
         return;
     }
 
@@ -302,7 +284,7 @@ void Board::loadRomFromBinFile(const std::string &path) {
     file.seekg(0, std::ios::beg);
 
     std::vector<uint8_t> buffer(size);
-    if (!file.read(reinterpret_cast<char *>(buffer.data()), size)) {
+    if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
         LOG_ERR("ERROR: Failed to read entire file.");
         return;
     }
@@ -311,14 +293,12 @@ void Board::loadRomFromBinFile(const std::string &path) {
     std::ranges::copy(buffer, userRom.begin());
 }
 
-void Board::saveRomToBinFile(const std::string &path) const {
-    writeToFile(path, userRom);
-}
+void Board::saveRomToBinFile(const std::string& path) const { writeToFile(path, userRom); }
 
-void Board::loadDiskFromBinFile(const std::string &path) {
+void Board::loadDiskFromBinFile(const std::string& path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file) {
-        std::cout << "ERROR: Could not open file" << std::endl;
+        std::cout << "ERROR: Could not open file" << "\n";
         return;
     }
 
@@ -330,7 +310,7 @@ void Board::loadDiskFromBinFile(const std::string &path) {
     file.seekg(0, std::ios::beg);
 
     std::vector<uint8_t> buffer(size);
-    if (!file.read(reinterpret_cast<char *>(buffer.data()), size)) {
+    if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
         LOG_ERR("ERROR: Failed to read entire file.");
         return;
     }
@@ -339,19 +319,15 @@ void Board::loadDiskFromBinFile(const std::string &path) {
     std::ranges::copy(buffer, disk.begin());
 }
 
-void Board::saveDiskToBinFile(const std::string &path) const {
-    writeToFile(path, disk);
-}
+void Board::saveDiskToBinFile(const std::string& path) const { writeToFile(path, disk); }
 
 void Board::calcClockSpeedHz(double elapsedMillis) {
-    clockSpeedHz =
-        static_cast<double>(clock.getCycles()) / (elapsedMillis / 1000);
+    clockSpeedHz = static_cast<double>(clock.getCycles()) / (elapsedMillis / 1000);
 }
 
-void Board::setKernelRom(std::vector<uint8_t> &rom) {
+void Board::setKernelRom(std::vector<uint8_t>& rom) {
     if (rom.size() > isa::ROM_SIZE) {
-        std::cerr << "ERROR: ROM size exceeds " << isa::ROM_SIZE << " bytes"
-                  << std::endl;
+        std::cerr << "ERROR: ROM size exceeds " << isa::ROM_SIZE << " bytes" << "\n";
         return;
     }
     std::ranges::copy(rom, this->kernelRom.begin());
@@ -359,12 +335,11 @@ void Board::setKernelRom(std::vector<uint8_t> &rom) {
 
 // CPU
 // ----------------------------------------------------------------------------
-CPU16::CPU16(std::array<uint8_t, isa::SRAM_SIZE> &sram,
-             std::array<uint8_t, isa::ROM_SIZE> &userRom,
-             std::array<uint8_t, isa::ROM_SIZE> &kernelRom,
-             std::vector<uint8_t> &disk, bool enableDebug)
-    : isEnableDebug(enableDebug), sram(sram), userRom(userRom),
-      kernelRom(kernelRom), activeRom(this->userRom), disk(disk) {}
+CPU16::CPU16(std::array<uint8_t, isa::SRAM_SIZE>& sram, std::array<uint8_t, isa::ROM_SIZE>& userRom,
+             std::array<uint8_t, isa::ROM_SIZE>& kernelRom, std::vector<uint8_t>& disk,
+             bool enableDebug)
+    : isEnableDebug(enableDebug), sram(sram), userRom(userRom), kernelRom(kernelRom),
+      activeRom(this->userRom), disk(disk) {}
 
 // CPU16 flow of execution
 void CPU16::step() {
@@ -381,9 +356,7 @@ void CPU16::step() {
 // Interrupt interface
 void CPU16::setActiveRomToUser() { activeRom = this->userRom; }
 void CPU16::setActiveRomToKernel() { activeRom = this->kernelRom; }
-void CPU16::setTrapReturnAddress(uint16_t trapRetAddr) {
-    this->trapRetAddr.set(trapRetAddr);
-}
+void CPU16::setTrapReturnAddress(uint16_t trapRetAddr) { this->trapRetAddr.set(trapRetAddr); }
 
 // fetch
 uint64_t CPU16::fetchInstruction() const {
@@ -405,8 +378,7 @@ void CPU16::execute(parts::Instruction instr) {
     performOp(instr, src1Val, src2Val);
 }
 // carry out execution and writeback (when applicable)
-void CPU16::performOp(const parts::Instruction &instr, uint16_t src1Val,
-                      uint16_t src2Val) {
+void CPU16::performOp(const parts::Instruction& instr, uint16_t src1Val, uint16_t src2Val) {
     uint16_t op14 = instr.opCode14;
     uint16_t dest = instr.dest;
     bool const isArith = op14 < 0x0010;
@@ -423,13 +395,11 @@ void CPU16::performOp(const parts::Instruction &instr, uint16_t src1Val,
         doCtrlFlow(instr, src1Val, src2Val);
     } else {
         LOG_ERR("ERROR: Unknown op14, trace to performOp | op14: "
-                << std::hex << std::setw(4) << std::setfill('0') << op14
-                << std::endl);
-        LOG_ERR("op14: " << std::to_string(op14) << std::endl);
+                << std::hex << std::setw(4) << std::setfill('0') << op14 << "\n");
+        LOG_ERR("op14: " << std::to_string(op14) << "\n");
     }
 }
-void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val,
-                    uint16_t dest) {
+void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest) {
     uint16_t destVal = 0;
     // note flag updates not fully good to go
     auto thisOp = static_cast<isa::Opcode_E>(op14);
@@ -440,8 +410,8 @@ void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val,
         flagReg.setCarry(result > 0xFFFF);
         flagReg.setZero(destVal == 0);
         flagReg.setNegative((destVal & 0x8000) != 0);
-        bool overflow = (~(src1Val ^ src2Val) & (src1Val ^ destVal)) & 0x8000;
-        flagReg.setOverflow(overflow != 0);
+        auto overflow = static_cast<bool>((~(src1Val ^ src2Val) & (src1Val ^ destVal)) & 0x8000);
+        flagReg.setOverflow(overflow);
         break;
     }
     case isa::Opcode_E::SUB: {
@@ -462,14 +432,16 @@ void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val,
         break;
     }
     case (isa::Opcode_E::DIV): {
-        if (src2Val == 0)
+        if (src2Val == 0) {
             src2Val = 1; // prevent divide by zero
+        }
         destVal = src1Val / src2Val;
         break;
     }
     case (isa::Opcode_E::MOD): {
-        if (src2Val == 0)
+        if (src2Val == 0) {
             src2Val = 1; // prevent divide by zero
+        }
         destVal = src1Val % src2Val;
         break;
     }
@@ -518,14 +490,13 @@ void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val,
         break;
     }
     default: {
-        LOG_ERR("ERROR: Unknown op14" << std::endl);
+        LOG_ERR("ERROR: Unknown op14" << "\n");
         break;
     }
     }
     writeback(dest, destVal);
 }
-void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val,
-                   uint16_t dest) {
+void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t dest) {
     bool cond = false;
     auto thisOp = static_cast<isa::Opcode_E>(op14);
     if (thisOp < isa::Opcode_E::Z) {
@@ -539,23 +510,19 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val,
             break;
         }
         case (isa::Opcode_E::LT): {
-            cond =
-                static_cast<int16_t>(src1Val) < static_cast<int16_t>(src2Val);
+            cond = static_cast<int16_t>(src1Val) < static_cast<int16_t>(src2Val);
             break;
         }
         case (isa::Opcode_E::LE): {
-            cond =
-                static_cast<int16_t>(src1Val) <= static_cast<int16_t>(src2Val);
+            cond = static_cast<int16_t>(src1Val) <= static_cast<int16_t>(src2Val);
             break;
         }
         case (isa::Opcode_E::GT): {
-            cond =
-                static_cast<int16_t>(src1Val) > static_cast<int16_t>(src2Val);
+            cond = static_cast<int16_t>(src1Val) > static_cast<int16_t>(src2Val);
             break;
         }
         case (isa::Opcode_E::GE): {
-            cond =
-                static_cast<int16_t>(src1Val) >= static_cast<int16_t>(src2Val);
+            cond = static_cast<int16_t>(src1Val) >= static_cast<int16_t>(src2Val);
             break;
         }
         case (isa::Opcode_E::ULT): {
@@ -575,7 +542,7 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val,
             break;
         }
         default: {
-            LOG_ERR("ERROR: Unknown op14" << std::endl);
+            LOG_ERR("ERROR: Unknown op14");
             break;
         }
         }
@@ -604,13 +571,12 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val,
             flagReg.setNegative(false);
             break;
         default:
-            LOG_ERR("ERROR: Unknown op14" << std::endl);
+            LOG_ERR("ERROR: Unknown op14");
             break;
         }
     }
 }
-void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val,
-                        uint16_t src2Val) {
+void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val) {
     uint16_t op14 = instr.opCode14;
     uint16_t dest = instr.dest;
     auto thisOp = static_cast<isa::Opcode_E>(op14);
@@ -646,14 +612,12 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val,
     case (isa::Opcode_E::PUSH): {
         stackPtr.set(stackPtr.val - 2);
         writeWordToRam(stackPtr.val, src1Val);
-        LOG("DEBUG: pushing " << static_cast<int>(src1Val) << " to "
-                              << stackPtr.val);
+        LOG("DEBUG: pushing " << static_cast<int>(src1Val) << " to " << stackPtr.val);
         break;
     }
     case (isa::Opcode_E::POP): {
         src1Val = fetchWordFromRam(stackPtr.val);
-        LOG("DEBUG: popping " << src1Val << " from " << stackPtr.val << " to "
-                              << dest);
+        LOG("DEBUG: popping " << src1Val << " from " << stackPtr.val << " to " << dest);
         stackPtr.set(stackPtr.val + 2);
         writeback(dest, src1Val);
         break;
@@ -679,8 +643,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val,
         }
         // instr loops to copy bytes in order
         if (isInMemcpyLoop) {
-            LOG("DEBUG: MEMCPY LOOP" << std::endl
-                                     << "tickWaitStopPt: " << tickWaitCnt);
+            LOG("DEBUG: MEMCPY LOOP" << "\n" << "tickWaitStopPt: " << tickWaitCnt);
             uint16_t startingSrcAddr = src1Val;
             uint16_t startingDestAddr = getValInReg(dest);
             writeByteToRam(startingDestAddr + tickWaitCnt,
@@ -701,12 +664,11 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val,
         break;
     }
     case (isa::Opcode_E::SB): {
-        writeByteToRam(getValInReg(dest) + src1Val,
-                       static_cast<uint8_t>(src2Val));
+        writeByteToRam(getValInReg(dest) + src1Val, static_cast<uint8_t>(src2Val));
         break;
     }
     case (isa::Opcode_E::LWROM): {
-        const uint16_t &val = fetchWordFromRom(src1Val + src2Val);
+        const uint16_t& val = fetchWordFromRom(src1Val + src2Val);
         writeback(dest, val);
         break;
     }
@@ -724,8 +686,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val,
         }
         // instr loops to copy bytes in order
         if (isInMemcpyLoop) {
-            LOG("DEBUG: ROMCPY LOOP" << std::endl
-                                     << "tickWaitStopPt: " << tickWaitCnt);
+            LOG("DEBUG: ROMCPY LOOP" << "\n" << "tickWaitStopPt: " << tickWaitCnt);
             uint16_t startingSrcAddr = src1Val;
             uint16_t startingDestAddr = getValInReg(dest);
             writeByteToRam(startingDestAddr + tickWaitCnt,
@@ -742,24 +703,23 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val,
         break;
     }
     case (isa::Opcode_E::MULTS): {
-        const uint16_t val =
-            static_cast<int16_t>(src1Val) * static_cast<int16_t>(src2Val);
+        const uint16_t val = static_cast<int16_t>(src1Val) * static_cast<int16_t>(src2Val);
         writeback(dest, val);
         break;
     }
     case (isa::Opcode_E::DIVS): {
-        if (src2Val == 0)
+        if (src2Val == 0) {
             src2Val = isa::MAX_UINT16_T; // prevent divide by zero
-        const uint16_t val =
-            static_cast<int16_t>(src1Val) / static_cast<int16_t>(src2Val);
+        }
+        const uint16_t val = static_cast<int16_t>(src1Val) / static_cast<int16_t>(src2Val);
         writeback(dest, val);
         break;
     }
     case (isa::Opcode_E::MODS): {
-        if (src2Val == 0)
+        if (src2Val == 0) {
             src2Val = isa::MAX_UINT16_T; // prevent divide by zero
-        const uint16_t val =
-            static_cast<int16_t>(src1Val) % static_cast<int16_t>(src2Val);
+        }
+        const uint16_t val = static_cast<int16_t>(src1Val) % static_cast<int16_t>(src2Val);
         writeback(dest, val);
         break;
     }
@@ -772,8 +732,9 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val,
         break;
     }
     case (isa::Opcode_E::DIV_FPT): {
-        if (src2Val == 0)
+        if (src2Val == 0) {
             src2Val = isa::MAX_UINT16_T; // prevent divide by zero
+        }
         const fixpt8_8_t numer(src1Val);
         const fixpt8_8_t denom(src2Val);
         const int32_t temp = (static_cast<int32_t>(numer.val) << 8) / denom.val;
@@ -782,17 +743,16 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val,
         break;
     }
     case (isa::Opcode_E::MOD_FPT): {
-        const int32_t dividend =
-            static_cast<int16_t>(src1Val); // 8.8 fixed-point
-        const int32_t divisor =
-            static_cast<int16_t>(src2Val); // 8.8 fixed-point
+        const int32_t dividend = static_cast<int16_t>(src1Val); // 8.8 fixed-point
+        const int32_t divisor = static_cast<int16_t>(src2Val);  // 8.8 fixed-point
 
         int32_t quotient = dividend / divisor; // integer division (floor)
-        int32_t remainder = dividend - quotient * divisor;
+        int32_t remainder = dividend - (quotient * divisor);
 
         // Adjust remainder to be positive mod result
-        if ((remainder < 0 && divisor > 0) || (remainder > 0 && divisor < 0))
+        if ((remainder < 0 && divisor > 0) || (remainder > 0 && divisor < 0)) {
             remainder += divisor;
+        }
 
         const auto val = static_cast<uint16_t>(remainder);
         writeback(dest, val);
@@ -800,18 +760,17 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val,
     }
 
     default: {
-        LOG_ERR("ERROR: Unknown op14" << std::endl);
+        LOG_ERR("ERROR: Unknown op14");
     }
     }
 }
-void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val,
-                       uint16_t src2Val) {
+void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2Val) {
     uint16_t op14 = instr.opCode14;
     uint16_t dest = instr.dest;
     const auto thisOp = static_cast<isa::Opcode_E>(op14);
     switch (thisOp) {
     case (isa::Opcode_E::CALL): {
-        LOG("DEBUG: CALL" << std::endl);
+        LOG("DEBUG: CALL" << "\n");
 
         // Push return address
         stackPtr -= 2;
@@ -837,10 +796,9 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val,
 
         // load the old FP and return address using the current frame's base
         // address
-        uint16_t oldFP =
-            fetchWordFromRam(currentFrameBaseAddr); // [Current FP] = old FP
-        uint16_t retAddr = fetchWordFromRam(
-            currentFrameBaseAddr + 2); // [Current FP + 2] = return addr
+        uint16_t oldFP = fetchWordFromRam(currentFrameBaseAddr); // [Current FP] = old FP
+        uint16_t retAddr =
+            fetchWordFromRam(currentFrameBaseAddr + 2); // [Current FP + 2] = return addr
 
         // restore the frame Pointer to the caller's FP
         framePtr.set(oldFP);
@@ -851,8 +809,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val,
 
         // debug
         LOG(std::dec << "DEBUG: fetched return address = " << retAddr
-                     << " from FP+2 = "
-                     << static_cast<int>(currentFrameBaseAddr) + 2 << "\n");
+                     << " from FP+2 = " << static_cast<int>(currentFrameBaseAddr) + 2 << "\n");
 
         // jump back to the caller
         jumpTo(retAddr);
@@ -864,33 +821,39 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val,
         break;
     }
     case (isa::Opcode_E::JCOND_Z): {
-        if (flagReg.zero)
+        if (flagReg.zero) {
             jumpTo(dest);
+        }
         break;
     }
     case (isa::Opcode_E::JCOND_NZ): {
-        if (!flagReg.zero)
+        if (!flagReg.zero) {
             jumpTo(dest);
+        }
         break;
     }
     case (isa::Opcode_E::JCOND_NEG): {
-        if (flagReg.negative)
+        if (flagReg.negative) {
             jumpTo(dest);
+        }
         break;
     }
     case (isa::Opcode_E::JCOND_NNEG): {
-        if (!flagReg.negative)
+        if (!flagReg.negative) {
             jumpTo(dest);
+        }
         break;
     }
     case (isa::Opcode_E::JCOND_POS): {
-        if (!flagReg.negative && !flagReg.zero)
+        if (!flagReg.negative && !flagReg.zero) {
             jumpTo(dest);
+        }
         break;
     }
     case (isa::Opcode_E::JCOND_NPOS): {
-        if (flagReg.negative || flagReg.zero)
+        if (flagReg.negative || flagReg.zero) {
             jumpTo(dest);
+        }
         break;
     }
     case (isa::Opcode_E::NOP): {
@@ -913,15 +876,15 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val,
         break;
     }
     default: {
-        LOG_ERR("ERROR: Unknown op14" << std::endl);
+        LOG_ERR("ERROR: Unknown op14" << "\n");
     }
     }
 }
 
 // gen purpose
 void CPU16::writeback(uint16_t dest, uint16_t val) {
-    LOG("DEBUG: writeback: " << std::hex << std::setw(4) << std::setfill('0')
-                             << dest << " " << val);
+    LOG("DEBUG: writeback: " << std::hex << std::setw(4) << std::setfill('0') << dest << " "
+                             << val);
     if (dest < NUM_GEN_REGS) {
         genRegs[dest].set(val);
     } else if (dest < NUM_GEN_REGS + NUM_IO) {
@@ -933,9 +896,8 @@ void CPU16::writeback(uint16_t dest, uint16_t val) {
     } else if (dest == 0x001F) {
         pc = val;
     } else {
-        LOG_ERR("ERROR: Unknown dest when writing back: "
-                << std::hex << std::setw(4) << std::setfill('0') << dest
-                << std::endl);
+        LOG_ERR("ERROR: Unknown dest when writing back: " << std::hex << std::setw(4)
+                                                          << std::setfill('0') << dest << "\n");
     }
 }
 uint16_t CPU16::getValInReg(uint16_t reg) const {
@@ -951,7 +913,7 @@ uint16_t CPU16::getValInReg(uint16_t reg) const {
     } else if (reg < NUM_GEN_REGS + NUM_IO) {
         regVal = inps[reg - NUM_GEN_REGS];
     } else {
-        LOG_ERR("ERROR: Unknown dest when getValInReg:" << reg << std::endl);
+        LOG_ERR("ERROR: Unknown dest when getValInReg:" << reg << "\n");
     }
     return regVal;
 }
@@ -959,12 +921,9 @@ uint16_t CPU16::getValInReg(uint16_t reg) const {
 inline uint16_t CPU16::fetchByteAsWordFromRam(uint16_t addr) const {
     return static_cast<uint16_t>(sram[addr]);
 }
-inline uint8_t CPU16::fetchByteFromRam(uint16_t addr) const {
-    return sram[addr];
-}
+inline uint8_t CPU16::fetchByteFromRam(uint16_t addr) const { return sram[addr]; }
 inline uint16_t CPU16::fetchWordFromRam(uint16_t addr) const {
-    uint16_t word = static_cast<uint16_t>(sram[addr]) |
-                    static_cast<uint16_t>(sram[addr + 1] << 8);
+    uint16_t word = static_cast<uint16_t>(sram[addr]) | static_cast<uint16_t>(sram[addr + 1] << 8);
     return word;
 }
 inline std::array<uint8_t, 2> CPU16::convertWordToBytePair(uint16_t val) {
@@ -976,41 +935,34 @@ inline std::array<uint8_t, 2> CPU16::convertWordToBytePair(uint16_t val) {
 inline void CPU16::writeWordToRam(uint16_t addr, uint16_t val) {
     sram[addr] = static_cast<uint8_t>(val & 0xFF);
     sram[addr + 1] = static_cast<uint8_t>((val >> 8) & 0xFF);
-    LOG(std::dec << "DEBUG: wrote word to addr " << addr << ", val:" << val
-                 << std::endl
-                 << std::hex);
+    LOG(std::dec << "DEBUG: wrote word to addr " << addr << ", val:" << val << "\n" << std::hex);
 }
 void CPU16::writeByteToRam(uint16_t addr, uint8_t val) {
     sram[addr] = val;
-    LOG(std::dec << "DEBUG: wrote byte to addr " << addr << ", val:" << val
-                 << std::endl
-                 << std::hex);
+    LOG(std::dec << "DEBUG: wrote byte to addr " << addr << ", val:" << val << "\n" << std::hex);
 }
-void CPU16::printSectionOfRam(uint16_t &startingAddr, uint16_t &numBytes,
-                              bool asChar) const {
-    std::cout << "Starting Address: " << startingAddr
-              << " | # bytes read: " << numBytes << std::endl;
-    std::cout << "Leading word @ starting addr: "
-              << (int16_t)fetchWordFromRam(startingAddr) << "\n";
+void CPU16::printSectionOfRam(uint16_t& startingAddr, uint16_t& numBytes, bool asChar) const {
+    std::cout << "Starting Address: " << startingAddr << " | # bytes read: " << numBytes << "\n";
+    std::cout << "Leading word @ starting addr: " << (int16_t)fetchWordFromRam(startingAddr)
+              << "\n";
     for (uint16_t i = 0; i < numBytes; i++) {
-        if (asChar)
+        if (asChar) {
             std::cout << sram.at(startingAddr + i);
-        else
+        } else {
             std::cout << static_cast<int>(sram.at(startingAddr + i));
+        }
     }
-    std::cout << std::endl;
+    std::cout << "\n";
 }
 
 // ROM
 inline uint16_t CPU16::fetchByteAsWordFromRom(uint16_t addr) const {
     return static_cast<uint16_t>(activeRom[addr]);
 }
-inline uint8_t CPU16::fetchByteFromRom(uint16_t addr) const {
-    return activeRom[addr];
-}
+inline uint8_t CPU16::fetchByteFromRom(uint16_t addr) const { return activeRom[addr]; }
 inline uint16_t CPU16::fetchWordFromRom(uint16_t addr) const {
-    uint16_t word = static_cast<uint16_t>(activeRom[addr]) |
-                    static_cast<uint16_t>(activeRom[addr + 1] << 8);
+    uint16_t word =
+        static_cast<uint16_t>(activeRom[addr]) | static_cast<uint16_t>(activeRom[addr + 1] << 8);
     return word;
 }
 void CPU16::jumpTo(uint16_t destAddrInRom) {
@@ -1021,26 +973,23 @@ void CPU16::jumpTo(uint16_t destAddrInRom) {
 // Screen
 Screen::Screen() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        std::cerr << "SDL Init Error: " << SDL_GetError() << std::endl;
+        std::cerr << "SDL Init Error: " << SDL_GetError() << "\n";
     }
-    window.reset(SDL_CreateWindow("Bear16 Display", SDL_WINDOWPOS_CENTERED,
-                                  SDL_WINDOWPOS_CENTERED, WIDTH * SCALE,
-                                  HEIGHT * SCALE, SDL_WINDOW_SHOWN));
-    renderer.reset(
-        SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_PRESENTVSYNC));
+    window.reset(SDL_CreateWindow("Bear16 Display", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                  WIDTH * SCALE, HEIGHT * SCALE, SDL_WINDOW_SHOWN));
+    renderer.reset(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_PRESENTVSYNC));
     texture.reset(SDL_CreateTexture(renderer.get(), SDL_PIXELFORMAT_RGBA8888,
-                                    SDL_TEXTUREACCESS_STREAMING, WIDTH,
-                                    HEIGHT));
+                                    SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT));
 }
 Screen::~Screen() { SDL_Quit(); }
 void Screen::updateFB() {
-    uint32_t *fbPtr = framebuffer.data();
+    uint32_t* fbPtr = framebuffer.data();
     SDL_UpdateTexture(texture.get(), nullptr, fbPtr, WIDTH * sizeof(uint32_t));
     SDL_RenderClear(renderer.get());
     SDL_RenderCopy(renderer.get(), texture.get(), nullptr, nullptr);
     SDL_RenderPresent(renderer.get());
 }
-void Screen::renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE> &sram,
+void Screen::renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE>& sram,
                             const uint16_t fbAddr) {
     // we have WIDTH * HEIGHT pixels total
     // each byte in SRAM encodes 8 horizontal pixels (MSB first)
@@ -1065,12 +1014,11 @@ void Screen::renderSramToFB(const std::array<uint8_t, isa::SRAM_SIZE> &sram,
     }
 }
 
-InputController::InputController(std::array<uint8_t, isa::SRAM_SIZE> &sramRef)
-    : sram(sramRef) {}
+InputController::InputController(std::array<uint8_t, isa::SRAM_SIZE>& sramRef) : sram(sramRef) {}
 
-void InputController::handleKeyboardPress(const SDL_Event &e) const {
+void InputController::handleKeyboardPress(const SDL_Event& event) const {
     // Only process key presses with ASCII range (0-127)
-    const int keycode = e.key.keysym.sym;
+    const int keycode = event.key.keysym.sym;
     if (keycode >= 0 && keycode < 128) {
         const auto charVal = static_cast<uint8_t>(keycode);
         sram[isa::KEY_IO_MEM_LOC] = charVal;
@@ -1101,8 +1049,8 @@ void InputController::handleKeyboardPress(const SDL_Event &e) const {
         break;
     }
 }
-void InputController::handleKeyboardRelease(const SDL_Event &e) const {
-    int keycode = e.key.keysym.sym;
+void InputController::handleKeyboardRelease(const SDL_Event& event) const {
+    int keycode = event.key.keysym.sym;
     if (keycode == SDLK_LSHIFT || keycode == SDLK_RSHIFT) {
         sram[isa::SHIFT_KEY_IO_MEM_LOC] = 0x00;
         HANDLE_KBD_INTERRUPT();
@@ -1129,8 +1077,8 @@ void InputController::handleKeyboardRelease(const SDL_Event &e) const {
 // Interrupt Controller
 void InterruptController::handleKeyboardInterrupt() {}
 // Disk Controller
-DiskController::DiskController(std::array<uint8_t, isa::SRAM_SIZE> &sramRef,
-                               std::vector<uint8_t> &disk)
+DiskController::DiskController(std::array<uint8_t, isa::SRAM_SIZE>& sramRef,
+                               std::vector<uint8_t>& disk)
     : disk(disk), sram(sramRef) {}
 
 void DiskController::handleDiskOperation() {
@@ -1142,7 +1090,7 @@ void DiskController::handleDiskOperation() {
               (static_cast<uint32_t>(sram[isa::DISK_ADDR_HI]) << 16);
 
     if (addrPtr >= isa::DISK_SIZE) {
-        LOG_ERR("ERROR: Disk address out of bounds: " << addrPtr << std::endl);
+        LOG_ERR("ERROR: Disk address out of bounds: " << addrPtr << "\n");
         sram[isa::DISK_STATUS] |= OVERFLOW_ERROR;
         return;
     }
@@ -1156,8 +1104,7 @@ void DiskController::handleDiskOperation() {
         sram[isa::DISK_OP] = NO_OP; // reset/clear operation mem LOC
     } else if (sram[isa::DISK_OP] == READ_WORD_OP) {
         if (addrPtr + 1 >= isa::DISK_SIZE) {
-            LOG_ERR("ERROR: Disk word access out of bounds: " << addrPtr
-                                                              << std::endl);
+            LOG_ERR("ERROR: Disk word access out of bounds: " << addrPtr << "\n");
             sram[isa::DISK_STATUS] |= OVERFLOW_ERROR;
             return;
         }
@@ -1167,8 +1114,7 @@ void DiskController::handleDiskOperation() {
         sram[isa::DISK_OP] = NO_OP; // reset/clear operation mem LOC
     } else if (sram[isa::DISK_OP] == WRITE_WORD_OP) {
         if (addrPtr + 1 >= isa::DISK_SIZE) {
-            LOG_ERR("ERROR: Disk word access out of bounds: " << addrPtr
-                                                              << std::endl);
+            LOG_ERR("ERROR: Disk word access out of bounds: " << addrPtr << "\n");
             sram[isa::DISK_STATUS] |= OVERFLOW_ERROR;
             return;
         }
@@ -1179,8 +1125,7 @@ void DiskController::handleDiskOperation() {
     } else if (sram[isa::DISK_OP] == RESET_STATUS_OP) {
         sram[isa::DISK_STATUS] = 0; // reset
     } else {
-        LOG_ERR("ERROR: Unknown disk operation: " << sram[isa::DISK_OP]
-                                                  << std::endl);
+        LOG_ERR("ERROR: Unknown disk operation: " << sram[isa::DISK_OP] << "\n");
         sram[isa::DISK_STATUS] |= UNKNOWN_OP_ERROR;
     }
 }
@@ -1189,6 +1134,6 @@ void DiskController::handleDiskOperation() {
 uint64_t currentTimeMillis() {
     using namespace std::chrono;
     auto now = system_clock::now();
-    auto ms = duration_cast<milliseconds>(now.time_since_epoch()).count();
-    return static_cast<uint64_t>(ms);
+    auto millis = duration_cast<milliseconds>(now.time_since_epoch()).count();
+    return static_cast<uint64_t>(millis);
 }

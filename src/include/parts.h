@@ -11,7 +11,7 @@
 namespace parts {
 class Clock {
     // reference to board memory
-    std::array<uint8_t, isa::SRAM_SIZE> &sram;
+    std::array<uint8_t, isa::SRAM_SIZE>& sram;
     // cum cycles
     uint64_t cycles = 0;
     // values for mem-mapped time
@@ -24,8 +24,8 @@ class Clock {
     uint16_t years = 0;
     uint16_t continuous_frames = 0;
     // map for days in months
-    static constexpr std::array<uint8_t, 12> daysInMonths = {
-        31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    static constexpr std::array<uint8_t, 12> daysInMonths = {31, 28, 31, 30, 31, 30,
+                                                             31, 31, 30, 31, 30, 31};
 
   public:
     void initMemMappedTime();
@@ -33,7 +33,7 @@ class Clock {
     [[nodiscard]] uint64_t getCycles() const { return cycles; }
     void resetCycles() { cycles = 0; }
     bool frozen = false;
-    explicit Clock(std::array<uint8_t, isa::SRAM_SIZE> &sram);
+    explicit Clock(std::array<uint8_t, isa::SRAM_SIZE>& sram);
     void freeze();
     void unfreeze();
     void tick();
@@ -63,7 +63,7 @@ class FlagRegister {
     void setCarry(bool carry);
     void setZero(bool zero);
     void setNegative(bool neg);
-    void setOverflow(bool v);
+    void setOverflow(bool over);
     void reset();
     FlagRegister() = default;
 };

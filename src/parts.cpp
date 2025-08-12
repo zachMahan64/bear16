@@ -13,16 +13,15 @@ void Clock::initMemMappedTime() {
 
     // get system clock time (local time)
     const std::time_t now = std::time(nullptr);
-    const std::tm *localTime = std::localtime(&now);
+    const std::tm* localTime = std::localtime(&now);
 
     // Set clock internal-state
     seconds = static_cast<uint8_t>(localTime->tm_sec);
     minutes = static_cast<uint8_t>(localTime->tm_min);
     hours = static_cast<uint8_t>(localTime->tm_hour);
     days = static_cast<uint8_t>(localTime->tm_mday);
-    months = static_cast<uint8_t>(localTime->tm_mon); // tm_mon: 0 = Jan
-    years = static_cast<uint16_t>(localTime->tm_year +
-                                  1900); // tm_year: years since 1900
+    months = static_cast<uint8_t>(localTime->tm_mon);         // tm_mon: 0 = Jan
+    years = static_cast<uint16_t>(localTime->tm_year + 1900); // tm_year: years since 1900
 
     // set mem-mapped values
     sram[isa::SECONDS_PTR_MEM_LOC] = seconds;
@@ -33,8 +32,7 @@ void Clock::initMemMappedTime() {
 
     // for 16-bit year, store as little-endian
     sram[isa::YEARS_PTR_MEM_LOC] = static_cast<uint8_t>(years & 0xFF);
-    sram[isa::YEARS_PTR_MEM_LOC + 1] =
-        static_cast<uint8_t>((years >> 8) & 0xFF);
+    sram[isa::YEARS_PTR_MEM_LOC + 1] = static_cast<uint8_t>((years >> 8) & 0xFF);
 }
 void Clock::incMemMappedTime() {
     ++frames;
@@ -80,34 +78,35 @@ void Clock::incMemMappedTime() {
         }
     }
 }
-Clock::Clock(std::array<uint8_t, isa::SRAM_SIZE> &sram) : sram(sram) {}
+Clock::Clock(std::array<uint8_t, isa::SRAM_SIZE>& sram) : sram(sram) {}
 void Clock::freeze() { frozen = true; }
 void Clock::unfreeze() { frozen = false; }
 void Clock::tick() {
-    if (frozen)
+    if (frozen) {
         return;
+    }
     ++cycles;
 }
 void Clock::tick(int delayMillis) {
-    if (frozen)
+    if (frozen) {
         return;
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(delayMillis));
     ++cycles;
 }
 
 // instr
 Instruction::Instruction(uint64_t raw) {
-    opcode = (raw >> 48) & 0xFFFFu;
-    dest = (raw >> 32) & 0xFFFFu;
-    src1 = (raw >> 16) & 0xFFFFu;
-    src2 = raw & 0xFFFFu;
+    opcode = (raw >> 48) & 0xFFFFU;
+    dest = (raw >> 32) & 0xFFFFU;
+    src1 = (raw >> 16) & 0xFFFFU;
+    src2 = raw & 0xFFFFU;
     immFlags = opcode >> 14;
     opCode14 = opcode & 0x3FFF;
     val = raw;
 }
 uint64_t Instruction::toRaw() const {
-    return (static_cast<uint64_t>(opcode) << 48) |
-           (static_cast<uint64_t>(dest) << 32) |
+    return (static_cast<uint64_t>(opcode) << 48) | (static_cast<uint64_t>(dest) << 32) |
            (static_cast<uint64_t>(src1) << 16) | static_cast<uint64_t>(src2);
 }
 
@@ -119,7 +118,7 @@ void FlagRegister::setNegative(const bool neg) { negative = neg; }
 void FlagRegister::setOverflow(const bool v) { overflow = v; }
 
 // genRegister definitions
-void GenRegister::set(uint16_t v) { val = v; }
+void GenRegister::set(uint16_t value) { val = value; }
 
 void GenRegister::operator-=(uint16_t decAmount) { val -= decAmount; }
 

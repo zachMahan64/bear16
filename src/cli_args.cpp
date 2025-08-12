@@ -52,14 +52,14 @@ std::unordered_set<cli_flag> parseFlags(const std::vector<std::string>& args,
         if (arg == "-ar" || arg == "-ra") {
             parsedFlags.insert(cli_flag::assemble);
             parsedFlags.insert(cli_flag::run);
-        } else if (stringToArgFlagMap.count(arg)) {
+        } else if (stringToArgFlagMap.contains(arg)) {
             parsedFlags.insert(stringToArgFlagMap.at(arg));
         }
     }
 
     if (parsedFlags.size() > 1 &&
-        !(parsedFlags.size() == 2 && parsedFlags.contains(cli_flag::assemble) &&
-          parsedFlags.contains(cli_flag::run))) {
+        (parsedFlags.size() != 2 || !parsedFlags.contains(cli_flag::assemble) ||
+         !parsedFlags.contains(cli_flag::run))) {
         cliErrorState.insert(cli_error_e::multiple_incompatible_flags);
     }
 
@@ -102,7 +102,7 @@ MentionedFiles parseArgsForMentionedFiles(const std::vector<std::string>& args,
 bool parseForUnrecognizedArgs(const std::vector<std::string>& args,
                               std::unordered_set<cli_error_e>& cliErrorState) {
     bool errFlag = false;
-    auto isUnreckonized = [](std::string arg) {
+    auto isUnreckonized = [](const std::string& arg) {
         return (!stringToArgFlagMap.contains(arg) && !arg.ends_with(ASM_SUFFIX) &&
                 !arg.ends_with(BIN_SUFFIX) && arg != BEAR16_EXECUTABLE_NAME);
     };

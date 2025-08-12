@@ -20,31 +20,26 @@ IncludeToken::IncludeToken(std::string fileName, std::string projectPath)
     buildContents();
 }
 
-void IncludeToken::adjustFullPathAccordingToProjectPath(
-    const std::string &projectPath) {
+void IncludeToken::adjustFullPathAccordingToProjectPath(const std::string& projectPath) {
     this->projectPath = projectPath;
 
     // Strip surrounding quotes if present
-    if (!fileName.empty() && fileName.front() == '"' &&
-        fileName.back() == '"') {
+    if (!fileName.empty() && fileName.front() == '"' && fileName.back() == '"') {
         fileName = fileName.substr(1, fileName.size() - 2);
     }
 
     // Remove all internal quotes
-    fileName.erase(std::remove(fileName.begin(), fileName.end(), '"'),
-                   fileName.end());
+    fileName.erase(std::remove(fileName.begin(), fileName.end(), '"'), fileName.end());
 
     // Remove all whitespace characters
-    fileName.erase(
-        std::remove_if(fileName.begin(), fileName.end(),
-                       [](unsigned char c) { return std::isspace(c); }),
-        fileName.end());
+    fileName.erase(std::remove_if(fileName.begin(), fileName.end(),
+                                  [](unsigned char c) { return std::isspace(c); }),
+                   fileName.end());
 
     // Remove all non-ASCII characters (keep 0x20-0x7E printable ASCII range)
-    fileName.erase(
-        std::remove_if(fileName.begin(), fileName.end(),
-                       [](unsigned char c) { return c < 0x20 || c > 0x7E; }),
-        fileName.end());
+    fileName.erase(std::remove_if(fileName.begin(), fileName.end(),
+                                  [](unsigned char c) { return c < 0x20 || c > 0x7E; }),
+                   fileName.end());
 
     fullPath = (std::filesystem::path(projectPath) / fileName).string();
 }
@@ -56,15 +51,13 @@ bool IncludeToken::checkPathValidity() const {
 void IncludeToken::buildContents() {
     if (!checkPathValidity()) {
         contents = "";
-        LOG_ERR("ERROR: Could not open .asm file for preprocessing: " +
-                fullPath);
+        LOG_ERR("ERROR: Could not open .asm file for preprocessing: " + fullPath);
         return;
     }
-    LOG("Successfully opened .asm file: " + fullPath +
-        " for building contents");
+    LOG("Successfully opened .asm file: " + fullPath + " for building contents");
     std::ifstream file(fullPath, std::ios::in | std::ios::binary);
-    contents = std::string((std::istreambuf_iterator<char>(file)),
-                           std::istreambuf_iterator<char>());
+    contents =
+        std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     contents += '\n'; // for safety
     LOG("Included contents: \n" + contents);
 }
@@ -83,33 +76,28 @@ void MacroDefToken::discernParametersFromBody() {
 }
 // Preprocessor
 // -----------------------------------------------------------------------------------------------------
-inline const std::unordered_map<std::string, PreprocessTokenType>
-    stringToPreprocessTokenTypeMap = {
-        {"@include", PreprocessTokenType::INCLUDE},
-        {"@def", PreprocessTokenType::MACRO_DEF},
-        {"@end_def", PreprocessTokenType::MACRO_END_DEF},
-        {"@use", PreprocessTokenType::MACRO_USE},
+inline const std::unordered_map<std::string, PreprocessTokenType> stringToPreprocessTokenTypeMap = {
+    {"@include", PreprocessTokenType::INCLUDE},
+    {"@def", PreprocessTokenType::MACRO_DEF},
+    {"@end_def", PreprocessTokenType::MACRO_END_DEF},
+    {"@use", PreprocessTokenType::MACRO_USE},
 };
-void Preprocessor::setProject(const std::string &projectPath,
-                              const std::string &entry) {
+void Preprocessor::setProject(const std::string& projectPath, const std::string& entry) {
     this->projectPath = projectPath;
     this->entry = entry;
 }
-std::string Preprocessor::preprocessAsmProject(const std::string &fileName) {
+std::string Preprocessor::preprocessAsmProject(const std::string& fileName) {
     std::string path = (std::filesystem::path(projectPath) / fileName).string();
     std::string revisedAsm{};
     std::ifstream file(path, std::ios::in | std::ios::binary);
     if (!file) {
-        LOG_ERR(
-            "Current working directory: " << std::filesystem::current_path());
-        LOG_ERR("ERROR: Could not open .asm file for preprocessing: "
-                << "\"" + path + "\"");
+        LOG_ERR("Current working directory: " << std::filesystem::current_path());
+        LOG_ERR("ERROR: Could not open .asm file for preprocessing: " << "\"" + path + "\"");
         return {};
     }
     LOG("Successfully opened .asm file: " + path + " for preprocessing.");
 
-    std::string buffer((std::istreambuf_iterator<char>(file)),
-                       std::istreambuf_iterator<char>());
+    std::string buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
     uint64_t lineNum = 1;
     uint64_t charsThisLine = 0;
@@ -123,13 +111,13 @@ std::string Preprocessor::preprocessAsmProject(const std::string &fileName) {
     bool inMacroUse = false;
 
     auto inPreprocessDirective = [&]() {
-        return inDirectiveDeclaration || inIncludeDirective || inMacroDef ||
-               inMacroBody || inMacroEndDef || inMacroUse;
+        return inDirectiveDeclaration || inIncludeDirective || inMacroDef || inMacroBody ||
+               inMacroEndDef || inMacroUse;
     };
     std::string revisedMainFile{};
     std::string includedFilesContents{};
     std::string currentStr{};
-    for (const char &c : buffer) {
+    for (const char& c : buffer) {
         charsThisLine++;
         if (c == '\t' || c == ' ' || c == '\n') {
             revisedMainFile += c;
@@ -138,8 +126,7 @@ std::string Preprocessor::preprocessAsmProject(const std::string &fileName) {
                 charsThisLine = 0;
             }
             if (inDirectiveDeclaration) {
-                if (deducePreprocessTokenType(currentStr) ==
-                    PreprocessTokenType::INCLUDE) {
+                if (deducePreprocessTokenType(currentStr) == PreprocessTokenType::INCLUDE) {
                     inIncludeDirective = true;
                 }
                 inDirectiveDeclaration = false;
@@ -150,8 +137,7 @@ std::string Preprocessor::preprocessAsmProject(const std::string &fileName) {
                 IncludeToken tkn(fileToInclude, projectPath);
                 if (addIncludeIfAbsent(tkn)) {
                     LOG_ERR("Included file: " + fileToInclude);
-                    includedFilesContents +=
-                        preprocessAsmProject(tkn.getFileName());
+                    includedFilesContents += preprocessAsmProject(tkn.getFileName());
                 }
                 currentStr.clear();
                 inIncludeDirective = false;
@@ -186,43 +172,38 @@ void Preprocessor::reset() {
     LOG("Resetting preprocessor");
 }
 
-bool Preprocessor::addIncludeIfAbsent(const IncludeToken &tkn) {
-    const std::string &fullPath = tkn.getFullPath();
-    const std::string entryPath =
-        (std::filesystem::path(projectPath) / entry).string();
+bool Preprocessor::addIncludeIfAbsent(const IncludeToken& tkn) {
+    const std::string& fullPath = tkn.getFullPath();
+    const std::string entryPath = (std::filesystem::path(projectPath) / entry).string();
     if (fullPath == entryPath) {
         LOG("DID NOT ADD " + fullPath + " SINCE IT IS THE ENTRY FILE.");
         return false;
     }
 
-    if (std::find(includes.begin(), includes.end(), tkn) == includes.end()) {
+    if (std::ranges::find(includes, tkn) == includes.end()) {
         includes.push_back(tkn);
         LOG("ADDED " + fullPath + " to includes");
         return true;
-    } else {
-        LOG("DID NOT ADD " + fullPath + " -> already present in includes");
-        return false;
     }
+    LOG("DID NOT ADD " + fullPath + " -> already present in includes");
+    return false;
 }
-void Preprocessor::addMacroDefIfAbsent(const MacroDefToken &tkn) {
-    if (const auto it = std::find(macros.begin(), macros.end(), tkn);
-        it == macros.end()) {
+void Preprocessor::addMacroDefIfAbsent(const MacroDefToken& tkn) {
+    if (const auto iter = std::ranges::find(macros, tkn); iter == macros.end()) {
         macros.emplace_back(tkn);
     }
 }
-PreprocessTokenType
-Preprocessor::deducePreprocessTokenType(const std::string &token) {
+PreprocessTokenType Preprocessor::deducePreprocessTokenType(const std::string& token) {
     if (stringToPreprocessTokenTypeMap.contains(token)) {
         return stringToPreprocessTokenTypeMap.at(token);
     }
     return PreprocessTokenType::MISTAKE;
 }
 // helper
-bool isBlank(const std::string &str) {
+bool isBlank(const std::string& str) {
     if (str.empty()) {
         return true;
     }
-    return std::all_of(str.begin(), str.end(),
-                       [](unsigned char c) { return std::isspace(c); });
+    return std::all_of(str.begin(), str.end(), [](unsigned char c) { return std::isspace(c); });
 }
 } // namespace preprocess

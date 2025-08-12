@@ -4,5 +4,5 @@ IndentWidth: 4
 ColumnLimit: 100
 UseTab: Never
 PointerAlignment: Left
-AllowShortIfStatementsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: false
 

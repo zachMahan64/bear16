@@ -1,12 +1,14 @@
 #ifndef CLI_ARGS_H
 #define CLI_ARGS_H
 
+#include <cstdint>
 #include <string>
+#include <sys/types.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 // FLAGS
-enum class cli_flag {
+enum class cli_flag : uint8_t {
     assemble,
     run,
     help,
@@ -18,7 +20,7 @@ enum class cli_flag {
 }; // valid_multi currently redundant as of 20250809
 extern const std::unordered_map<std::string, cli_flag> stringToArgFlagMap;
 // ERRORS
-enum class cli_error_e {
+enum class cli_error_e : uint8_t {
     multiple_incompatible_flags,
     too_many_asm_files,
     too_many_bin_files,
@@ -44,11 +46,11 @@ std::vector<std::string> parseForBinary(); // TODO
 //
 bool fileExistsAndIsValid(const std::string& filePath, const std::string& fileSuffix);
 
-enum class bin_file_state { does_not_exist, exists };
+enum class bin_file_state : uint8_t { does_not_exist, exists };
 
 struct MentionedFiles {
-    std::string asmFile{};
-    std::string binFile{};
+    std::string asmFile;
+    std::string binFile;
     bin_file_state binFileState;
 };
 
