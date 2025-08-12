@@ -1,6 +1,7 @@
 #ifndef PREPROCESS_H
 #define PREPROCESS_H
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <unordered_map>
