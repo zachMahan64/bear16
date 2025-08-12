@@ -39,11 +39,6 @@ std::vector<std::string> vectorizeArgs(int argc, char** argv);
 std::unordered_set<cli_flag> parseFlags(const std::vector<std::string>& args,
                                         std::unordered_set<cli_error_e>& cliErrorState);
 
-std::vector<std::string> parseForAsmFile();
-// ^ make sure to get parent directory as "project path"
-
-std::vector<std::string> parseForBinary(); // TODO
-//
 bool fileExistsAndIsValid(const std::string& filePath, const std::string& fileSuffix);
 
 enum class bin_file_state : uint8_t { does_not_exist, exists };
