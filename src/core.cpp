@@ -32,7 +32,7 @@
 #define LOG(x)
 #endif
 
-#define LOG_ERR(x) std::cerr << x << "\n";
+// #define LOG_ERR(x) std::cerr << x << "\n"; define in preprocess already
 
 // #define ENABLE_KEYBOARD_INTERRUPT
 #ifdef ENABLE_KEYBOARD_INTERRUPT
