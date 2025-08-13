@@ -5,8 +5,10 @@
 #include "assembly.h"
 #include "cli_args.h"
 #include "core.h"
+#include "isa.h"
 #include "json.hpp"
 #include "path_manager.h"
+#include <algorithm>
 #include <exception>
 #include <filesystem>
 #include <format>
@@ -65,6 +67,7 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
     bool doTUI = flags.contains(cli_flag::tui);
     bool doSetDisk = flags.contains(cli_flag::set_disk);
     bool doCheckDisk = flags.contains(cli_flag::check_disk);
+    bool doClearDisk = flags.contains(cli_flag::clear_disk);
     bool doHelp = flags.contains(cli_flag::help);
     bool doVersion = flags.contains(cli_flag::version);
 
@@ -125,6 +128,10 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
         guardNoArgFlagCommands();
         getDiskPathFromUser();
     }
+    if (doClearDisk) {
+        guardNoArgFlagCommands();
+        clearDisk();
+    }
 
     if (doCheckDisk) {
         guardNoArgFlagCommands();
@@ -179,6 +186,21 @@ int Emulator::runMentionedExecutable(const std::string& executableFileName) {
               << "\n";
     std::cout << "\n";
     return exitCode;
+}
+void Emulator::clearDisk() {
+    std::cout << "Clear current disk (" << diskPath << ")?\n";
+    std::cout
+        << "-> This action is permanent, so back up the disk if you care about its contents. \n";
+    std::cout << "[y/n] \n";
+    std::string choice;
+    std::getline(std::cin, choice);
+    std::ranges::transform(choice, choice.begin(), [](char c) { return std::tolower(c); });
+    if (choice != "y") {
+        return;
+    }
+    std::vector emptyDiskData(isa::DISK_SIZE, 0);
+    writeToFile(diskPath, emptyDiskData);
+    std::cout << "Cleared current disk. \n";
 }
 void Emulator::enterTUI() {
     getEmuStateFromConfigFile();

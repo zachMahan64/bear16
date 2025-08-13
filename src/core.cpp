@@ -6,7 +6,9 @@
 #include "fixpt8_8_t.h"
 #include "isa.h"
 #include "parts.h"
+#include "preprocess.h"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_video.h>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -976,7 +978,8 @@ Screen::Screen() {
         std::cerr << "SDL Init Error: " << SDL_GetError() << "\n";
     }
     window.reset(SDL_CreateWindow("Bear16 Display", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                  WIDTH * SCALE, HEIGHT * SCALE, SDL_WINDOW_SHOWN));
+                                  WIDTH * SCALE, HEIGHT * SCALE,
+                                  SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE));
     renderer.reset(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_PRESENTVSYNC));
     texture.reset(SDL_CreateTexture(renderer.get(), SDL_PIXELFORMAT_RGBA8888,
                                     SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT));

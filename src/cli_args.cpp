@@ -22,9 +22,11 @@ const std::unordered_map<std::string, cli_flag> stringToArgFlagMap{
     {"-ar", cli_flag::valid_multi},
     {"-ar", cli_flag::valid_multi},
     {"-sd", cli_flag::set_disk},
-    {"-cd", cli_flag::check_disk},
+    {"-chd", cli_flag::check_disk},
+    {"-cld", cli_flag::clear_disk},
     {"--check-disk", cli_flag::check_disk},
-    {"--set-disk", cli_flag::set_disk}};
+    {"--set-disk", cli_flag::set_disk},
+    {"--clear-disk", cli_flag::clear_disk}};
 
 const std::unordered_map<cli_error_e, std::string> errMsgMap{
     {cli_error_e::multiple_incompatible_flags, "Multiple incompatible flags provided"},

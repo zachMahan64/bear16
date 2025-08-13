@@ -34,6 +34,7 @@ class Emulator {
     // CLI
     int performActionBasedOnArgs(const std::vector<std::string>& args);
     int runMentionedExecutable(const std::string& executableFileName);
+    void clearDisk();
     [[noreturn]] static void
     enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e>& errors,
                                 int exitCode = EXIT_FAILURE);

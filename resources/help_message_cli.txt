@@ -6,7 +6,8 @@ options:
   -u, --ui, --tui                start terminal user interface
   -ar, -ra                       assemble and run
   -sd, --set-disk                set the active disk image
-  -cd, --check-disk              check the path of the current disk
+  -chd, --check-disk             check the path of the current disk
+  -cld, --clear-disk             clear the contents of the current disk
   <no-args>                      start termnial user interface
                                  *note: all args and flags are order-agnostic
 
@@ -16,7 +17,8 @@ usage: b16 [-h | --help]
        b16 [-ar | -ra] <assembly_file> <binary_file>
        b16 [--ui | --tui]
        b16 -sd <disk>
-       b16 -cd
+       b16 -chd
+       b16 -cld
        b16 [--version]
        b16 [help]
        b16 <no-args>
