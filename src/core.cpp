@@ -134,7 +134,7 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << std::dec << "Clock Speed = " << clockSpeedHz << " Hz" << " = "
               << clockSpeedHz / 1'000'000 << " MHz" << "\n";
     std::cout << "=====================" << "\n";
-    std::cout << "Disk contents: \n";
+    std::cout << "Disk contents (first 1024 bytes): \n";
     for (int i = 0; i < 1024; i++) {
         std::cout << disk.at(i);
         if (i % 128 == 127) {
