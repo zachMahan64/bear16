@@ -128,7 +128,7 @@ void Board::printDiagnostics(bool printMemAsChars) const {
     // std::cout << "Bottom of stack: \n";
     // cpu.printSectionOfRam(startingAddr, numBytes, true);
     std::cout << "=====================" << "\n";
-    std::cout << "FIRST 512 BYTES OF HEAP" << "\n";
+    std::cout << "Heap contents (first 512 bytes):" << "\n";
     startingAddr = isa::STARTING_HEAP_PTR_VALUE;
     numBytes = 512;
     cpu.printSectionOfRam(startingAddr, numBytes, true);
@@ -1100,6 +1100,9 @@ void DiskController::handleDiskOperation() {
     if (sram[isa::DISK_OP] == READ_BYTE_OP) {
         sram[isa::DISK_DATA] = disk[addrPtr];
         sram[isa::DISK_STATUS] |= READ_DONE;
+        // LOG_ERR("read byte into data, val:" << std::dec << static_cast<int>(sram[isa::DISK_DATA])
+        //                                     << " @ addr: " << addrPtr); // for debugging, if
+        //                                     necessary
         sram[isa::DISK_OP] = NO_OP; // reset/clear operation mem LOC
     } else if (sram[isa::DISK_OP] == WRITE_BYTE_OP) {
         disk[addrPtr] = sram[isa::DISK_DATA];
