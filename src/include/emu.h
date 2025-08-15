@@ -24,7 +24,9 @@ class Emulator {
     // DEFAULTS
     const std::filesystem::path CONFIG_FILE_NAME = ".b16.json";
     const std::string DEFAULT_ENTRY_FILE = "main.asm";
-    const std::filesystem::path DEFAULT_PROJECT_PATH = USER_HOME_DIR / PROJECTS_DIR / "bear16_os";
+    const std::string DEFAULT_PROJECT_NAME = "bear16_os";
+    const std::filesystem::path DEFAULT_PROJECT_PATH =
+        USER_HOME_DIR / PROJECTS_DIR / DEFAULT_DISK_NAME;
     const std::string DEFAULT_DISK_NAME = "disk0.bin";
     const std::filesystem::path DEFAULT_DISK_PATH = USER_HOME_DIR / DISKS_DIR / DEFAULT_DISK_NAME;
     // VARIABLE
