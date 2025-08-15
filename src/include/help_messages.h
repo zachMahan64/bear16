@@ -10,8 +10,10 @@ constexpr const char* helpMessageCli =
   -u, --ui, --tui                start terminal user interface
   -ar, -ra                       assemble and run
   -sd, --set-disk                set the active disk image
-  -chd, --check-disk             check the path of the current disk
-  -cld, --clear-disk             clear the contents of the current disk
+  -cd, --check-disk              check the path of the current disk
+  -rd, --reset-disk-disk         reset/zero the contents of the current disk
+  doctor, --doctor               restore ".b16.json" config file and rebuild
+                                 disks/projects directories if missing
   <no-args>                      start termnial user interface
                                  *note: all args and flags are order-agnostic
 
@@ -20,11 +22,12 @@ usage: b16 [-h | --help]
        b16 [--run | run | -r] <binary_file>
        b16 [-ar | -ra] <assembly_file> <binary_file>
        b16 [--ui | --tui]
-       b16 -sd <disk>
-       b16 -chd
-       b16 -cld
+       b16 -sd
+       b16 -cd
+       b16 -rd
        b16 [--version]
        b16 [help]
+       b16 doctor
        b16 <no-args>
 
 example flows: ~ project set-up ~

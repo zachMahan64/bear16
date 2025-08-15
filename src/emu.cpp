@@ -69,9 +69,10 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
     bool doTUI = flags.contains(cli_flag::tui);
     bool doSetDisk = flags.contains(cli_flag::set_disk);
     bool doCheckDisk = flags.contains(cli_flag::check_disk);
-    bool doClearDisk = flags.contains(cli_flag::clear_disk);
+    bool doResetDisk = flags.contains(cli_flag::reset_disk);
     bool doHelp = flags.contains(cli_flag::help);
     bool doVersion = flags.contains(cli_flag::version);
+    bool doDoctor = flags.contains(cli_flag::doctor);
 
     getEmuStateFromConfigFile(); // for getting disk, everything else will be ignored while using
                                  // CLI
@@ -130,9 +131,9 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
         guardNoArgFlagCommands();
         getDiskPathFromUser();
     }
-    if (doClearDisk) {
+    if (doResetDisk) {
         guardNoArgFlagCommands();
-        clearDisk();
+        resetDisk();
     }
 
     if (doCheckDisk) {
@@ -141,9 +142,9 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
         if (std::filesystem::exists(diskPath)) {
             std::cout << "-> exists, valid path \n";
         } else {
-            std::cout << "-> ERROR: does not exist, invalid path";
+            std::cout << "-> ERROR: does not exist, invalid path \n";
+            std::cout << "[!] hint: use \"b16 --set-disk\" or \"b16 -sd\" to change the disk\n";
         }
-        std::cout << "[!] hint: use \"b16 --set-disk\" or \"b16 -sd\" to change the disk\n";
     }
 
     if (doHelp) {
@@ -154,6 +155,14 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
     if (doVersion) {
         guardNoArgFlagCommands();
         std::cout << "bear16 version " + version << "\n";
+    }
+
+    if (doDoctor) {
+        restoreDefaultConfigFile();
+        std::string endOfSentence =
+            buildBear16DirsIfDNE() ? " and rebuilt bear16 projects and disks directories." : ".";
+        saveEmuStateToConfigFile();
+        std::cout << "restored " << CONFIG_FILE_NAME << " to defaults" << endOfSentence << "\n";
     }
 
     return exitCode;
@@ -189,7 +198,7 @@ int Emulator::runMentionedExecutable(const std::string& executableFileName) {
     std::cout << "\n";
     return exitCode;
 }
-void Emulator::clearDisk() {
+void Emulator::resetDisk() {
     std::cout << "Clear current disk (" << diskPath << ")?\n";
     std::cout
         << "-> This action is permanent, so back up the disk if you care about its contents. \n";
@@ -443,9 +452,7 @@ void Emulator::restoreDefaultEmuState() {
 
 void Emulator::restoreDefaultConfigFile() {
     restoreDefaultEmuState();
-    saveEmuStateToConfigFile(); // saves the defaults, which the emu
-                                // boots up w/
-    enterToContinue();
+    saveEmuStateToConfigFile(); // saves the restored defaults
 }
 
 std::filesystem::path Emulator::computeDefaultExecutablePath() const {
@@ -487,6 +494,7 @@ void Emulator::getEmuStateFromConfigFile() {
         if (!std::filesystem::exists(CONFIG_PATH)) {
             std::cout << "Built default config file at \"" << CONFIG_PATH.string() << "\".\n";
             restoreDefaultConfigFile();
+            enterToContinue();
         }
         std::ifstream inStream(CONFIG_PATH);
         if (!inStream) {

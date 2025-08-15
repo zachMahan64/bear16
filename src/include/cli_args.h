@@ -17,7 +17,8 @@ enum class cli_flag : uint8_t {
     valid_multi,
     check_disk,
     set_disk,
-    clear_disk
+    reset_disk,
+    doctor
 }; // valid_multi currently redundant as of 20250809
 extern const std::unordered_map<std::string, cli_flag> stringToArgFlagMap;
 // ERRORS
