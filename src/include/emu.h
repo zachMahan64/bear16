@@ -17,15 +17,20 @@ class Emulator {
     const std::string dateOfLastVersion = "2025-08-09";
     const emu_launch launchState;
     // PATHING
-    std::filesystem::path bear16RootDir = getBear16DefaultRootDir();
-    std::filesystem::path projectsRootDir = "projects_b16";
-    std::filesystem::path projectPath = bear16RootDir / projectsRootDir / "bear16_os";
-    std::string entryFileName = "main.asm";
-    std::filesystem::path disksRootDir = "disks_b16";
-    std::filesystem::path diskPath = bear16RootDir / disksRootDir / "default_disk.bin";
-    // user-facing data paths
-    const std::filesystem::path CONFIG_ROOT = bear16RootDir / "config_b16";
-    const std::filesystem::path CONFIG_FILE = "config.json";
+    // CONSTANTS
+    const std::filesystem::path USER_HOME_DIR = getUserHomeDir();
+    const std::filesystem::path PROJECTS_DIR = "bear16_projects";
+    const std::filesystem::path DISKS_DIR = "bear16_disks";
+    // DEFAULTS
+    const std::filesystem::path CONFIG_FILE_NAME = ".b16.json";
+    const std::string DEFAULT_ENTRY_FILE = "main.asm";
+    const std::filesystem::path DEFAULT_PROJECT_PATH = USER_HOME_DIR / PROJECTS_DIR / "bear16_os";
+    const std::string DEFAULT_DISK_NAME = "disk0.bin";
+    const std::filesystem::path DEFAULT_DISK_PATH = USER_HOME_DIR / DISKS_DIR / DEFAULT_DISK_NAME;
+    // VARIABLE
+    std::filesystem::path projectPath = DEFAULT_PROJECT_PATH;
+    std::string entryFileName = DEFAULT_ENTRY_FILE;
+    std::filesystem::path diskPath = DEFAULT_DISK_PATH;
     // assembler
     assembly::Assembler testAssembler;
     // CLI
@@ -46,13 +51,13 @@ class Emulator {
     // config menu
     void enterConfigMenu();
     void printConfigMenu();
-    // help menu
-    void printMsgFile(const std::filesystem::path& messageFileToPrint);
     // helpers
+    bool buildBear16DirsIfDNE();
+    void restoreDefaultEmuState();
+    void restoreDefaultConfigFile();
     [[nodiscard]] std::filesystem::path computeDefaultExecutablePath() const;
     void saveEmuStateToConfigFile();
     void getEmuStateFromConfigFile();
-    static std::filesystem::path snipBear16RootDir(const std::filesystem::path& path);
     // getting input from user
     void getProjectPathFromUser();
     void getEntryFromUser();

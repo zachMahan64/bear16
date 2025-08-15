@@ -1,11 +1,12 @@
 #include "path_manager.h"
 
-#include <algorithm>
+#include <algorithm> // ignore clang-tidy warnings, required for WIN32 builds
 #include <cstdlib>
 #include <iostream>
 #include <string>
 
-std::filesystem::path getBear16DefaultRootDir() {
+std::filesystem::path getUserHomeDir() {
+    constexpr const char* HOME_NOT_FOUND_ERR_MSG = "Critical error: user folder not found";
 #ifdef _WIN32
     const char* userFolderEnv = std::getenv("USERPROFILE");
 #else
@@ -13,20 +14,16 @@ std::filesystem::path getBear16DefaultRootDir() {
 #endif
 
     if ((userFolderEnv == nullptr) || std::string(userFolderEnv).empty()) {
-        throw std::runtime_error("User folder not found");
+        throw std::runtime_error(HOME_NOT_FOUND_ERR_MSG);
     }
 
-    std::filesystem::path userFolder(userFolderEnv);
-    std::filesystem::path bear16Path = userFolder / "bear16";
+    std::filesystem::path userHomeDir(userFolderEnv);
 
-    if (!std::filesystem::exists(bear16Path)) {
-        std::cerr << "[bear16] Notice: ~/bear16 does not exist.\n";
-        std::cerr << "          Create it manually or symlink to your cloned repo:\n";
-        std::cerr << "          ln -s /path/to/your/repo ~/bear16\n";
-        throw std::runtime_error("bear16 root directory not found.");
+    if (!std::filesystem::exists(userHomeDir)) {
+        throw std::runtime_error(HOME_NOT_FOUND_ERR_MSG);
     }
 
-    return bear16Path;
+    return userHomeDir;
 }
 
 #ifdef _WIN32
@@ -34,7 +31,7 @@ std::filesystem::path getBear16DefaultRootDir() {
 #include <windows.h>
 #endif
 
-std::string snipHomeDir(const std::string& path) {
+std::string snipUserHomeDir(const std::string& path) {
     if (path.empty()) {
         return path;
     }

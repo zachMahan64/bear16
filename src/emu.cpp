@@ -19,6 +19,17 @@
 #include <unordered_set>
 #include <vector>
 Emulator::Emulator(emu_launch launchState) : launchState(launchState) {}
+int Emulator::launch(int argc, char** argv) {
+    int exitCode = 0;
+    buildBear16DirsIfDNE();
+    if (launchState == emu_launch::tui) {
+        enterTUI();
+    } else {
+        std::vector<std::string> args = vectorizeArgs(argc, argv);
+        exitCode = performActionBasedOnArgs(args);
+    }
+    return exitCode;
+}
 int Emulator::assembleAndRunWithoutSavingExecutable() {
     testAssembler.openProject(projectPath, entryFileName);
     auto userRom = testAssembler.assembleOpenedProject();
@@ -38,16 +49,6 @@ int Emulator::assembleAndRunWithoutSavingExecutable() {
     board.printDiagnostics(false);
     std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode
               << "\n";
-    return exitCode;
-}
-int Emulator::launch(int argc, char** argv) {
-    int exitCode = 0;
-    if (launchState == emu_launch::tui) {
-        enterTUI();
-    } else {
-        std::vector<std::string> args = vectorizeArgs(argc, argv);
-        exitCode = performActionBasedOnArgs(args);
-    }
     return exitCode;
 }
 int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
@@ -368,19 +369,14 @@ void Emulator::enterConfigMenu() {
         char selection = line.at(0);
         switch (selection) {
         case ('1'): {
-            std::cout << "NOT CURRENTLY SUPPORTED\n";
-            enterToContinue();
-            break;
-        }
-        case ('2'): {
             getProjectPathFromUser();
             break;
         }
-        case ('3'): {
+        case ('2'): {
             getEntryFromUser();
             break;
         }
-        case ('4'): {
+        case ('3'): {
             getDiskPathFromUser();
             break;
         }
@@ -401,11 +397,55 @@ void Emulator::printConfigMenu() {
     cout << "\n";
     cout << " Enter a [#] to make a change" << "\n";
     cout << "==============================" << "\n";
-    cout << " [1] Bear16 Root Directory: " << bear16RootDir << "\n";
-    cout << " [2] Project Directory:     " << projectPath << "\n";
-    cout << " [3] Entry .asm file:       \"" << entryFileName << "\"\n";
-    cout << " [4] Disk Path:             " << diskPath << "\n";
+    cout << " [1] Project Directory:     " << projectPath << "\n";
+    cout << " [2] Entry .asm file:       \"" << entryFileName << "\"\n";
+    cout << " [3] Disk Path:             " << diskPath << "\n";
     cout << " [C] Cancel" << "\n";
+}
+
+bool Emulator::buildBear16DirsIfDNE() {
+    bool atLeastOneDirDNE = false; // return val flag for potential logging
+    const std::filesystem::path DISKS_PATH = USER_HOME_DIR / DISKS_DIR;
+    const std::filesystem::path PROJECTS_PATH = USER_HOME_DIR / PROJECTS_DIR;
+    if (!std::filesystem::exists(DISKS_PATH)) {
+        atLeastOneDirDNE = true;
+        std::error_code errorCode;
+        if (std::filesystem::create_directory(DISKS_PATH, errorCode)) {
+            // success, log here?
+        } else {
+            if (errorCode) {
+                std::cerr << "Error creating Bear16 disk directory: " << errorCode.message()
+                          << "\n";
+            }
+        }
+    }
+    if (!std::filesystem::exists(PROJECTS_PATH)) {
+        atLeastOneDirDNE = true;
+
+        std::error_code errorCode;
+        if (std::filesystem::create_directory(PROJECTS_PATH, errorCode)) {
+            // success, log here?
+        } else {
+            if (errorCode) {
+                std::cerr << "Error creating Bear16 project directory: " << errorCode.message()
+                          << "\n";
+            }
+        }
+    }
+    return atLeastOneDirDNE;
+}
+
+void Emulator::restoreDefaultEmuState() {
+    projectPath = DEFAULT_PROJECT_PATH;
+    entryFileName = DEFAULT_ENTRY_FILE;
+    diskPath = DEFAULT_DISK_PATH;
+}
+
+void Emulator::restoreDefaultConfigFile() {
+    restoreDefaultEmuState();
+    saveEmuStateToConfigFile(); // saves the defaults, which the emu
+                                // boots up w/
+    enterToContinue();
 }
 
 std::filesystem::path Emulator::computeDefaultExecutablePath() const {
@@ -426,12 +466,11 @@ std::filesystem::path Emulator::computeDefaultExecutablePath() const {
 void Emulator::saveEmuStateToConfigFile() {
     try {
         nlohmann::json jsonObject{};
-        jsonObject["bear16RootDir"] = bear16RootDir;
-        jsonObject["projectPath"] = snipBear16RootDir(projectPath);
+        jsonObject["projectPath"] = snipUserHomeDir(projectPath);
         jsonObject["entry"] = entryFileName;
-        jsonObject["diskPath"] = snipBear16RootDir(diskPath);
+        jsonObject["diskPath"] = snipUserHomeDir(diskPath);
 
-        std::ofstream outStream(std::filesystem::path(CONFIG_ROOT / CONFIG_FILE));
+        std::ofstream outStream(std::filesystem::path(USER_HOME_DIR / CONFIG_FILE_NAME));
         if (!outStream) {
             std::cerr << "ERROR: Could not open config file." << "\n";
             return;
@@ -443,57 +482,37 @@ void Emulator::saveEmuStateToConfigFile() {
 }
 
 void Emulator::getEmuStateFromConfigFile() {
-    std::filesystem::path configPath = std::filesystem::path(CONFIG_ROOT / CONFIG_FILE);
+    std::filesystem::path CONFIG_PATH = std::filesystem::path(USER_HOME_DIR / CONFIG_FILE_NAME);
     try {
-        if (!std::filesystem::exists(configPath)) {
-            std::cout << "It's your first time using the Bear16 Terminal Interface so we'll do "
-                         "some automatic set up.\n";
-            std::cout << "Generating default config.json ...\n";
-            enterToContinue();
-            saveEmuStateToConfigFile(); // saves the defaults, which the emu
-                                        // boots up w/
+        if (!std::filesystem::exists(CONFIG_PATH)) {
+            std::cout << "Built default config file at \"" << CONFIG_PATH.string() << "\".\n";
+            restoreDefaultConfigFile();
         }
-        std::ifstream inStream(configPath);
+        std::ifstream inStream(CONFIG_PATH);
         if (!inStream) {
             std::cerr << "ERROR: Could not open config file." << "\n";
             return;
         }
         nlohmann::json jsonObject{};
         inStream >> jsonObject;
-        if (jsonObject[bear16RootDir.string()].empty()) {
-            bear16RootDir = std::filesystem::path(getBear16DefaultRootDir());
-        } else {
-            bear16RootDir = std::filesystem::path(jsonObject["bear16RootDir"]);
-        }
-        projectPath = bear16RootDir / std::filesystem::path(jsonObject["projectPath"]);
+        projectPath = USER_HOME_DIR / std::filesystem::path(jsonObject["projectPath"]);
         entryFileName = jsonObject["entry"];
-        diskPath = bear16RootDir / std::filesystem::path(jsonObject["diskPath"]);
+        diskPath = USER_HOME_DIR / std::filesystem::path(jsonObject["diskPath"]);
     } catch (const std::exception& e) {
         std::cerr << "ERROR: Could not read config file: " << e.what() << "\n";
     }
 }
-std::filesystem::path Emulator::snipBear16RootDir(const std::filesystem::path& path) {
-    std::string snippedOfHomeDir = snipHomeDir(path.string());
-    size_t pos = snippedOfHomeDir.find_first_of("/\\");
-    std::string snippedOfBear16RootDir{};
-    if (pos != std::string::npos) {
-        snippedOfBear16RootDir = snippedOfHomeDir.substr(pos + 1);
-    } else {
-        snippedOfBear16RootDir = snippedOfHomeDir;
-    }
-    return std::filesystem::path(snippedOfBear16RootDir);
-}
 void Emulator::getProjectPathFromUser() {
     std::string projectDir;
     std::cout << "Enter the name of the project directory: " << "\n";
-    std::cout << (bear16RootDir / projectsRootDir).string() << '/';
+    std::cout << (USER_HOME_DIR / PROJECTS_DIR).string() << '/';
     std::getline(std::cin, projectDir);
     if (projectDir.empty()) {
         std::cout << "ERROR: Project path cannot be empty." << "\n";
         enterToContinue();
         return;
     }
-    std::string projectPath((bear16RootDir / projectsRootDir / projectDir).string());
+    std::string projectPath((USER_HOME_DIR / PROJECTS_DIR / projectDir).string());
 
     auto saveChanges = [this, &projectPath, &projectDir]() {
         this->projectPath = projectPath;
@@ -506,20 +525,20 @@ void Emulator::getProjectPathFromUser() {
         std::cout << "Project path does not exist: " << projectPath << "\n";
         bool madeValidChoice = false;
         do {
-            std::cout << " [1] Create new project directory" << "\n";
-            std::cout << " [2|C] Cancel" << "\n";
+            std::cout << " [N] Create new project directory" << "\n";
+            std::cout << " [C] Cancel" << "\n";
             std::cout << "Make a selection: ";
             std::string choice;
             std::getline(std::cin, choice);
-            if (!(choice == "1" || choice == "2" || choice == "C")) {
+            if (!(choice == "c" || choice == "C" || choice == "n" || choice == "N")) {
                 std::cout << "Invalid choice. Please try again." << "\n";
             }
-            if (choice == "1") {
+            if (choice == "n" || choice == "N") {
                 std::filesystem::create_directory(projectPath);
                 std::cout << "Project directory created at " << projectPath << "\n";
                 madeValidChoice = true;
                 saveChanges();
-            } else if (choice == "2" || choice == "C" || choice == "c") {
+            } else if (choice == "C" || choice == "c") {
                 madeValidChoice = true;
             }
         } while (!madeValidChoice);
@@ -531,7 +550,7 @@ void Emulator::getProjectPathFromUser() {
 void Emulator::getDiskPathFromUser() {
     std::string diskFileName;
     std::cout << "Enter the name of the disk: " << "\n";
-    std::cout << std::filesystem::path(bear16RootDir / disksRootDir).string() << '/';
+    std::cout << std::filesystem::path(USER_HOME_DIR / DISKS_DIR).string() << '/';
     std::getline(std::cin, diskFileName);
     if (diskFileName.empty()) {
         std::cout << "ERROR: Disk cannot be empty." << "\n";
@@ -543,11 +562,12 @@ void Emulator::getDiskPathFromUser() {
         enterToContinue();
         return;
     }
-    std::string diskPath((bear16RootDir / disksRootDir / diskFileName).string());
+    std::string diskPath((USER_HOME_DIR / DISKS_DIR / diskFileName).string());
     if (!std::filesystem::exists(diskPath)) {
         std::fstream createFileStream(diskPath, std::ios::out);
         if (!createFileStream) {
-            std::cout << "ERROR: Failed to create new disk file \"" << diskPath << "\"";
+            std::cout << "ERROR: Failed to create new disk file \"" << diskPath << "\"\n";
+            enterToContinue();
             return;
         }
         std::cout << "Created new disk file \n";
@@ -575,11 +595,12 @@ void Emulator::getEntryFromUser() {
     }
     std::filesystem::path entryFilePath(projectPath / entryFileName);
     if (!std::filesystem::exists(entryFilePath)) {
-        std::cout << "ERROR: Specified entry file does not exist";
+        std::cout << "ERROR: Specified entry file does not exist\n";
+        enterToContinue();
         return;
     }
     this->entryFileName = entryFileName;
-    std::cout << "Entry set to: \"" << snipHomeDir(entryFilePath.string()) << "\"\n";
+    std::cout << "Entry set to: \"" << snipUserHomeDir(entryFilePath.string()) << "\"\n";
     saveEmuStateToConfigFile();
     enterToContinue();
 }

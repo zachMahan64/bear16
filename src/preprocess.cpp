@@ -91,7 +91,6 @@ std::string Preprocessor::preprocessAsmProject(const std::string& fileName) {
     std::string revisedAsm{};
     std::ifstream file(path, std::ios::in | std::ios::binary);
     if (!file) {
-        LOG_ERR("Current working directory: " << std::filesystem::current_path());
         LOG_ERR("ERROR: Could not open .asm file for preprocessing: " << "\"" + path + "\"");
         return {};
     }
