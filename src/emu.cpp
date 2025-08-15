@@ -5,6 +5,7 @@
 #include "assembly.h"
 #include "cli_args.h"
 #include "core.h"
+#include "help_messages.h"
 #include "isa.h"
 #include "json.hpp"
 #include "path_manager.h"
@@ -146,7 +147,7 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
 
     if (doHelp) {
         guardNoArgFlagCommands();
-        printMsgFile(HELP_MESSAGE_CLI);
+        std::cout << helpMessageCli;
     }
 
     if (doVersion) {
@@ -249,7 +250,8 @@ void Emulator::enterTUI() {
             break;
         }
         case 'h': {
-            printMsgFile(HELP_MESSAGE_TUI);
+            std::cout << helpMessageTui;
+            enterToContinue();
             break;
         }
         case 'q': {
@@ -406,18 +408,6 @@ void Emulator::printConfigMenu() {
     cout << " [C] Cancel" << "\n";
 }
 
-void Emulator::printMsgFile(const std::filesystem::path& messageFileToPrint) {
-    std::ifstream helpMessageFile(std::filesystem::path(RESOURCES_PATH / messageFileToPrint));
-    if (helpMessageFile) {
-        std::string helpMessageBuffer((std::istreambuf_iterator<char>(helpMessageFile)),
-                                      std::istreambuf_iterator<char>());
-        std::cout << helpMessageBuffer;
-    } else {
-        std::cerr << "ERROR: Could not open help message file." << "\n";
-    }
-    std::cout << "\n";
-    enterToContinue();
-}
 std::filesystem::path Emulator::computeDefaultExecutablePath() const {
     std::string DEFAULT_BUILD_DIR = "build"; // lives inside project root
     // Ensure projectPath is a valid path

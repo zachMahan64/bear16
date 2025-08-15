@@ -25,9 +25,6 @@ class Emulator {
     std::filesystem::path diskPath = bear16RootDir / disksRootDir / "default_disk.bin";
     // user-facing data paths
     const std::filesystem::path CONFIG_ROOT = bear16RootDir / "config_b16";
-    const std::filesystem::path RESOURCES_PATH = bear16RootDir / "resources";
-    const std::filesystem::path HELP_MESSAGE_TUI = "help_message_tui.txt";
-    const std::filesystem::path HELP_MESSAGE_CLI = "help_message_cli.txt";
     const std::filesystem::path CONFIG_FILE = "config.json";
     // assembler
     assembly::Assembler testAssembler;

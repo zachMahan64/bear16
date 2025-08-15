@@ -1,4 +1,8 @@
-options:
+#ifndef HELP_MESSAGES_H
+#define HELP_MESSAGES_H
+
+constexpr const char* helpMessageCli =
+    R"HELP(options:
   -a, --assemble, assemble       assemble source file(s)
   -r, --run, run                 run the specified disk image
   -h, --help, help               show help message
@@ -39,3 +43,36 @@ example flows: ~ project set-up ~
                b16 --assemble main.asm --run build/my_executable.bin
                ~~~~~~~~ or ~~~~~~~~
                b16 -ar my_project_entry.asm my_executable.bin
+)HELP";
+
+constexpr const char* helpMessageTui =
+    R"HELP(                                               THANK YOU FOR USING BEAR16
+========================================================================================================================
+WHAT TO DO IN THE BEAR16 TERMINAL USER INTERFACE
+------------------------------------------------
+- You can use the assembler and emulator to run:
+    - Standalone programs
+    - Apps for the Bear16 OS
+    - Write your own OS for the system (you could reuse my OS Core libraries to streamline the process!)
+
+MAKING A NEW PROJECT
+--------------------
+    1.) Create a new directory inside `projects_b16` or another location if you prefer and set it as your open project
+    2.) Create at least one `.asm` file to be used as your entry point and set it as such in the project config.
+    3.) You can create and link as many `.asm` files as you want (use the` @include` directive; see README for details).
+    4.) Make sure to follow the opcode syntax in the ISA spreadsheet and the directive syntax section in the README.
+    5.) The assembler is pretty helpful with any kind of syntax mistake, but it cannot catch logical errors.
+
+MORE INFO
+---------
+- See the README and GitHub repo for:
+    - ISA reference
+    - Assembly syntax
+    - Memory-mapped IO implementation details
+    - Emulator & assembler source code
+    - Bear16 OS breakdown
+    - Example assembly programs and the Bear16 OS source code
+    → Docs on: https://github.com/zachMahan64/bear16
+)HELP";
+
+#endif // HELP_MESSAGES_H
