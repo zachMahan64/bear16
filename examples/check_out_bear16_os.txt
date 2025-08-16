@@ -1,0 +1,1 @@
+visit https://github.com/zachMahan64/bear16_os to check out the os made with bear16!
