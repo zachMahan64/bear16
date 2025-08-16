@@ -21,6 +21,7 @@
 Emulator::Emulator(emu_launch launchState) : launchState(launchState) {}
 int Emulator::launch(int argc, char** argv) {
     int exitCode = 0;
+    getEmuStateFromConfigFile();
     buildBear16DirsIfDNE();
     if (launchState == emu_launch::tui) {
         enterTUI();
@@ -414,12 +415,11 @@ void Emulator::printConfigMenu() {
 
 bool Emulator::buildBear16DirsIfDNE() {
     bool atLeastOneDirDNE = false; // return val flag for potential logging
-    const std::filesystem::path DISKS_PATH = USER_HOME_DIR / DISKS_DIR;
-    const std::filesystem::path PROJECTS_PATH = USER_HOME_DIR / PROJECTS_DIR;
-    if (!std::filesystem::exists(DISKS_PATH)) {
+    const std::filesystem::path diskDir = diskPath.parent_path();
+    if (!std::filesystem::exists(diskDir)) {
         atLeastOneDirDNE = true;
         std::error_code errorCode;
-        if (std::filesystem::create_directory(DISKS_PATH, errorCode)) {
+        if (std::filesystem::create_directories(diskDir, errorCode)) {
             // success, log here?
         } else {
             if (errorCode) {
@@ -428,11 +428,11 @@ bool Emulator::buildBear16DirsIfDNE() {
             }
         }
     }
-    if (!std::filesystem::exists(PROJECTS_PATH)) {
+    if (!std::filesystem::exists(projectPath)) {
         atLeastOneDirDNE = true;
 
         std::error_code errorCode;
-        if (std::filesystem::create_directory(PROJECTS_PATH, errorCode)) {
+        if (std::filesystem::create_directories(projectPath, errorCode)) {
             // success, log here?
         } else {
             if (errorCode) {
@@ -473,9 +473,9 @@ std::filesystem::path Emulator::computeDefaultExecutablePath() const {
 void Emulator::saveEmuStateToConfigFile() {
     try {
         nlohmann::json jsonObject{};
-        jsonObject["projectPath"] = snipUserHomeDir(projectPath);
+        jsonObject["projectPath"] = projectPath;
         jsonObject["entry"] = entryFileName;
-        jsonObject["diskPath"] = snipUserHomeDir(diskPath);
+        jsonObject["diskPath"] = diskPath;
 
         std::ofstream outStream(std::filesystem::path(USER_HOME_DIR / CONFIG_FILE_NAME));
         if (!outStream) {
@@ -492,7 +492,7 @@ void Emulator::getEmuStateFromConfigFile() {
     std::filesystem::path CONFIG_PATH = std::filesystem::path(USER_HOME_DIR / CONFIG_FILE_NAME);
     try {
         if (!std::filesystem::exists(CONFIG_PATH)) {
-            std::cout << "Built default config file at \"" << CONFIG_PATH.string() << "\".\n";
+            std::cout << "Created default config file at \"" << CONFIG_PATH.string() << "\".\n";
             restoreDefaultConfigFile();
             enterToContinue();
         }
@@ -503,9 +503,9 @@ void Emulator::getEmuStateFromConfigFile() {
         }
         nlohmann::json jsonObject{};
         inStream >> jsonObject;
-        projectPath = USER_HOME_DIR / std::filesystem::path(jsonObject["projectPath"]);
+        projectPath = std::filesystem::path(jsonObject["projectPath"]);
         entryFileName = jsonObject["entry"];
-        diskPath = USER_HOME_DIR / std::filesystem::path(jsonObject["diskPath"]);
+        diskPath = std::filesystem::path(jsonObject["diskPath"]);
     } catch (const std::exception& e) {
         std::cerr << "ERROR: Could not read config file: " << e.what() << "\n";
     }
@@ -608,7 +608,7 @@ void Emulator::getEntryFromUser() {
         return;
     }
     this->entryFileName = entryFileName;
-    std::cout << "Entry set to: \"" << snipUserHomeDir(entryFilePath.string()) << "\"\n";
+    std::cout << "Entry set to: \"" << entryFilePath.string() << "\"\n";
     saveEmuStateToConfigFile();
     enterToContinue();
 }
