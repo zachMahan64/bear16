@@ -410,6 +410,9 @@ void Emulator::printConfigMenu() {
     cout << " [1] Project Directory:     " << projectPath << "\n";
     cout << " [2] Entry .asm file:       \"" << entryFileName << "\"\n";
     cout << " [3] Disk Path:             " << diskPath << "\n";
+    cout << " NOTE: You can also edit\n";
+    cout << "       the config manually in your\n";
+    cout << "       \".b16.json\" file.\n";
     cout << " [C] Cancel" << "\n";
 }
 
@@ -511,26 +514,27 @@ void Emulator::getEmuStateFromConfigFile() {
     }
 }
 void Emulator::getProjectPathFromUser() {
-    std::string projectDir;
+    std::string projectDirName;
+    std::filesystem::path projectsParentDir = projectPath.parent_path();
     std::cout << "Enter the name of the project directory: " << "\n";
-    std::cout << (USER_HOME_DIR / PROJECTS_DIR).string() << '/';
-    std::getline(std::cin, projectDir);
-    if (projectDir.empty()) {
+    std::cout << projectsParentDir.string() << '/';
+    std::getline(std::cin, projectDirName);
+    if (projectDirName.empty()) {
         std::cout << "ERROR: Project path cannot be empty." << "\n";
         enterToContinue();
         return;
     }
-    std::string projectPath((USER_HOME_DIR / PROJECTS_DIR / projectDir).string());
+    std::filesystem::path potentialnewProjectPath(projectsParentDir / projectDirName);
 
-    auto saveChanges = [this, &projectPath, &projectDir]() {
-        this->projectPath = projectPath;
-        std::cout << "Project path set to: " << projectDir << "\n";
+    auto saveChanges = [this, &potentialnewProjectPath, &projectDirName]() {
+        this->projectPath = potentialnewProjectPath;
+        std::cout << "Project path set to: " << projectDirName << "\n";
         saveEmuStateToConfigFile();
         enterToContinue();
     };
 
-    if (!std::filesystem::exists(projectPath)) {
-        std::cout << "Project path does not exist: " << projectPath << "\n";
+    if (!std::filesystem::exists(potentialnewProjectPath)) {
+        std::cout << "Project path does not exist: " << potentialnewProjectPath << "\n";
         bool madeValidChoice = false;
         do {
             std::cout << " [N] Create new project directory" << "\n";
@@ -542,8 +546,9 @@ void Emulator::getProjectPathFromUser() {
                 std::cout << "Invalid choice. Please try again." << "\n";
             }
             if (choice == "n" || choice == "N") {
-                std::filesystem::create_directory(projectPath);
-                std::cout << "Project directory created at " << projectPath << "\n";
+                std::filesystem::create_directory(potentialnewProjectPath);
+                std::cout << "Project directory created at " << potentialnewProjectPath.string()
+                          << "\n";
                 madeValidChoice = true;
                 saveChanges();
             } else if (choice == "C" || choice == "c") {
@@ -557,8 +562,9 @@ void Emulator::getProjectPathFromUser() {
 
 void Emulator::getDiskPathFromUser() {
     std::string diskFileName;
+    std::filesystem::path diskParentDir(diskPath.parent_path());
     std::cout << "Enter the name of the disk: " << "\n";
-    std::cout << std::filesystem::path(USER_HOME_DIR / DISKS_DIR).string() << '/';
+    std::cout << diskParentDir.string() << '/';
     std::getline(std::cin, diskFileName);
     if (diskFileName.empty()) {
         std::cout << "ERROR: Disk cannot be empty." << "\n";
@@ -570,17 +576,18 @@ void Emulator::getDiskPathFromUser() {
         enterToContinue();
         return;
     }
-    std::string diskPath((USER_HOME_DIR / DISKS_DIR / diskFileName).string());
-    if (!std::filesystem::exists(diskPath)) {
-        std::fstream createFileStream(diskPath, std::ios::out);
+    std::filesystem::path potentialNewDiskPath(diskParentDir / diskFileName);
+    if (!std::filesystem::exists(potentialNewDiskPath)) {
+        std::fstream createFileStream(potentialNewDiskPath, std::ios::out);
         if (!createFileStream) {
-            std::cout << "ERROR: Failed to create new disk file \"" << diskPath << "\"\n";
+            std::cout << "ERROR: Failed to create new disk file \"" << potentialNewDiskPath
+                      << "\"\n";
             enterToContinue();
             return;
         }
         std::cout << "Created new disk file \n";
     }
-    this->diskPath = diskPath;
+    this->diskPath = potentialNewDiskPath;
     std::cout << "Disk set to: \"" << diskFileName << "\"\n";
     saveEmuStateToConfigFile();
     enterToContinue();

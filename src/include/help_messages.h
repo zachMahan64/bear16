@@ -17,7 +17,7 @@ constexpr const char* helpMessageCli =
   <no-args>                      start termnial user interface
                                  *note: all args and flags are order-agnostic
 
-usage: b16 [-h | --help]
+usage: b16 [--help | -h]
        b16 [--assemble | assemble | -a] <assembly_file> <target_binary_file>
        b16 [--run | run | -r] <binary_file>
        b16 [-ar | -ra] <assembly_file> <binary_file>
@@ -25,9 +25,8 @@ usage: b16 [-h | --help]
        b16 -sd
        b16 -cd
        b16 -rd
-       b16 [--version]
-       b16 [help]
-       b16 doctor
+       b16 [--version | -v]
+       b16 [doctor | --doctor]
        b16 <no-args>
 
 example flows: ~ project set-up ~
@@ -55,16 +54,18 @@ WHAT TO DO IN THE BEAR16 TERMINAL USER INTERFACE
 ------------------------------------------------
 - You can use the assembler and emulator to run:
     - Standalone programs
-    - Apps for the Bear16 OS
-    - Write your own OS for the system (you could reuse my OS Core libraries to streamline the process!)
+    - Apps for the Bear16 OS (you must static include any bear16 os files in your project)
+    - Write your own OS for the system (you could reuse my util library to streamline the process!)
 
 MAKING A NEW PROJECT
 --------------------
     1.) Create a new directory inside `projects_b16` or another location if you prefer and set it as your open project
-    2.) Create at least one `.asm` file to be used as your entry point and set it as such in the project config.
-    3.) You can create and link as many `.asm` files as you want (use the` @include` directive; see README for details).
+    2.) Create at least one `.asm` file inside the root of your project to be used as your entry point and set it as
+        such in the project config.
+    3.) Create and link as many `.asm` files as you want (use the` @include` directive; see README for details). Write
+        all paths relative to project root.
     4.) Make sure to follow the opcode syntax in the ISA spreadsheet and the directive syntax section in the README.
-    5.) The assembler is pretty helpful with any kind of syntax mistake, but it cannot catch logical errors.
+    5.) The assembler catches all syntax mistakes, but it cannot catch logical errors.
 
 MORE INFO
 ---------
