@@ -512,7 +512,9 @@ void Emulator::getEmuStateFromConfigFile() {
 }
 void Emulator::getProjectPathFromUser() {
     std::string projectDirName;
-    std::filesystem::path projectsParentDir = projectPath.parent_path();
+    std::filesystem::path projectsParentDir =
+        projectPath.parent_path().parent_path(); // TODO might be implementation defined, funky
+                                                 // behavior likely caused by trailing backslash
     std::cout << "Enter the name of the project directory: " << "\n";
     std::cout << projectsParentDir.string() << '/';
     std::getline(std::cin, projectDirName);
