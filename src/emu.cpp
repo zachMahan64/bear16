@@ -460,16 +460,13 @@ void Emulator::restoreDefaultConfigFile() {
 
 std::filesystem::path Emulator::computeDefaultExecutablePath() const {
     std::string DEFAULT_BUILD_DIR = "build"; // lives inside project root
-    // Ensure projectPath is a valid path
-    std::filesystem::path curProjectPath(projectPath);
-    if (!std::filesystem::exists(curProjectPath)) {
-        std::cerr << "Project path does not exist: " << projectPath << "\n";
-        return {};
-    }
+
     // compute the output binary path
-    std::filesystem::path executableName = curProjectPath.stem(); // filename w/o extension
+    std::filesystem::path executableName =
+        projectPath.parent_path()
+            .filename(); // gets project name from dir name, TODO: may be implementation defined
     std::filesystem::path executablePath =
-        curProjectPath / DEFAULT_BUILD_DIR / (executableName.string() + ".bin");
+        projectPath / DEFAULT_BUILD_DIR / (executableName.string() + ".bin");
     return executablePath;
 }
 
