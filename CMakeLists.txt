@@ -12,10 +12,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2")
 else()
-  # Use GCC/Clang flags
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+    # Use GCC/Clang flags
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 endif()
 
 
@@ -57,7 +57,7 @@ elseif(UNIX)
 elseif(WIN32)
     # paths
     set(SDL2_INCLUDE_DIR
-      "${CMAKE_SOURCE_DIR}/dependencies/x86_64-w64-mingw32/include")
+        "${CMAKE_SOURCE_DIR}/dependencies/SDL2-x86_64-w64-mingw32/include")
     set(SDL2_LIB_DIR "${CMAKE_SOURCE_DIR}/dependencies/x86_64-w64-mingw32/lib")
     set(SDL2_DLL "${SDL2_LIB_DIR}/SDL2.dll")
 
