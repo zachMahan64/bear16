@@ -65,6 +65,8 @@ class Emulator {
     void getEntryFromUser();
     void getDiskPathFromUser();
     static void enterToContinue();
+    // process messages
+    void printProcessTerminationMsg(int exitCode);
 
   public:
     explicit Emulator(emu_launch launchState);

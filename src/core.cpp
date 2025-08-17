@@ -110,7 +110,7 @@ int Board::run() {
 }
 void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << std::dec;
-    std::cout << "RESULTS\n========" << "\n";
+    std::cout << "   DUMPED STATE\n";
     std::cout << "=====================" << "\n";
     printAllRegisterContents();
     std::cout << "=====================" << "\n";

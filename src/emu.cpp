@@ -47,9 +47,8 @@ int Emulator::assembleAndRunWithoutSavingExecutable() {
     board.saveDiskToBinFile(diskPath.string());
 
     // display diagnostics:
-    board.printDiagnostics(false);
-    std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode
-              << "\n";
+    board.printDiagnostics();
+    printProcessTerminationMsg(exitCode);
     return exitCode;
 }
 int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
@@ -193,10 +192,8 @@ int Emulator::runMentionedExecutable(const std::string& executableFileName) {
     board.saveDiskToBinFile(diskPath.string());
 
     // display diagnostics
-    board.printDiagnostics(false);
-    std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode
-              << "\n";
-    std::cout << "\n";
+    board.printDiagnostics();
+    printProcessTerminationMsg(exitCode);
     return exitCode;
 }
 void Emulator::resetDisk() {
@@ -356,10 +353,8 @@ void Emulator::runSavedExecutable() {
     board.saveDiskToBinFile(diskPath.string());
 
     // display diagnostics
-    board.printDiagnostics(false);
-    std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode
-              << "\n";
-    std::cout << "\n";
+    board.printDiagnostics();
+    printProcessTerminationMsg(exitCode);
 }
 
 void Emulator::enterConfigMenu() {
@@ -622,4 +617,10 @@ void Emulator::getEntryFromUser() {
 void Emulator::enterToContinue() {
     std::cout << "[ENTER] to continue" << "\n";
     std::cin.get();
+}
+
+void Emulator::printProcessTerminationMsg(int exitCode) {
+    std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode
+              << "\n";
+    std::cout << "\n";
 }

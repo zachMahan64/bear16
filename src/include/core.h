@@ -195,7 +195,7 @@ class Board {
     void saveDiskToBinFile(const std::string& path) const;
     // DIAGNOSTICS
     void calcClockSpeedHz(double elapsedMillis);
-    void printDiagnostics(bool printMemAsChars) const;
+    void printDiagnostics(bool printMemAsChars = false) const;
     void printAllRegisterContents() const;
 };
 // helper
