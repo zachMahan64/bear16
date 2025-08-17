@@ -110,8 +110,8 @@ int Board::run() {
 }
 void Board::printDiagnostics(bool printMemAsChars) const {
     std::cout << std::dec;
-    std::cout << "   DUMPED STATE\n";
-    std::cout << "=====================" << "\n";
+    std::cout << "   DUMPED PROCESS STATE\n";
+    std::cout << "==========================" << "\n";
     printAllRegisterContents();
     std::cout << "=====================" << "\n";
     std::cout << "First 64 bytes of RAM: \n";

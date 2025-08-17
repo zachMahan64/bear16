@@ -64,6 +64,7 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
         errors.insert(cli_error_e::missing_bin_file);
     }
     bool errorFlag = parseForUnrecognizedArgs(args, errors);
+    bool doDump = flags.contains(cli_flag::dump);
     bool doAssemble = flags.contains(cli_flag::assemble);
     bool doRun = flags.contains(cli_flag::run);
     bool doTUI = flags.contains(cli_flag::tui);
@@ -106,7 +107,9 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
         if (!errors.empty()) {
             enumerateErrorsAndTerminate(errors);
         }
-        runMentionedExecutable(mentionedFiles.binFile);
+        runMentionedExecutable(
+            mentionedFiles.binFile,
+            doDump); // dump state at process termination if --dump was specified!
     }
 
     if (!errors.empty()) {
@@ -177,7 +180,8 @@ Emulator::enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e>& err
     std::exit(exitCode);
 }
 
-int Emulator::runMentionedExecutable(const std::string& executableFileName) {
+int Emulator::runMentionedExecutable(const std::string& executableFileName,
+                                     bool dumpStateAtTermination) {
     std::vector<uint8_t> userRom{};
 
     // init emulated system
@@ -192,7 +196,9 @@ int Emulator::runMentionedExecutable(const std::string& executableFileName) {
     board.saveDiskToBinFile(diskPath.string());
 
     // display diagnostics
-    board.printDiagnostics();
+    if (dumpStateAtTermination) {
+        board.printDiagnostics();
+    }
     printProcessTerminationMsg(exitCode);
     return exitCode;
 }
@@ -620,7 +626,7 @@ void Emulator::enterToContinue() {
 }
 
 void Emulator::printProcessTerminationMsg(int exitCode) {
-    std::cout << "Emulated process (version " + version + ") finished with exit code " << exitCode
-              << "\n";
+    std::cout << "Emulated process (bear16 version " + version + ") finished with exit code "
+              << exitCode << "\n";
     std::cout << "\n";
 }

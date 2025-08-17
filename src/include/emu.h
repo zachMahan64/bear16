@@ -13,8 +13,8 @@
 enum class emu_launch : uint8_t { cli_args, tui };
 class Emulator {
     // version info & constant state
-    const std::string version = "0.0.6";
-    const std::string dateOfLastVersion = "2025-08-09";
+    const std::string version = "0.0.7";
+    const std::string dateOfLastVersion = "2025-08-17";
     const emu_launch launchState;
     // PATHING
     // CONSTANTS
@@ -37,7 +37,8 @@ class Emulator {
     assembly::Assembler testAssembler;
     // CLI
     int performActionBasedOnArgs(const std::vector<std::string>& args);
-    int runMentionedExecutable(const std::string& executableFileName);
+    int runMentionedExecutable(const std::string& executableFileName,
+                               bool dumpStateAtTermination = false);
     void resetDisk();
     [[noreturn]] static void
     enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e>& errors,

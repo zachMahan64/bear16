@@ -4,7 +4,8 @@
 constexpr const char* helpMessageCli =
     R"HELP(options:
   -a, --assemble, assemble       assemble source file(s)
-  -r, --run, run                 run the specified disk image
+  -r, --run, run                 run the specified rom image
+  --dump                         dump process state at termination
   -h, --help, help               show help message
   -v, --version                  show version information
   -u, --ui, --tui                start terminal user interface

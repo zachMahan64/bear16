@@ -28,7 +28,8 @@ const std::unordered_map<std::string, cli_flag> stringToArgFlagMap{
     {"--set-disk", cli_flag::set_disk},
     {"--reset-disk", cli_flag::reset_disk},
     {"--doctor", cli_flag::doctor},
-    {"doctor", cli_flag::doctor}};
+    {"doctor", cli_flag::doctor},
+    {"--dump", cli_flag::dump}};
 
 const std::unordered_map<cli_error_e, std::string> errMsgMap{
     {cli_error_e::multiple_incompatible_flags, "Multiple incompatible flags provided"},
@@ -63,8 +64,13 @@ std::unordered_set<cli_flag> parseFlags(const std::vector<std::string>& args,
 
     if (parsedFlags.size() > 1 &&
         (parsedFlags.size() != 2 || !parsedFlags.contains(cli_flag::assemble) ||
-         !parsedFlags.contains(cli_flag::run))) {
-        cliErrorState.insert(cli_error_e::multiple_incompatible_flags);
+         !parsedFlags.contains(cli_flag::run)) &&
+        (parsedFlags.size() != 2 || !parsedFlags.contains(cli_flag::dump) ||
+         !parsedFlags.contains(cli_flag::run)) &&
+        (parsedFlags.size() != 3 || !parsedFlags.contains(cli_flag::assemble) ||
+         !parsedFlags.contains(cli_flag::run) || !parsedFlags.contains(cli_flag::dump))) {
+        cliErrorState.insert(
+            cli_error_e::multiple_incompatible_flags); // refactor this monstrosity asap 20250817
     }
 
     return parsedFlags;
