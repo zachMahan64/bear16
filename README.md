@@ -34,6 +34,8 @@
 ### Windows (Msys2)
 - Visit: `https://www.msys2.org/`, then download and run the Msys2 setup exe
 - Open Msys2 once installed
+- `pacman -Syu` and restart when prompted
+- `pacman -Su`
 - `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-cmake`
 - `cd /c/path/to/bear16`
 - `mkdir build`
