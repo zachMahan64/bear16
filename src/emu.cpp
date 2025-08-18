@@ -16,6 +16,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <system_error>
 #include <unordered_set>
 #include <vector>
 Emulator::Emulator(emu_launch launchState) : launchState(launchState) {}
@@ -79,6 +80,9 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
                                  // CLI
 
     if (doAssemble) {
+        if (mentionedFiles.binFile.empty()) {
+            errors.insert(cli_error_e::missing_bin_file);
+        }
         if (mentionedFiles.asmFile.empty()) {
             errors.insert(cli_error_e::missing_asm_file);
         }
@@ -87,9 +91,7 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
         }
         projectPath = std::filesystem::canonical(mentionedFiles.asmFile).parent_path();
         entryFileName = std::filesystem::path(mentionedFiles.asmFile).filename().string();
-        std::filesystem::path execPath = (mentionedFiles.binFile.empty())
-                                             ? computeDefaultExecutablePath()
-                                             : std::filesystem::path(mentionedFiles.binFile);
+        std::filesystem::path execPath = std::filesystem::path(mentionedFiles.binFile);
         if (assembleAndSaveExecutable(execPath)) {
             mentionedFiles.binFileState = bin_file_state::exists; // if assembly succeeds
         }
@@ -324,7 +326,14 @@ void Emulator::printTUIMainMenu() {
 bool Emulator::assembleAndSaveExecutable(const std::filesystem::path& executablePath) {
     testAssembler.openProject(projectPath, entryFileName);
     auto userRom = testAssembler.assembleOpenedProject();
-
+    std::filesystem::path executableParentPath = executablePath.parent_path();
+    if (!std::filesystem::exists(executableParentPath)) {
+        std::error_code errorCode;
+        std::filesystem::create_directories(executableParentPath, errorCode);
+        if (errorCode) {
+            std::cout << "Failed to build path to specified executable\n";
+        }
+    }
     std::ofstream executableFile(executablePath, std::ios::binary);
     if (!executableFile) {
         std::cerr << "Failed to open output file: " << executablePath << "\n";

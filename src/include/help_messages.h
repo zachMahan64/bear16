@@ -20,8 +20,8 @@ constexpr const char* helpMessageCli =
 
 usage: b16 [--help | -h]
        b16 [--assemble | assemble | -a] <assembly_file> <target_binary_file>
-       b16 [--run | run | -r] <binary_file>
-       b16 [-ar | -ra] <assembly_file> <binary_file>
+       b16 [--run | run | -r] <binary_file> <--dump/no-flag>
+       b16 [-ar | -ra] <assembly_file> <binary_file> <--dump/no-flag>
        b16 [--ui | --tui]
        b16 -sd
        b16 -cd
