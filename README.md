@@ -123,10 +123,7 @@
 ### A Preprocessor, Recursive Linker, and Multi-pass Assembler
 *(To be added soon.)*
 
-### A Monolithic OS and Kernel
-*(To be added soon.)*
-
-### Unfinished and Unused Features
+### Unused Features
 *(To be added soon.)*
 
 ### Bear16: A Reflection
