@@ -619,8 +619,8 @@ void Emulator::getDiskPathFromUser() {
 
 void Emulator::getEntryFromUser() {
     std::string entryFileName;
-    std::cout << "Enter the name of the disk: " << "\n";
-    std::cout << projectPath.string() << '/';
+    std::cout << "Enter the name of the entry file: " << "\n";
+    std::cout << projectPath.string();
     std::getline(std::cin, entryFileName);
     if (entryFileName.empty()) {
         std::cout << "ERROR: Entry file name cannot be empty." << "\n";
