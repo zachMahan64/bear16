@@ -216,7 +216,7 @@ void Emulator::resetDisk() {
         return;
     }
     std::vector emptyDiskData(isa::DISK_SIZE, 0);
-    writeToFile(diskPath, emptyDiskData);
+    writeToFile(diskPath.string(), emptyDiskData);
     std::cout << "Cleared current disk. \n";
 }
 void Emulator::enterTUI() {

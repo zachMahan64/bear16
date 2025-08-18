@@ -58,7 +58,7 @@ elseif(WIN32)
     # paths
     set(SDL2_INCLUDE_DIR
         "${CMAKE_SOURCE_DIR}/dependencies/SDL2-x86_64-w64-mingw32/include")
-    set(SDL2_LIB_DIR "${CMAKE_SOURCE_DIR}/dependencies/x86_64-w64-mingw32/lib")
+    set(SDL2_LIB_DIR "${CMAKE_SOURCE_DIR}/dependencies/SDL2-x86_64-w64-mingw32/lib")
     set(SDL2_DLL "${SDL2_LIB_DIR}/SDL2.dll")
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE SDL_MAIN_HANDLED)
