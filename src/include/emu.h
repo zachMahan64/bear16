@@ -50,7 +50,8 @@ class Emulator {
     void printTUIMainMenu();
     // submenus/methods
     bool assembleAndSaveExecutable(const std::filesystem::path& executablePath);
-    void runSavedExecutable();
+    enum class build_type : uint8_t { release, debug };
+    void runSavedExecutable(build_type buildType);
     // config menu
     void enterConfigMenu();
     void printConfigMenu();
@@ -58,7 +59,7 @@ class Emulator {
     bool buildBear16DirsIfDNE();
     void restoreDefaultEmuState();
     void restoreDefaultConfigFile();
-    [[nodiscard]] std::filesystem::path computeDefaultExecutablePath() const;
+    [[nodiscard]] std::filesystem::path computeDefaultExecutablePath(build_type buildType) const;
     void saveEmuStateToConfigFile();
     void getEmuStateFromConfigFile();
     // getting input from user

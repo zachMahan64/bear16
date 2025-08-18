@@ -60,12 +60,13 @@ WHAT TO DO IN THE BEAR16 TERMINAL USER INTERFACE
 
 MAKING A NEW PROJECT
 --------------------
-    1.) Create a new directory inside `projects_b16` or another location if you prefer and set it as your open project
+    1.) Create a new directory inside `bear16_projects` or another projects directory specificed in your `.b16.json` file
+        and set it as your open project.
     2.) Create at least one `.asm` file inside the root of your project to be used as your entry point and set it as
         such in the project config.
-    3.) Create and link as many `.asm` files as you want (use the` @include` directive; see README for details). Write
+    3.) Create and link as many `.asm` files as you want (use the `@include` directive; see README for details). Write
         all paths relative to project root.
-    4.) Make sure to follow the opcode syntax in the ISA spreadsheet and the directive syntax section in the README.
+    4.) Make sure to follow the syntax given in the ISA spreadsheet and the directive syntax section in the README.
     5.) The assembler catches all syntax mistakes, but it cannot catch logical errors.
 
 MORE INFO
@@ -75,9 +76,10 @@ MORE INFO
     - Assembly syntax
     - Memory-mapped IO implementation details
     - Emulator & assembler source code
-    - Bear16 OS breakdown
-    - Example assembly programs and the Bear16 OS source code
+    - Example assembly programs
     → Docs on: https://github.com/zachMahan64/bear16
+    → Bear16 OS docs on: https://github.com/zachMahan64/bear16_os
+
 )HELP";
 
 #endif // HELP_MESSAGES_H

@@ -238,22 +238,32 @@ void Emulator::enterTUI() {
         }
         switch (choice.at(0)) {
         case '1': {
-            assembleAndRunWithoutSavingExecutable();
-            hasLaunchedEmu = true;
+            assembleAndSaveExecutable(computeDefaultExecutablePath(build_type::release));
             break;
         }
         case '2': {
-            assembleAndSaveExecutable(computeDefaultExecutablePath());
+            runSavedExecutable(build_type::release);
+            hasLaunchedEmu = true;
             break;
         }
         case '3': {
-            runSavedExecutable();
+            assembleAndSaveExecutable(computeDefaultExecutablePath(build_type::release));
+            runSavedExecutable(build_type::release);
             hasLaunchedEmu = true;
             break;
         }
         case '4': {
-            assembleAndSaveExecutable(computeDefaultExecutablePath());
-            runSavedExecutable();
+            assembleAndSaveExecutable(computeDefaultExecutablePath(build_type::debug));
+            break;
+        }
+        case '5': {
+            runSavedExecutable(build_type::debug);
+            hasLaunchedEmu = true;
+            break;
+        }
+        case '6': {
+            assembleAndSaveExecutable(computeDefaultExecutablePath(build_type::debug));
+            runSavedExecutable(build_type::debug);
             hasLaunchedEmu = true;
             break;
         }
@@ -311,10 +321,13 @@ void Emulator::printTUIMainMenu() {
         std::cout << fullPath << "\n";
     }
     PRINT_TITLE_BAR();
-    std::cout << std::format("| {:<76} |", "[1] Assemble & Run Without Saving Executable") << "\n";
-    std::cout << std::format("| {:<76} |", "[2] Assemble & Save Executable") << "\n";
-    std::cout << std::format("| {:<76} |", "[3] Run Saved Executable") << "\n";
-    std::cout << std::format("| {:<76} |", "[4] Assemble, Save, & Run Executable") << "\n";
+    std::cout << std::format("| {:<76} |", "[1] Assemble Project (Release)") << "\n";
+    std::cout << std::format("| {:<76} |", "[2] Run Executable   (Release)") << "\n";
+    std::cout << std::format("| {:<76} |", "[3] Assemble & Run   (Release)") << "\n";
+    PRINT_BORDER_DIV_LINE();
+    std::cout << std::format("| {:<76} |", "[4] Assemble Project (Debug)") << "\n";
+    std::cout << std::format("| {:<76} |", "[5] Run Executable   (Debug)") << "\n";
+    std::cout << std::format("| {:<76} |", "[6] Assemble & Run   (Debug)") << "\n";
     PRINT_BORDER_DIV_LINE();
     std::cout << std::format("| {:<76} |", "[P] Open a Different Project") << "\n";
     std::cout << std::format("| {:<76} |", "[C] Configure") << "\n";
@@ -353,12 +366,12 @@ bool Emulator::assembleAndSaveExecutable(const std::filesystem::path& executable
     enterToContinue();
     return true;
 }
-void Emulator::runSavedExecutable() {
+void Emulator::runSavedExecutable(Emulator::build_type buildType) {
     std::vector<uint8_t> userRom{};
 
     // init emulated system
     Board board(false);
-    board.loadRomFromBinFile(computeDefaultExecutablePath().string());
+    board.loadRomFromBinFile(computeDefaultExecutablePath(buildType).string());
     board.loadDiskFromBinFile(diskPath.string());
     // run
     LOG_ERR("Launching the Bear16 Emulator...");
@@ -367,8 +380,10 @@ void Emulator::runSavedExecutable() {
     // save disk state
     board.saveDiskToBinFile(diskPath.string());
 
-    // display diagnostics
-    board.printDiagnostics();
+    // display diagnostics only when we're debugging
+    if (buildType == Emulator::build_type::debug) {
+        board.printDiagnostics();
+    }
     printProcessTerminationMsg(exitCode);
 }
 
@@ -468,15 +483,15 @@ void Emulator::restoreDefaultConfigFile() {
     saveEmuStateToConfigFile(); // saves the restored defaults
 }
 
-std::filesystem::path Emulator::computeDefaultExecutablePath() const {
-    std::string DEFAULT_BUILD_DIR = "build"; // lives inside project root
+std::filesystem::path Emulator::computeDefaultExecutablePath(Emulator::build_type buildType) const {
+    std::string buildDir = (buildType == Emulator::build_type::release) ? "build" : "debug";
 
     // compute the output binary path
     std::filesystem::path executableName =
         projectPath.parent_path()
             .filename(); // gets project name from dir name, TODO: may be implementation defined
     std::filesystem::path executablePath =
-        projectPath / DEFAULT_BUILD_DIR / (executableName.string() + ".bin");
+        projectPath / buildDir / (executableName.string() + ".bin");
     return executablePath;
 }
 
