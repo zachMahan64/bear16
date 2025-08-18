@@ -1,29 +1,47 @@
 # Bear16: A Custom, Fully Featured 16-Bit ISA, Assembler, Emulator, & OS
 ## Set-up
 ### Linux:
-Installing SDL2 packages:
+#### Installing SDL2 packages:
 - Fedora:        `sudo dnf install SDL2-devel`
 - Debian/Ubuntu: `sudo apt install libsdl2-dev`
 - Arch:          `sudo pacman -S sdl2`
-Cloning the repo:
-- `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/bear16`
+- `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/dev/cpp/bear16` or wherever you want the project to live
 ### macOS:
-- `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/bear16`
+- `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/dev/cpp/bear16` or wherever
 ### Windows
-- `git clone --depth=1 https://github.com/zachMahan64/bear16.git %USERPROFILE%/bear16`
-- Note (for all platforms): You can clone the repo into any location, just make a symlink in your home dir or change the config.
-- **You should export the bear16 directory to your path for proper CLI support (or whichever your b16 executable lives, like a build dir).**
-## Build Instructions and Toolchain Tips
+- `git clone --depth=1 https://github.com/zachMahan64/bear16.git %USERPROFILE%/dev/cpp/bear16` or wherever
+### All Platforms
+- **You should export the b16 executable's parent directory to your path for proper CLI support (where your b16 executable lives, like a build dir).**
+## Build Instructions
 - **Buildable with CMake** directly after cloning the GitHub repo.
 - **Platform support:** Linux, MacOS, and Windows.
 - **Dependencies:**
   - CMake >= v3.10
-  - C++23 compiler (altough C++20 should work too with a couple tweaks)
-     - Linux & MacOS: Both gcc & clang work.
-     - Windows: MinGW recomended (tested & working), altough MSVC should work with some manual config.
+  - Make or Ninja
+  - C++23 compiler:
+     - Linux & MacOS: gcc or clang
+     - Windows: MinGW
   - SDL2 (for framebuffer and input)
-- **IDE Recommendation:**
-- I used CLion & NeoVim, and they worked well.
+  - Nlohmann (header-only inside the repo)
+### Linux & MacOS
+- `cd path/to/bear16`
+- `mkdir build`
+- `cd build`
+- `cmake ..`
+- `make`
+- `echo 'export PATH="$HOME/path/to/bear16/build:$PATH"' >> ~/.bashrc` or `.zshrc` if you're using zsh instead of bash
+- `source ~/.bashrc` or `.zshrc`
+### Windows (Msys2)
+- Visit: `https://www.msys2.org/`, then download and run the Msys2 setup exe
+- Open Msys2 once installed
+- `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-cmake`
+- `cd /c/path/to/bear16`
+- `mkdir build`
+- `cd build`
+- `cmake -G "MinGW Makefiles" ..`
+- `mingw32-make`
+- `echo 'export PATH="$PWD:$PATH"' >> ~/.bashrc`
+- `source ~/.bashrc`
 ## Technical Overview
 ### Background
 - I built Bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
@@ -31,7 +49,7 @@ Cloning the repo:
       framebuffering, blitting, and memory allocator.
     - The VM and Assembler are written in modern C++ 23.
     - All programming for the Bear16 system must be done in raw assembly.
-    - The Bear16 architecture is inspired by x86 and RISC-V, although it deviates in its syntax, directives, and instruction layout.
+    - The Bear16 architecture is inspired by x86's expressiveness and RISC-V's simplicity, although it deviates in its syntax, directives, and instruction layout.
     - Bear16 is a pure Harvard architecture in which ROM and RAM occupy separate address spaces. This
       was done as a design choice largely to expand system memory given 16-bit address space constraints without
       the need for banking or wider-than-16-bit register addressing.
