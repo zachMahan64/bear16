@@ -1,8 +1,8 @@
 //
 // Created by Zachary Mahan on 6/4/25.
 //
-#ifndef EMU_H
-#define EMU_H
+#ifndef BEAR16_H
+#define BEAR16_H
 #include "assembly.h"
 #include "cli_args.h"
 #include "path_manager.h"
@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 enum class emu_launch : uint8_t { cli_args, tui };
-class Emulator {
+class Bear16 {
     // version info & constant state
     const std::string version = "0.0.7";
     const std::string dateOfLastVersion = "2025-08-17";
@@ -71,8 +71,8 @@ class Emulator {
     void printProcessTerminationMsg(int exitCode);
 
   public:
-    explicit Emulator(emu_launch launchState);
+    explicit Bear16(emu_launch launchState);
     int launch(int argc, char** argv);
 };
 
-#endif // EMU_H
+#endif // BEAR16_H

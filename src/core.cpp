@@ -345,9 +345,9 @@ CPU16::CPU16(std::array<uint8_t, isa::SRAM_SIZE>& sram, std::array<uint8_t, isa:
 
 // CPU16 flow of execution
 void CPU16::step() {
-    // fetch & prelim. decoding
-    LOG("DEBUG: PC = " << std::to_string(pc));
-    auto instr = parts::Instruction(fetchInstruction());
+    // fetch & decode
+    LOG("DEBUG: PC = " << pc);
+    parts::Instruction instr(fetchInstruction());
     // execute & writeback
     execute(instr);
     if (!pcIsFrozenThisCycle) {

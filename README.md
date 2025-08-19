@@ -44,6 +44,8 @@
 - `mingw32-make`
 - `echo 'export PATH="$PWD:$PATH"' >> ~/.bashrc`
 - `source ~/.bashrc`
+## Using Bear16: Some Example Workflows
+- (...)
 ## Technical Overview
 ### Background
 - I built Bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
@@ -63,12 +65,12 @@
 - Bear16 is a 16-bit, little-endian architecture with 16-bit memory addressing and 64-bit fixed-width instructions.
 - Instruction format:
   - Each instruction is broken up into four distinct 16-bit fields
-    - [16] [16] [16] [16]
-    - [opcode] [destination] [source_one] [source_two]
+    - `{16} {16} {16} {16}`
+    - `{opcode} {destination} {source_one} {source_two}`
     - Each opcode contains two sub-fields:
-      - [opcode]
-      - [2][14]
-      - [immediate_flags][instruction_code]
+      - `{opcode}`
+      - `{2} {14}`
+      - {immediate_flags}{instruction_code}
         - The immediate flags can be 00, 01, 10, and 11
         - Bit 15 (MSB) indicates that source_one is an immediate; bit 14 indicates the same for source_two.
         - This can be specified manually in text by `{op}{imm_suffix}` where the suffix can either be absent (00), i1 (10), i2 (01), or i (11).
@@ -119,14 +121,82 @@
 
 ## The Bear16 Design Process and a Toolchain Overview
 
-### A Cycle-Accurate RTL Emulator
-*(To be added soon.)*
+### A Cycle-Accurate RTL Emulator, Preprocessor, Recursive Linker, and Multi-pass Assembler
+    The design philosophy behind Bear16 is one of maximizing speed. The emulator, despite being cycle-accurate, can run well above 100 MHz in real-time. However, it has been calibrated to target ~36-40 MHz. The code is Object-Based, following principles of encapsulation, but uses composition with zero inheritance for maximum runtime speed. The general structure of b16 is as follows:
+- [bear16 interface](src/include/bear16.h)
+    - controlled via CLI arguments or the TUI (a click-and-run experience that runs in the terminal).
+    - owns: assmebler, board
+- [assembler](src/include/assembly.h)
+    - assembles .asm files (links included files recursively -> create an executable binary compliant with the Bear16 ISA)
+    - owns preprocessor for linking
+    - assembles in a multi-pass fashion: tokenize -> break into text & data sections -> resolve constant expressions -> resolve references to labels and constants -> convert into binary that Bear16 CPU understands!
+- [board](src/include/core.h)
+    - owns a CPU16: the CPU core
+    - owns memory and disk (ram and rom are std::arrays and disk is an std::vector of uint8_t's)
+    - owns a Screen (wrapper around an SDL2 window with framebuffer rendering functionality)
+    - owns a DiskController & a InputController (memory-mapped IO controllers)
+    - all subcomponents of Board have non-owning views into memory/disk
+    - all objects follow RAII and everything lives on stack (for maximized cache-locality) besides the SDL2 window and the disk (an std::vector).
+    - heres the simplified C++/pseudo-code for the Board's main method ("run"):
+```cpp
+int Board::run() {
+    int exitCode = 0;
+    // init clock & SDL2 timings
+    STEPS_PER_LOOP = ... enough to target 36'000'000 Hz;
+    SDL_Event event;
+    clock.resetCycles(); // set clock cycles to zero @ the start of a new process
+    clock.initMemMappedTime();
 
-### A Preprocessor, Recursive Linker, and Multi-pass Assembler
-*(To be added soon.)*
+    auto startTime = currentTimeMillis(); // for calculating clock speed after running ends
+    constexpr double TARGET_FRAME_TIME = 1.0 / 60.0; // 60 FPS,
+    uint64_t lastFrameTime = SDL_GetPerformanceCounter();
+    const uint64_t freq = SDL_GetPerformanceFrequency();
 
-### Unused Features
-*(To be added soon.)*
+    do {
+        while (SDL_PollEvent(&event)) {
+            ... poll for an event, like a keypress
+        }
+        for (int i = 0; i < STEPS_PER_LOOP; ++i) {
+            cpu.step();
+            clock.tick();
+            if (cpu.isHalted) {
+                break;
+            }
+        } // this inner loop lets the cpu wait less often for (slow) SDL2 polling
+
+        diskController.handleDiskOperation();
+
+        const uint64_t now = SDL_GetPerformanceCounter();
+        const double elapsed = static_cast<double>(now - lastFrameTime) / static_cast<double>(freq);
+
+        if (elapsed >= TARGET_FRAME_TIME) {
+            ... render framebuffer to SDL2 window & update memory-mapped time
+        }
+    } while (!cpu.isHalted);
+
+    // calculate some clock stats
+    auto endTime = currentTimeMillis();
+    auto elapsedMillis = static_cast<double>(endTime - startTime);
+    calcClockSpeedHz(elapsedMillis);
+
+    return exitCode;
+}
+```
+- [cpu16](core.h)
+    - main interface through the "step" method:
+```cpp
+void CPU16::step() {
+    // fetch & decode
+    LOG("DEBUG: PC = " << pc);
+    parts::Instruction instr(fetchInstruction());
+    // execute & writeback
+    execute(instr);
+    if (!pcIsFrozenThisCycle) {
+        pc += 8;
+    }
+    pcIsFrozenThisCycle = false;
+}
+```
 
 ### Bear16: A Reflection
 *(To be added soon.)*

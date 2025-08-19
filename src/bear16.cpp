@@ -1,7 +1,7 @@
 //
 // Created by Zachary Mahan on 6/4/25.
 //
-#include "emu.h"
+#include "bear16.h"
 #include "assembly.h"
 #include "cli_args.h"
 #include "core.h"
@@ -19,8 +19,8 @@
 #include <system_error>
 #include <unordered_set>
 #include <vector>
-Emulator::Emulator(emu_launch launchState) : launchState(launchState) {}
-int Emulator::launch(int argc, char** argv) {
+Bear16::Bear16(emu_launch launchState) : launchState(launchState) {}
+int Bear16::launch(int argc, char** argv) {
     int exitCode = 0;
     getEmuStateFromConfigFile();
     buildBear16DirsIfDNE();
@@ -32,7 +32,7 @@ int Emulator::launch(int argc, char** argv) {
     }
     return exitCode;
 }
-int Emulator::assembleAndRunWithoutSavingExecutable() {
+int Bear16::assembleAndRunWithoutSavingExecutable() {
     testAssembler.openProject(projectPath, entryFileName);
     auto userRom = testAssembler.assembleOpenedProject();
 
@@ -52,7 +52,7 @@ int Emulator::assembleAndRunWithoutSavingExecutable() {
     printProcessTerminationMsg(exitCode);
     return exitCode;
 }
-int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
+int Bear16::performActionBasedOnArgs(const std::vector<std::string>& args) {
     int exitCode = 0;
     std::unordered_set<cli_error_e> errors{};
     std::unordered_set<cli_flag> flags = parseFlags(args, errors);
@@ -173,8 +173,8 @@ int Emulator::performActionBasedOnArgs(const std::vector<std::string>& args) {
     return exitCode;
 }
 
-[[noreturn]] void
-Emulator::enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e>& errors, int exitCode) {
+[[noreturn]] void Bear16::enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e>& errors,
+                                                      int exitCode) {
     std::cerr << "Bear16 found critical errors. \n";
     for (const auto& error : errors) {
         std::cerr << " -> " << errMsgMap.at(error) << '\n';
@@ -182,8 +182,8 @@ Emulator::enumerateErrorsAndTerminate(const std::unordered_set<cli_error_e>& err
     std::exit(exitCode);
 }
 
-int Emulator::runMentionedExecutable(const std::string& executableFileName,
-                                     bool dumpStateAtTermination) {
+int Bear16::runMentionedExecutable(const std::string& executableFileName,
+                                   bool dumpStateAtTermination) {
     std::vector<uint8_t> userRom{};
 
     // init emulated system
@@ -204,7 +204,7 @@ int Emulator::runMentionedExecutable(const std::string& executableFileName,
     printProcessTerminationMsg(exitCode);
     return exitCode;
 }
-void Emulator::resetDisk() {
+void Bear16::resetDisk() {
     std::cout << "Clear current disk (" << diskPath << ")?\n";
     std::cout
         << "-> This action is permanent, so back up the disk if you care about its contents. \n";
@@ -219,7 +219,7 @@ void Emulator::resetDisk() {
     writeToFile(diskPath.string(), emptyDiskData);
     std::cout << "Cleared current disk. \n";
 }
-void Emulator::enterTUI() {
+void Bear16::enterTUI() {
     getEmuStateFromConfigFile();
     auto printInvalidChoice = []() { std::cout << "Invalid choice. Please try again." << "\n"; };
     std::string choice;
@@ -291,7 +291,7 @@ void Emulator::enterTUI() {
         }
     } while (choice != "q" && !hasLaunchedEmu);
 }
-void Emulator::printTUIMainMenu() {
+void Bear16::printTUIMainMenu() {
     size_t LINE_LEN = 80;
     size_t FORMAT_LINE_LEN = LINE_LEN - 4;
     std::string emuTitle =
@@ -336,7 +336,7 @@ void Emulator::printTUIMainMenu() {
     PRINT_DIVIDE_BAR();
     std::cout << "Make a selection: ";
 }
-bool Emulator::assembleAndSaveExecutable(const std::filesystem::path& executablePath) {
+bool Bear16::assembleAndSaveExecutable(const std::filesystem::path& executablePath) {
     testAssembler.openProject(projectPath, entryFileName);
     auto userRom = testAssembler.assembleOpenedProject();
     std::filesystem::path executableParentPath = executablePath.parent_path();
@@ -366,7 +366,7 @@ bool Emulator::assembleAndSaveExecutable(const std::filesystem::path& executable
     enterToContinue();
     return true;
 }
-void Emulator::runSavedExecutable(Emulator::build_type buildType) {
+void Bear16::runSavedExecutable(Bear16::build_type buildType) {
     std::vector<uint8_t> userRom{};
 
     // init emulated system
@@ -381,13 +381,13 @@ void Emulator::runSavedExecutable(Emulator::build_type buildType) {
     board.saveDiskToBinFile(diskPath.string());
 
     // display diagnostics only when we're debugging
-    if (buildType == Emulator::build_type::debug) {
+    if (buildType == Bear16::build_type::debug) {
         board.printDiagnostics();
     }
     printProcessTerminationMsg(exitCode);
 }
 
-void Emulator::enterConfigMenu() {
+void Bear16::enterConfigMenu() {
     auto printInvalidChoice = []() { std::cout << "Invalid choice. Please try again." << "\n"; };
     std::string line;
     do {
@@ -427,7 +427,7 @@ void Emulator::enterConfigMenu() {
     } while (line.empty() || line.at(0) != 'c');
 }
 
-void Emulator::printConfigMenu() {
+void Bear16::printConfigMenu() {
     using namespace std;
     cout << "\n";
     cout << " Enter a [#] to make a change" << "\n";
@@ -441,7 +441,7 @@ void Emulator::printConfigMenu() {
     cout << " [C] Cancel" << "\n";
 }
 
-bool Emulator::buildBear16DirsIfDNE() {
+bool Bear16::buildBear16DirsIfDNE() {
     bool atLeastOneDirDNE = false; // return val flag for potential logging
     const std::filesystem::path diskDir = diskPath.parent_path();
     if (!std::filesystem::exists(diskDir)) {
@@ -472,19 +472,19 @@ bool Emulator::buildBear16DirsIfDNE() {
     return atLeastOneDirDNE;
 }
 
-void Emulator::restoreDefaultEmuState() {
+void Bear16::restoreDefaultEmuState() {
     projectPath = DEFAULT_PROJECT_PATH;
     entryFileName = DEFAULT_ENTRY_FILE;
     diskPath = DEFAULT_DISK_PATH;
 }
 
-void Emulator::restoreDefaultConfigFile() {
+void Bear16::restoreDefaultConfigFile() {
     restoreDefaultEmuState();
     saveEmuStateToConfigFile(); // saves the restored defaults
 }
 
-std::filesystem::path Emulator::computeDefaultExecutablePath(Emulator::build_type buildType) const {
-    std::string buildDir = (buildType == Emulator::build_type::release) ? "build" : "debug";
+std::filesystem::path Bear16::computeDefaultExecutablePath(Bear16::build_type buildType) const {
+    std::string buildDir = (buildType == Bear16::build_type::release) ? "build" : "debug";
 
     // compute the output binary path
     std::filesystem::path executableName =
@@ -495,7 +495,7 @@ std::filesystem::path Emulator::computeDefaultExecutablePath(Emulator::build_typ
     return executablePath;
 }
 
-void Emulator::saveEmuStateToConfigFile() {
+void Bear16::saveEmuStateToConfigFile() {
     try {
         nlohmann::json jsonObject{};
         jsonObject["projectPath"] = projectPath;
@@ -513,7 +513,7 @@ void Emulator::saveEmuStateToConfigFile() {
     }
 }
 
-void Emulator::getEmuStateFromConfigFile() {
+void Bear16::getEmuStateFromConfigFile() {
     std::filesystem::path CONFIG_PATH = std::filesystem::path(USER_HOME_DIR / CONFIG_FILE_NAME);
     try {
         if (!std::filesystem::exists(CONFIG_PATH)) {
@@ -535,7 +535,7 @@ void Emulator::getEmuStateFromConfigFile() {
         std::cerr << "ERROR: Could not read config file: " << e.what() << "\n";
     }
 }
-void Emulator::getProjectPathFromUser() {
+void Bear16::getProjectPathFromUser() {
     std::string projectDirName;
     std::filesystem::path projectsParentDir =
         projectPath.parent_path().parent_path(); // TODO might be implementation defined, funky
@@ -584,7 +584,7 @@ void Emulator::getProjectPathFromUser() {
     saveChanges();
 }
 
-void Emulator::getDiskPathFromUser() {
+void Bear16::getDiskPathFromUser() {
     std::string diskFileName;
     std::filesystem::path diskParentDir(diskPath.parent_path());
     std::cout << "Enter the name of the disk: " << "\n";
@@ -617,7 +617,7 @@ void Emulator::getDiskPathFromUser() {
     enterToContinue();
 }
 
-void Emulator::getEntryFromUser() {
+void Bear16::getEntryFromUser() {
     std::string entryFileName;
     std::cout << "Enter the name of the entry file: " << "\n";
     std::cout << projectPath.string();
@@ -644,12 +644,12 @@ void Emulator::getEntryFromUser() {
     enterToContinue();
 }
 
-void Emulator::enterToContinue() {
+void Bear16::enterToContinue() {
     std::cout << "[ENTER] to continue" << "\n";
     std::cin.get();
 }
 
-void Emulator::printProcessTerminationMsg(int exitCode) {
+void Bear16::printProcessTerminationMsg(int exitCode) {
     std::cout << "Emulated process (bear16 version " + version + ") finished with exit code "
               << exitCode << "\n";
     std::cout << "\n";

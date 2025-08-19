@@ -147,78 +147,8 @@ enum class TokenType : uint8_t {
     REF,   // (to label or const, use look up table)
     STRING // "string" --> not supported currently
 };
-inline std::string toString(TokenType type) {
-    switch (type) {
-    case TokenType::MISTAKE:
-        return "MISTAKE";
-    case TokenType::GEN_REG:
-        return "GEN_REG";
-    case TokenType::SPEC_REG:
-        return "SPEC_REG";
-    case TokenType::IO_PSEUDO_REG:
-        return "IO_PSEUDO_REG";
-    case TokenType::LBRACKET:
-        return "LBRACKET";
-    case TokenType::RBRACKET:
-        return "RBRACKET";
-    case TokenType::EQUALS:
-        return "EQUALS";
-    case TokenType::SING_QUOTE:
-        return "SING_QUOTE";
-    case TokenType::DOUB_QUOTE:
-        return "DOUB_QUOTE";
-    case TokenType::PLUS:
-        return "PLUS";
-    case TokenType::OPERATION:
-        return "OPERATION";
-    case TokenType::COMMA:
-        return "COMMA";
-    case TokenType::COLON:
-        return "COLON";
-    case TokenType::EXPRESSION:
-        return "EXPRESSION";
-    case TokenType::DECIMAL:
-        return "DECIMAL";
-    case TokenType::CHAR:
-        return "CHAR";
-    case TokenType::CHAR_SPACE:
-        return "CHAR_SPACE";
-    case TokenType::HEX:
-        return "HEX";
-    case TokenType::FIXED_PT:
-        return "FIXED_PT";
-    case TokenType::BIN:
-        return "BIN";
-    case TokenType::EOL:
-        return "EOL";
-    case TokenType::COMMENT:
-        return "COMMENT";
-    case TokenType::LABEL:
-        return "LABEL";
-    case TokenType::CONST:
-        return "CONST";
-    case TokenType::TEXT:
-        return "TEXT";
-    case TokenType::DATA:
-        return "DATA";
-    case TokenType::WORD_DIR:
-        return "WORD_DIR";
-    case TokenType::QWORD_DIR:
-        return "QWORD_DIR";
-    case TokenType::BYTE_DIR:
-        return "BYTE_DIR";
-    case TokenType::OCTBYTE_DIR:
-        return "OCTBYTE_DIR";
-    case TokenType::STRING_DIR:
-        return "STRING_DIR";
-    case TokenType::REF:
-        return "REF";
-    case TokenType::STRING:
-        return "STRING";
-    default:
-        return "*UNKNOWN";
-    }
-}
+std::string toString(TokenType type);
+
 inline const std::unordered_set<TokenType> validOperandArguments = {
     TokenType::REF,           TokenType::STRING,     TokenType::GEN_REG, TokenType::SPEC_REG,
     TokenType::IO_PSEUDO_REG, TokenType::DECIMAL,    TokenType::HEX,     TokenType::BIN,
@@ -232,8 +162,8 @@ class Token {
         type = deduceTokenType(text);
         correctNullChar();
     }
-    explicit Token(const char c) {
-        body = std::string(1, c);
+    explicit Token(const char monoChar) {
+        body = std::string(1, monoChar);
         type = deduceTokenType(body);
     }
     static TokenType deduceTokenType(const std::string& text);
@@ -297,8 +227,9 @@ std::string unorderedMapToString(const std::unordered_map<K, V>& map) {
     oss << "{ ";
     for (auto it = map.begin(); it != map.end(); ++it) {
         oss << it->first << "|" << it->second;
-        if (std::next(it) != map.end())
+        if (std::next(it) != map.end()) {
             oss << ", ";
+        }
     }
     oss << " }";
     return oss.str();
