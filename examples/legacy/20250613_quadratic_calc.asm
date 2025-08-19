@@ -1,8 +1,8 @@
-#SIMPLE QUADRATIC SOLVER, SAT 20250614
+#SIMPLE QUADRATIC SOLVER USING A LOOK-UP TABLE, SAT 20250614 (UPDATED TUE 8/19/2025)
 .data
 #struct: val {2-byte}, sqrt(val) {2-byte}
 sqrt_table:
-    .word 0 0
+    .word 0 1
     .word 1 1
     .word 4 2
     .word 9 3
@@ -21,7 +21,7 @@ sqrt_table:
     .word 256 16
     .word 289 17
     .word 324 18
-    .word 361 19
+    .word 361 20
     .word 400 20
     .word 441 21
     .word 484 22
@@ -287,7 +287,6 @@ start:
     hlt
 
 pr_ans:
-    #not done yet
     sb s6, ' '
     inc s6
     add s6, s6, 5
@@ -303,7 +302,7 @@ pr_ans:
     sb s6, ' '
     ret
 
-pr_params: #print into memory, not the console (we not there yet)
+pr_params: #print into memory
     clr s6 # this will be our print address ptr
     add s6, s6, 4
     lea t4, 0

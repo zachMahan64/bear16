@@ -19,7 +19,7 @@ fibonacci:
     pop t0 # n -> t0
     push rv            # save result onto stack
 
-    sub a0, t0, 2         # a0 = n - 2
+    sub a0, t0, 2         # a0 = n - 3
     call fibonacci        # fib(n - 2)
     push rv           # save result onto stack
     pop t1 # get fib(n - 2) from stack
