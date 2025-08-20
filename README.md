@@ -121,7 +121,7 @@
 ## The Bear16 Design Process and a Toolchain Overview
 
 ### A Cycle-Accurate RTL Emulator, Preprocessor, Recursive Linker, and Multi-pass Assembler
-    The design philosophy behind Bear16 is one of maximizing speed. The emulator, despite being cycle-accurate, can run well above 100 MHz in real-time. However, it has been calibrated to target ~36-40 MHz. The code is Object-Based, following principles of encapsulation, but uses composition with zero inheritance for maximum runtime speed. The general structure of b16 is as follows:
+    The design philosophy behind Bear16 is one of maximizing speed. The emulator, despite being cycle-accurate, can comfortably 100 MHz on modern CPUs. However, it has been calibrated to target ~36-40 MHz. The program's design is Object-Based, following principles of encapsulation, but uses composition with zero inheritance for maximum runtime speed. The general structure of b16 is as follows:
 - [bear16 interface](src/include/bear16.h)
     - controlled via CLI arguments or the TUI (a click-and-run experience that runs in the terminal).
     - owns: assmebler, board
