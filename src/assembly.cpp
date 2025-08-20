@@ -14,6 +14,7 @@
 
 #include "expr_resolver.h"
 #include "fixpt8_8_t.h"
+#include "isa.h"
 #include "preprocess.h"
 #include <filesystem>
 
@@ -708,13 +709,13 @@ Assembler::parseListOfTokensIntoTokenizedRomLines(const std::vector<Token>& toke
              tkn.type == TokenType::WORD_DIR || tkn.type == TokenType::QWORD_DIR ||
              tkn.type == TokenType::STRING_DIR) &&
             inText) {
-            LOG_ERR("[WARNING] DATA DIRECTIVE IN TEXT SECTION: " + toString(tkn.type) + "-" +
+            LOG_ERR("[WARNING] data directive in text section: " + toString(tkn.type) + "-" +
                     tkn.body);
         }
         if (!inText && !inData && (tkn.type != TokenType::EOL && tkn.type != TokenType::COMMENT)) {
-            LOG_ERR("NOT IN TEXT OR DATA SECTION: " + toString(tkn.type) + "-" + tkn.body);
+            LOG_ERR("[ERROR] Not in text or data section: " + toString(tkn.type) + "-" + tkn.body);
         } else if (tkn.type == TokenType::MISTAKE) {
-            LOG_ERR("[ERROR] MISTAKE -> " + tkn.body);
+            LOG_ERR("[ERROR] Found mistake: " + tkn.body);
             if (inText)
                 currentLine_TEXT.push_back(tkn);
             if (inData)
@@ -1368,6 +1369,15 @@ void TokenizedInstruction::setOperandsAndAutocorrectImmediates(
     }
     if (operands.size() == 3) {
         dest = operands.at(0);
+        if ((opE == isa::Opcode_E::SB || opE == isa::Opcode_E::SW) &&
+            dest->valueType == ValueType::IMM) {
+            std::string opcodeStr = (opE == isa::Opcode_E::SW) ? "sw" : "sb";
+            LOG_ERR("[ERROR] immediate value given in dest for instruction \'" << opcodeStr
+                                                                               << "\'.");
+            LOG_ERR("|-----> " << opcodeStr
+                               << " expects a register argument in the destination field.");
+            LOG_ERR("|-----> correct usage: " << opcodeStr << " <register_name>, <src1>, <src2>");
+        }
         src1 = operands.at(1);
         src2 = operands.at(2);
     } else if (operands.size() == 2 && opE == isa::Opcode_E::COMP) {
@@ -1386,8 +1396,9 @@ void TokenizedInstruction::setOperandsAndAutocorrectImmediates(
         dest = operands.at(0);
     }
     // set imm
-    if (doNotAutoCorrectImmediates)
+    if (doNotAutoCorrectImmediates) {
         return;
+    }
     if (src1 && opHasNoWritImm && src1->valueType == ValueType::IMM) {
         LOG_ASM("Corrected imm to i1 for " + opcode.token.body);
         i1 = true;
@@ -1431,7 +1442,7 @@ OpCode::OpCode(Token token) : token(std::move(token)) {
     } else if (opCodeStrSplit.second == "i1") {
         immType = ImmType::I1;
     } else if (opCodeStrSplit.second == "i2") {
-        immType = ImmType::I2; // Fix here!
+        immType = ImmType::I2;
     } else {
         immType = ImmType::NO_IM;
     }
