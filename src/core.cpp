@@ -1131,7 +1131,7 @@ void DiskController::handleDiskOperation() {
     } else if (sram[isa::DISK_OP] == RESET_STATUS_OP) {
         sram[isa::DISK_STATUS] = 0; // reset
     } else {
-        LOG_ERR("ERROR: Unknown disk operation: " << sram[isa::DISK_OP] << "\n");
+        LOG("ERROR: Unknown disk operation: " << sram[isa::DISK_OP] << "\n");
         sram[isa::DISK_STATUS] |= UNKNOWN_OP_ERROR;
     }
 }
