@@ -1353,7 +1353,7 @@ void TokenizedInstruction::setOperandsAndAutocorrectImmediates(
     bool opHasNoWritImm = opcode.immType == ImmType::NO_IM;
     try {
         if (operands.size() < opcodeToOperandMinimumCountMap.at(opE)) {
-            LOG_ERR("[ERROR] too few of operands for opcode: " + opcode.token.body);
+            LOG_ERR("[ERROR] too few operands for opcode: " + opcode.token.body);
             return;
         }
     } catch (std::out_of_range& e) {
