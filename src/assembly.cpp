@@ -1267,40 +1267,41 @@ TokenType Token::deduceTokenType(const std::string& text) {
         } else {
             type = TokenType::GEN_REG;
         }
-    } else if (symbolToTokenMap.contains(text))
+    } else if (symbolToTokenMap.contains(text)) {
         type = symbolToTokenMap.at(text); // for '[', ']', ',', "+", "=", and ':'
-    else if (stringToDataDirectives.contains(text))
+    } else if (stringToDataDirectives.contains(text)) {
         type = stringToDataDirectives.at(text); // for directives like .string
-    else if (std::regex_match(text, std::regex("^0x[0-9A-Fa-f]+$")))
+    } else if (std::regex_match(text, std::regex("^0x[0-9A-Fa-f]+$"))) {
         type = TokenType::HEX;
-    else if (std::regex_match(text, std::regex("^0b[01]+$")))
+    } else if (std::regex_match(text, std::regex("^0b[01]+$"))) {
         type = TokenType::BIN;
-    else if (std::regex_match(text, std::regex("^[-+]?[0-9]+$")))
+    } else if (std::regex_match(text, std::regex("^[-+]?[0-9]+$"))) {
         type = TokenType::DECIMAL;
-    else if (std::regex_match(text, std::regex(R"(^[-+]?(\d+(\.\d*)?|\.\d+)$)")))
+    } else if (std::regex_match(text, std::regex(R"(^[-+]?(\d+(\.\d*)?|\.\d+)$)"))) {
         type = TokenType::FIXED_PT;
-    else if (text[0] == '#')
+    } else if (text[0] == '#') {
         type = TokenType::COMMENT;
-    else if (text[0] == '\n')
+    } else if (text[0] == '\n') {
         type = TokenType::EOL;
-    else if (text.length() == 1 && (std::isalpha(text[0]) || text[0] <= 127))
+    } else if (text.length() == 1 && (std::isalpha(text[0]) || text[0] <= 127)) {
         type = TokenType::CHAR;
-    else if (text == "\\0") {
+    } else if (text == "\\0") {
         type = TokenType::CHAR;
-    } else if (text == "\\s")
+    } else if (text == "\\s") {
         type = TokenType::CHAR_SPACE;
-    else if (text.length() > 1 && text.back() == ':')
+    } else if (text.length() > 1 && text.back() == ':') {
         type = TokenType::LABEL; // needs trimming?
-    else if (text == ".const")
+    } else if (text == ".const") {
         type = TokenType::CONST;
-    else if (text == ".data")
+    } else if (text == ".data") {
         type = TokenType::DATA;
-    else if (text == ".text")
+    } else if (text == ".text") {
         type = TokenType::TEXT;
-    else if (std::ranges::all_of(text, [](char c) { return (std::isalnum(c) || c == '_'); }))
+    } else if (std::ranges::all_of(text, [](char c) { return (std::isalnum(c) || c == '_'); })) {
         type = TokenType::REF;
-    else
+    } else {
         type = TokenType::STRING;
+    }
     return type;
 }
 
@@ -1322,7 +1323,7 @@ void Token::resolveExpression(const std::unordered_map<std::string, uint16_t>& l
     auto [str, raw] = expr_res::resolveStrExpr(body, labelMap, constMap);
     body = str;
     type = deduceTokenType(body);
-    LOG_ASM("DEBUG: resolved expression token body -> " << str << " - " << toString(type));
+    LOG_ASM("[DEBUG] resolved expression token body -> " << str << " - " << toString(type));
 }
 
 std::pair<std::string, std::string> splitOpcodeStr(std::string opcodeStr) {
@@ -1420,9 +1421,9 @@ OpCode::OpCode(Token token) : token(std::move(token)) {
     resolution = Resolution::UNRESOLVED;
     auto opCodeStrSplit = splitOpcodeStr(this->token.body);
     if (!stringToOpcodeMap.contains(opCodeStrSplit.first)) {
-        LOG_ERR("Unknown opcode: " + opCodeStrSplit.first + " (" + toString(token.type) + ", " +
-                this->token.body + ")");
-        throw std::runtime_error("Unknown opcode: -" + this->token.body + "-");
+        LOG_ERR("[ERROR] Unknown opcode: " + opCodeStrSplit.first + " (" + toString(token.type) +
+                ", " + this->token.body + ")");
+        throw std::runtime_error("[ERROR] Unknown opcode: -" + this->token.body + "-");
     }
     opcode_e = stringToOpcodeMap.at(opCodeStrSplit.first);
     if (opCodeStrSplit.second == "i") {
@@ -1458,7 +1459,7 @@ Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens)), signifi
           // as operand chars not working
         else if (significantToken.type == TokenType::CONST ||
                  significantToken.type == TokenType::LABEL) {
-            LOG_ERR("MISUSED DECLARATION: " + significantBody + " (" +
+            LOG_ERR("[ERROR] Misued declaration: " + significantBody + " (" +
                     toString(significantToken.type));
         }
     }
@@ -1472,8 +1473,8 @@ Operand::Operand(std::vector<Token> tokens) : tokens(std::move(tokens)), signifi
         valueType = ValueType::NAMED;
     }
     if (!validOperandArguments.contains(significantToken.type)) {
-        LOG_ERR("INVALID OPERAND: " + significantBody + " (" + toString(significantToken.type) +
-                ")");
+        LOG_ERR("[ERROR] Invalid operand: " + significantBody + " (" +
+                toString(significantToken.type) + ")");
     }
     LOG_ASM("full body:" + fullBody + ", significant body: " + significantBody +
             ", significant type: " + toString(significantToken.type));
