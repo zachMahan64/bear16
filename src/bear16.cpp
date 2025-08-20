@@ -89,8 +89,8 @@ int Bear16::performActionBasedOnArgs(const std::vector<std::string>& args) {
         if (!errors.empty()) {
             enumerateErrorsAndTerminate(errors);
         }
-        projectPath = std::filesystem::canonical(mentionedFiles.asmFile).parent_path();
-        entryFileName = std::filesystem::path(mentionedFiles.asmFile).filename().string();
+        projectPath = std::filesystem::current_path(); // assumes in project root dir
+        entryFileName = std::filesystem::path(mentionedFiles.asmFile).string();
         std::filesystem::path execPath = std::filesystem::path(mentionedFiles.binFile);
         if (assembleAndSaveExecutable(execPath)) {
             mentionedFiles.binFileState = bin_file_state::exists; // if assembly succeeds

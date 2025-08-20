@@ -135,7 +135,7 @@ std::string Preprocessor::preprocessAsmProject(const std::string& fileName) {
                 std::string fileToInclude = currentStr;
                 IncludeToken tkn(fileToInclude, projectPath);
                 if (addIncludeIfAbsent(tkn)) {
-                    LOG_ERR("Included file: " + fileToInclude);
+                    LOG_ERR("[INCLUDED FILE] " + fileToInclude);
                     includedFilesContents += preprocessAsmProject(tkn.getFileName());
                 }
                 currentStr.clear();
