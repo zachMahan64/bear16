@@ -51,7 +51,7 @@ bool IncludeToken::checkPathValidity() const {
 void IncludeToken::buildContents() {
     if (!checkPathValidity()) {
         contents = "";
-        LOG_ERR("ERROR: Could not open .asm file for preprocessing: " + fullPath);
+        LOG_ERR("[ERROR] Could not open .asm file for preprocessing: " + fullPath);
         return;
     }
     LOG("Successfully opened .asm file: " + fullPath + " for building contents");
@@ -91,7 +91,7 @@ std::string Preprocessor::preprocessAsmProject(const std::string& fileName) {
     std::string revisedAsm{};
     std::ifstream file(path, std::ios::in | std::ios::binary);
     if (!file) {
-        LOG_ERR("ERROR: Could not open .asm file for preprocessing: " << "\"" + path + "\"");
+        LOG_ERR("[ERROR] Could not open .asm file for preprocessing: " << "\"" + path + "\"");
         return {};
     }
     LOG("Successfully opened .asm file: " + path + " for preprocessing.");

@@ -172,7 +172,7 @@ void Board::loadUserRomFromBinInTxtFile(const std::string& path) {
     std::vector<uint8_t> byteRom{};
     std::filesystem::path executableName = std::filesystem::path(path).filename();
     if (!file.is_open()) {
-        std::cerr << "ERROR: could not run executable (" << executableName << " does not exist)"
+        std::cerr << "[ERROR] could not run executable (" << executableName << " does not exist)"
                   << "\n";
         return;
     }
@@ -187,7 +187,7 @@ void Board::loadUserRomFromBinInTxtFile(const std::string& path) {
     std::cout << "All bits: " << allBits << "\n";
 
     if (allBits.size() % 8 != 0) {
-        std::cout << "ERROR: Bitstream length (" << allBits.size()
+        std::cout << "[ERROR] Bitstream length (" << allBits.size()
                   << ") is not divisible by 8. File must contain errors." << "\n";
         file.close();
         return;
@@ -210,7 +210,7 @@ void Board::loadUserRomFromHexInTxtFile(const std::string& path) {
     std::ifstream file(path, std::ios::in | std::ios::binary);
     std::filesystem::path executableName = std::filesystem::path(path).filename();
     if (!file.is_open()) {
-        std::cerr << "ERROR: could not run executable (" << executableName << " does not exist)"
+        std::cerr << "[ERROR] could not run executable (" << executableName << " does not exist)"
                   << "\n";
         return;
     }
@@ -239,7 +239,7 @@ void Board::loadUserRomFromHexInTxtFile(const std::string& path) {
     std::cout << "All digits (debug): " << allDigits << "\n";
 
     if (allDigits.size() % 4 != 0) {
-        std::cout << "ERROR: Digit stream length (" << allDigits.size()
+        std::cout << "[ERROR] Digit stream length (" << allDigits.size()
                   << ") is not divisible by 4. File must contain errors." << "\n";
         return;
     }
@@ -261,7 +261,7 @@ void Board::loadUserRomFromHexInTxtFile(const std::string& path) {
 void Board::loadUserRomFromByteVector(std::vector<uint8_t>& rom) { setUserRom(rom); }
 void Board::setUserRom(std::vector<uint8_t>& rom) {
     if (rom.size() > isa::ROM_SIZE) {
-        std::cerr << "ERROR: ROM size exceeds " << isa::ROM_SIZE << " bytes" << "\n";
+        std::cerr << "[ERROR] ROM size exceeds " << isa::ROM_SIZE << " bytes" << "\n";
         return;
     }
     std::ranges::copy(rom, this->userRom.begin());
@@ -273,21 +273,21 @@ void Board::loadRomFromBinFile(const std::string& path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     std::filesystem::path executableName = std::filesystem::path(path).filename();
     if (!file.is_open()) {
-        std::cerr << "ERROR: could not run executable (" << executableName << " does not exist)"
+        std::cerr << "[ERROR] could not run executable (" << executableName << " does not exist)"
                   << "\n";
         return;
     }
 
     const std::streamsize size = file.tellg();
     if (size > isa::ROM_SIZE) {
-        LOG_ERR("ERROR: File size exceeds disk capacity.");
+        LOG_ERR("[ERROR] File size exceeds disk capacity.");
         return;
     }
     file.seekg(0, std::ios::beg);
 
     std::vector<uint8_t> buffer(size);
     if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
-        LOG_ERR("ERROR: Failed to read entire file.");
+        LOG_ERR("[ERROR] Failed to read entire file.");
         return;
     }
 
@@ -300,20 +300,20 @@ void Board::saveRomToBinFile(const std::string& path) const { writeToFile(path, 
 void Board::loadDiskFromBinFile(const std::string& path) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file) {
-        std::cout << "ERROR: Could not open file" << "\n";
+        std::cout << "[ERROR] Could not open file" << "\n";
         return;
     }
 
     std::streamsize size = file.tellg();
     if (size > isa::DISK_SIZE) {
-        LOG_ERR("ERROR: File size exceeds disk capacity.");
+        LOG_ERR("[ERROR] File size exceeds disk capacity.");
         return;
     }
     file.seekg(0, std::ios::beg);
 
     std::vector<uint8_t> buffer(size);
     if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
-        LOG_ERR("ERROR: Failed to read entire file.");
+        LOG_ERR("[ERROR] Failed to read entire file.");
         return;
     }
 
@@ -329,7 +329,7 @@ void Board::calcClockSpeedHz(double elapsedMillis) {
 
 void Board::setKernelRom(std::vector<uint8_t>& rom) {
     if (rom.size() > isa::ROM_SIZE) {
-        std::cerr << "ERROR: ROM size exceeds " << isa::ROM_SIZE << " bytes" << "\n";
+        std::cerr << "[ERROR] ROM size exceeds " << isa::ROM_SIZE << " bytes" << "\n";
         return;
     }
     std::ranges::copy(rom, this->kernelRom.begin());
@@ -396,7 +396,7 @@ void CPU16::performOp(const parts::Instruction& instr, uint16_t src1Val, uint16_
     } else if (isCtrlFlow) {
         doCtrlFlow(instr, src1Val, src2Val);
     } else {
-        LOG_ERR("ERROR: Unknown op14, trace to performOp | op14: "
+        LOG_ERR("[ERROR] Unknown op14, trace to performOp | op14: "
                 << std::hex << std::setw(4) << std::setfill('0') << op14 << "\n");
         LOG_ERR("op14: " << std::to_string(op14) << "\n");
     }
@@ -492,7 +492,7 @@ void CPU16::doArith(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t 
         break;
     }
     default: {
-        LOG_ERR("ERROR: Unknown op14" << "\n");
+        LOG_ERR("[ERROR] Unknown op14" << "\n");
         break;
     }
     }
@@ -544,7 +544,7 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
             break;
         }
         default: {
-            LOG_ERR("ERROR: Unknown op14");
+            LOG_ERR("[ERROR] Unknown op14");
             break;
         }
         }
@@ -573,7 +573,7 @@ void CPU16::doCond(uint16_t op14, uint16_t src1Val, uint16_t src2Val, uint16_t d
             flagReg.setNegative(false);
             break;
         default:
-            LOG_ERR("ERROR: Unknown op14");
+            LOG_ERR("[ERROR] Unknown op14");
             break;
         }
     }
@@ -762,7 +762,7 @@ void CPU16::doDataTrans(parts::Instruction instr, uint16_t src1Val, uint16_t src
     }
 
     default: {
-        LOG_ERR("ERROR: Unknown op14");
+        LOG_ERR("[ERROR] Unknown op14");
     }
     }
 }
@@ -878,7 +878,7 @@ void CPU16::doCtrlFlow(parts::Instruction instr, uint16_t src1Val, uint16_t src2
         break;
     }
     default: {
-        LOG_ERR("ERROR: Unknown op14" << "\n");
+        LOG_ERR("[ERROR] Unknown op14" << "\n");
     }
     }
 }
@@ -898,8 +898,8 @@ void CPU16::writeback(uint16_t dest, uint16_t val) {
     } else if (dest == 0x001F) {
         pc = val;
     } else {
-        LOG_ERR("ERROR: Unknown dest when writing back: " << std::hex << std::setw(4)
-                                                          << std::setfill('0') << dest << "\n");
+        LOG_ERR("[ERROR] Unknown dest when writing back: " << std::hex << std::setw(4)
+                                                           << std::setfill('0') << dest << "\n");
     }
 }
 uint16_t CPU16::getValInReg(uint16_t reg) const {
@@ -915,7 +915,7 @@ uint16_t CPU16::getValInReg(uint16_t reg) const {
     } else if (reg < NUM_GEN_REGS + NUM_IO) {
         regVal = inps[reg - NUM_GEN_REGS];
     } else {
-        LOG_ERR("ERROR: Unknown dest when getValInReg:" << reg << "\n");
+        LOG_ERR("[ERROR] Unknown dest when getValInReg:" << reg << "\n");
     }
     return regVal;
 }
@@ -1093,7 +1093,7 @@ void DiskController::handleDiskOperation() {
               (static_cast<uint32_t>(sram[isa::DISK_ADDR_HI]) << 16);
 
     if (addrPtr >= isa::DISK_SIZE) {
-        LOG_ERR("ERROR: Disk address out of bounds: " << addrPtr << "\n");
+        LOG_ERR("[ERROR] Disk address out of bounds: " << addrPtr << "\n");
         sram[isa::DISK_STATUS] |= OVERFLOW_ERROR;
         return;
     }
@@ -1110,7 +1110,7 @@ void DiskController::handleDiskOperation() {
         sram[isa::DISK_OP] = NO_OP; // reset/clear operation mem LOC
     } else if (sram[isa::DISK_OP] == READ_WORD_OP) {
         if (addrPtr + 1 >= isa::DISK_SIZE) {
-            LOG_ERR("ERROR: Disk word access out of bounds: " << addrPtr << "\n");
+            LOG_ERR("[ERROR] Disk word access out of bounds: " << addrPtr << "\n");
             sram[isa::DISK_STATUS] |= OVERFLOW_ERROR;
             return;
         }
@@ -1120,7 +1120,7 @@ void DiskController::handleDiskOperation() {
         sram[isa::DISK_OP] = NO_OP; // reset/clear operation mem LOC
     } else if (sram[isa::DISK_OP] == WRITE_WORD_OP) {
         if (addrPtr + 1 >= isa::DISK_SIZE) {
-            LOG_ERR("ERROR: Disk word access out of bounds: " << addrPtr << "\n");
+            LOG_ERR("[ERROR] Disk word access out of bounds: " << addrPtr << "\n");
             sram[isa::DISK_STATUS] |= OVERFLOW_ERROR;
             return;
         }
@@ -1131,7 +1131,7 @@ void DiskController::handleDiskOperation() {
     } else if (sram[isa::DISK_OP] == RESET_STATUS_OP) {
         sram[isa::DISK_STATUS] = 0; // reset
     } else {
-        LOG("ERROR: Unknown disk operation: " << sram[isa::DISK_OP] << "\n");
+        LOG("[ERROR] Unknown disk operation: " << sram[isa::DISK_OP] << "\n");
         sram[isa::DISK_STATUS] |= UNKNOWN_OP_ERROR;
     }
 }

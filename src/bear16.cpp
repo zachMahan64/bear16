@@ -143,12 +143,12 @@ int Bear16::performActionBasedOnArgs(const std::vector<std::string>& args) {
 
     if (doCheckDisk) {
         guardNoArgFlagCommands();
-        std::cout << "-> loaded disk: " << diskPath << "\n";
+        std::cout << "[SUCCESS] loaded disk: " << diskPath << "\n";
         if (std::filesystem::exists(diskPath)) {
-            std::cout << "-> exists, valid path \n";
+            std::cout << "[OKAY] exists, valid path \n";
         } else {
-            std::cout << "-> ERROR: does not exist, invalid path \n";
-            std::cout << "[!] hint: use \"b16 --set-disk\" or \"b16 -sd\" to change the disk\n";
+            std::cout << "[ERROR] does not exist, invalid path \n";
+            std::cout << "[HINT]  use \"b16 --set-disk\" or \"b16 -sd\" to change the disk\n";
         }
     }
 
@@ -504,12 +504,12 @@ void Bear16::saveEmuStateToConfigFile() {
 
         std::ofstream outStream(std::filesystem::path(USER_HOME_DIR / CONFIG_FILE_NAME));
         if (!outStream) {
-            std::cerr << "ERROR: Could not open config file." << "\n";
+            std::cerr << "[ERROR] Could not open config file." << "\n";
             return;
         }
         outStream << jsonObject.dump(4);
     } catch (const std::exception& e) {
-        std::cerr << "ERROR: Could not save to config file: " << e.what() << "\n";
+        std::cerr << "[ERROR] Could not save to config file: " << e.what() << "\n";
     }
 }
 
@@ -523,7 +523,7 @@ void Bear16::getEmuStateFromConfigFile() {
         }
         std::ifstream inStream(CONFIG_PATH);
         if (!inStream) {
-            std::cerr << "ERROR: Could not open config file." << "\n";
+            std::cerr << "[ERROR] Could not open config file." << "\n";
             return;
         }
         nlohmann::json jsonObject{};
@@ -532,7 +532,7 @@ void Bear16::getEmuStateFromConfigFile() {
         entryFileName = jsonObject["entry"];
         diskPath = std::filesystem::path(jsonObject["diskPath"]);
     } catch (const std::exception& e) {
-        std::cerr << "ERROR: Could not read config file: " << e.what() << "\n";
+        std::cerr << "[ERROR] Could not read config file: " << e.what() << "\n";
     }
 }
 void Bear16::getProjectPathFromUser() {
@@ -544,7 +544,7 @@ void Bear16::getProjectPathFromUser() {
     std::cout << projectsParentDir.string() << '/';
     std::getline(std::cin, projectDirName);
     if (projectDirName.empty()) {
-        std::cout << "ERROR: Project path cannot be empty." << "\n";
+        std::cout << "[ERROR] Project path cannot be empty." << "\n";
         enterToContinue();
         return;
     }
@@ -591,12 +591,12 @@ void Bear16::getDiskPathFromUser() {
     std::cout << diskParentDir.string() << '/';
     std::getline(std::cin, diskFileName);
     if (diskFileName.empty()) {
-        std::cout << "ERROR: Disk cannot be empty." << "\n";
+        std::cout << "[ERROR] Disk cannot be empty." << "\n";
         enterToContinue();
         return;
     }
     if (!diskFileName.ends_with(BIN_SUFFIX)) {
-        std::cout << "ERROR: Disk must be a \".bin\" file." << "\n";
+        std::cout << "[ERROR] Disk must be a \".bin\" file." << "\n";
         enterToContinue();
         return;
     }
@@ -604,7 +604,7 @@ void Bear16::getDiskPathFromUser() {
     if (!std::filesystem::exists(potentialNewDiskPath)) {
         std::fstream createFileStream(potentialNewDiskPath, std::ios::out);
         if (!createFileStream) {
-            std::cout << "ERROR: Failed to create new disk file \"" << potentialNewDiskPath
+            std::cout << "[ERROR] Failed to create new disk file \"" << potentialNewDiskPath
                       << "\"\n";
             enterToContinue();
             return;
@@ -623,18 +623,18 @@ void Bear16::getEntryFromUser() {
     std::cout << projectPath.string();
     std::getline(std::cin, entryFileName);
     if (entryFileName.empty()) {
-        std::cout << "ERROR: Entry file name cannot be empty." << "\n";
+        std::cout << "[ERROR] Entry file name cannot be empty." << "\n";
         enterToContinue();
         return;
     }
     if (!entryFileName.ends_with(ASM_SUFFIX)) {
-        std::cout << "ERROR: Entry must be a \".asm\" file." << "\n";
+        std::cout << "[ERROR] Entry must be a \".asm\" file." << "\n";
         enterToContinue();
         return;
     }
     std::filesystem::path entryFilePath(projectPath / entryFileName);
     if (!std::filesystem::exists(entryFilePath)) {
-        std::cout << "ERROR: Specified entry file does not exist\n";
+        std::cout << "[ERROR] Specified entry file does not exist\n";
         enterToContinue();
         return;
     }

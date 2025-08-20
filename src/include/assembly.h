@@ -96,7 +96,7 @@ class Assembler {
     build8ByteVecFromSingleLiteralInstruction(const parts::Instruction& literalInstruction);
 
     static void throwAFit(const std::string& ref) {
-        std::cerr << "MISTAKE MADE IN USAGE OR DEFINITION OF " << ref << '\n';
+        std::cerr << "[ERROR] MISTAKE MADE IN USAGE OR DEFINITION OF " << ref << '\n';
     }
 };
 

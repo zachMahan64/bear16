@@ -51,7 +51,7 @@ ResolutionResult resolveStrExpr(const std::string& input,
         fixpt8_8_t fixptRep(tokenizedResult.asFloat());
         result.raw = static_cast<uint16_t>(fixptRep);
         if (*tokenizedResult.getValue() > 127.996 || *tokenizedResult.getValue() < -128.000) {
-            std::cerr << "WARNING: result of expression " << input
+            std::cerr << "[WARNING] result of expression " << input
                       << " is outside of 8.8-bit fixpt range (-128.000 to 127.996)"
                       << "\n";
         }
@@ -59,14 +59,14 @@ ResolutionResult resolveStrExpr(const std::string& input,
         if (*tokenizedResult.getValue() < 0) {
             result.raw = static_cast<uint16_t>(static_cast<int16_t>(*tokenizedResult.getValue()));
             if (*tokenizedResult.getValue() > 32767 || *tokenizedResult.getValue() < -32768) {
-                std::cerr << "WARNING: result of expression " << input
+                std::cerr << "[WARNING] result of expression " << input
                           << " is outside of signed 16-bit range (-32768 to 32767)"
                           << "\n";
             }
         } else {
             result.raw = static_cast<uint16_t>(tokenizedResult.asInt());
             if (*tokenizedResult.getValue() > 65356 || *tokenizedResult.getValue() < 0) {
-                std::cerr << "WARNING: result of expression " << input
+                std::cerr << "[WARNING] result of expression " << input
                           << " is outside of unsigned 16-bit range (0 to 65536)"
                           << "\n";
             }
@@ -199,7 +199,7 @@ Token Expression::solve() const {
         if (isParen(tkn)) {
             if (tkn.getType() == TokenType::LPAREN) {
                 if (leftParenCount == 1) {
-                    std::cerr << "WARNING: Nested expression detected. This is not "
+                    std::cerr << "[WARNING] Nested expression detected. This is not "
                                  "supported on the current assembler version."
                               << "\n";
                 }
@@ -225,7 +225,7 @@ Token Expression::solve() const {
     bool resultIsReal = false;
     for (auto& term : terms) {
         if (term.tokens.empty()) {
-            std::cerr << "ERROR: empty term." << "\n";
+            std::cerr << "[ERROR] empty term." << "\n";
             return {0.0F, TokenType::INTEGER};
         }
 
@@ -238,11 +238,11 @@ Token Expression::solve() const {
 
             if (i % 2 == 0) { // number
                 if (!isNum(tkn)) {
-                    std::cerr << "ERROR: expected number in term." << "\n";
+                    std::cerr << "[ERROR] expected number in term." << "\n";
                     return {0.0F, TokenType::INTEGER};
                 }
 
-                float num = tkn.getValue().value_or(0.0f);
+                float num = tkn.getValue().value_or(0.0F);
                 if (tkn.getType() == TokenType::REAL) {
                     resultIsReal = true;
                 }
@@ -256,21 +256,21 @@ Token Expression::solve() const {
                         break;
                     case TokenType::DIV:
                         if (num == 0.0F) {
-                            std::cerr << "ERROR: division by zero."
+                            std::cerr << "[ERROR] division by zero."
                                       << "\n";
                             return {0.0F, TokenType::INTEGER};
                         }
                         value = *value / num;
                         break;
                     default:
-                        std::cerr << "ERROR: unexpected operator before number."
+                        std::cerr << "[ERROR] unexpected operator before number."
                                   << "\n";
                         return {0.0F, TokenType::INTEGER};
                     }
                 }
             } else { // operator
                 if (tkn.getType() != TokenType::MULT && tkn.getType() != TokenType::DIV) {
-                    std::cerr << "ERROR: expected * or / in term." << "\n";
+                    std::cerr << "[ERROR] expected * or / in term." << "\n";
                     return {0.0F, TokenType::INTEGER};
                 }
                 prevType = tkn.getType();
@@ -278,7 +278,7 @@ Token Expression::solve() const {
         }
 
         if (!value.has_value()) {
-            std::cerr << "ERROR: no value computed for term." << "\n";
+            std::cerr << "[ERROR] no value computed for term." << "\n";
             return {0.0F, TokenType::INTEGER};
         }
 
@@ -293,7 +293,7 @@ Token Expression::solve() const {
         } else if (term.sign == TokenType::MIN) {
             resultVal -= term.value;
         } else {
-            std::cerr << "ERROR: unexpected term sign." << "\n";
+            std::cerr << "[ERROR] unexpected term sign." << "\n";
             return {0.0F, TokenType::INTEGER};
         }
     }

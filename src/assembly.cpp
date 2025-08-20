@@ -543,7 +543,7 @@ std::vector<Token> Assembler::tokenizeAsmFirstPass(const std::string& processedA
                 currentStr += c;
                 expressionDepth += 1;
             } else if (c == '\n') {
-                LOG_ERR("ERROR: invalid expression (no closing parentheses)");
+                LOG_ERR("[ERROR] invalid expression (no closing parentheses)");
                 expressionDepth = 0; // terminate expression
             } else {
                 currentStr += c;
@@ -564,7 +564,7 @@ std::vector<Token> Assembler::tokenizeAsmFirstPass(const std::string& processedA
                 currentStr += c;
                 continue;
             }
-            LOG_ERR("ERROR: invalid escape sequence: " + std::string(1, c));
+            LOG_ERR("[ERROR] invalid escape sequence: " + std::string(1, c));
             continue;
         }
         if (c == '\\') {
@@ -607,7 +607,7 @@ std::vector<Token> Assembler::tokenizeAsmFirstPass(const std::string& processedA
             if (c == '\'') {
                 inChar = false;
                 if (currentStr.length() > 1) {
-                    LOG_ERR("ERROR: invalid char declaration (length greater "
+                    LOG_ERR("[ERROR] invalid char declaration (length greater "
                             "than 1 char)");
                 }
                 Token charTkn(currentStr);
@@ -664,7 +664,7 @@ std::vector<Token> Assembler::tokenizeAsmFirstPass(const std::string& processedA
         firstPassTokens.emplace_back(currentStr);
     }
     if (expressionDepth > 0) {
-        LOG_ERR("ERROR: invalid expression (no closing parentheses) at end of asm "
+        LOG_ERR("[ERROR] invalid expression (no closing parentheses) at end of asm "
                 "file");
     }
 
@@ -708,13 +708,13 @@ Assembler::parseListOfTokensIntoTokenizedRomLines(const std::vector<Token>& toke
              tkn.type == TokenType::WORD_DIR || tkn.type == TokenType::QWORD_DIR ||
              tkn.type == TokenType::STRING_DIR) &&
             inText) {
-            LOG_ERR("WARNING: DATA DIRECTIVE IN TEXT SECTION: " + toString(tkn.type) + "-" +
+            LOG_ERR("[WARNING] DATA DIRECTIVE IN TEXT SECTION: " + toString(tkn.type) + "-" +
                     tkn.body);
         }
         if (!inText && !inData && (tkn.type != TokenType::EOL && tkn.type != TokenType::COMMENT)) {
             LOG_ERR("NOT IN TEXT OR DATA SECTION: " + toString(tkn.type) + "-" + tkn.body);
         } else if (tkn.type == TokenType::MISTAKE) {
-            LOG_ERR("ERROR: MISTAKE -> " + tkn.body);
+            LOG_ERR("[ERROR] MISTAKE -> " + tkn.body);
             if (inText)
                 currentLine_TEXT.push_back(tkn);
             if (inData)
@@ -736,7 +736,7 @@ Assembler::parseListOfTokensIntoTokenizedRomLines(const std::vector<Token>& toke
         } else if (tkn.type == TokenType::OPERATION) {
             Token newTkn(tkn.body);
             if (inData && tkn.body.length() != 1) {
-                LOG_ERR("WARNING: instruction in data section: " + tkn.body + " on written line " +
+                LOG_ERR("[WARNING] instruction in data section: " + tkn.body + " on written line " +
                         std::to_string(lineNumInOrigAsm));
             } else {
                 if (tkn.body.length() == 1) {
@@ -785,7 +785,7 @@ Assembler::parseListOfTokensIntoTokenizedRomLines(const std::vector<Token>& toke
             std::string labelName = firstTkn.body.substr(0, firstTkn.body.length() - 1);
             const int& labelValue = byteNum;
             if (labelMap.contains(labelName)) {
-                LOG_ERR("WARNING: duplicate label: " + labelName);
+                LOG_ERR("[WARNING] duplicate label: " + labelName);
             }
             labelMap.emplace(labelName, labelValue);
             LOG_ASM("placed label " << labelName << " at " << std::dec << labelValue);
@@ -814,14 +814,14 @@ Assembler::parseListOfTokensIntoTokenizedRomLines(const std::vector<Token>& toke
                         byteNum +=
                             static_cast<int>(newStrTkn.body.length()) + 1; //+1 for null terminator
                     } else {
-                        LOG_ERR("ERROR: invalid string declaration at byte index: " << byteNum
-                                                                                    << std::endl);
+                        LOG_ERR("[ERROR] invalid string declaration at byte index: " << byteNum
+                                                                                     << std::endl);
                         for (const Token& tkn : line) {
                             LOG_ASM(tkn.body << " | ");
                         }
                     }
                 } catch (std::out_of_range& e) {
-                    LOG_ERR("ERROR: invalid string declaration at byte index: ")
+                    LOG_ERR("[ERROR] invalid string declaration at byte index: ")
                         << byteNum << " | " << std::endl;
                     for (const Token& tkn : line) {
                         LOG_ASM(tkn.body << " | ");
@@ -866,14 +866,15 @@ Assembler::parseListOfTokensIntoTokenizedRomLines(const std::vector<Token>& toke
                             value = std::stoi(line.at(3).body, nullptr, 16);
                         } else if (line.at(3).type == TokenType::BIN) {
                             const auto& body = line.at(3).body;
-                            if (body.rfind("0b", 0) == 0 && body.length() > 2)
+                            if (body.rfind("0b", 0) == 0 && body.length() > 2) {
                                 value = std::stoi(body.substr(2), nullptr, 2);
-                            else
+                            } else {
                                 throw std::invalid_argument("Binary constant without 0b prefix");
+                            }
                         } else if (line.at(3).type == TokenType::FIXED_PT) {
                             value = fixpt8_8_t(std::stof(line.at(3).body)).val;
                             if (!issuedFixPtConstWarning) {
-                                LOG_ERR("CAUTION: fixed point constant will "
+                                LOG_ERR("[WARNING] fixed point constant will "
                                         "not be supported "
                                         "in expressions");
                                 issuedFixPtConstWarning = true;
@@ -882,21 +883,22 @@ Assembler::parseListOfTokensIntoTokenizedRomLines(const std::vector<Token>& toke
                             value = static_cast<int>(line.at(4).body.at(0));
                         }
                     } catch (const std::exception& e) {
-                        LOG_ERR("ERROR: bad const value: " << line.at(3).body << " (" << e.what()
-                                                           << ")");
+                        LOG_ERR("[ERROR] bad const value: " << line.at(3).body << " (" << e.what()
+                                                            << ")");
                         throw;
                     }
-                    if (auto [it, inserted] = constMap.emplace(line.at(1).body, value); !inserted) {
-                        LOG_ERR("ERROR: duplicate const name: " << line.at(1).body);
+                    if (auto [iter, inserted] = constMap.emplace(line.at(1).body, value);
+                        !inserted) {
+                        LOG_ERR("[ERROR] duplicate const name: " << line.at(1).body);
                     }
                 } else if (line.size() > 1) {
                     std::string complaint = line.at(1).body;
                     throwAFit(complaint);
                 } else {
-                    LOG_ERR("ERROR: bad const declaration at line with tokens: " << line.size());
+                    LOG_ERR("[ERROR] bad const declaration at line with tokens: " << line.size());
                 }
             } catch (std::out_of_range& e) {
-                LOG_ERR("ERROR: bad const declaration");
+                LOG_ERR("[ERROR] bad const declaration");
             }
         }
     }
@@ -948,8 +950,8 @@ Assembler::parseListOfTokensIntoTokenizedRomLines(const std::vector<Token>& toke
                 parseLineOfTokensIntoTokenizedData(line, labelMap, constMap, byteIndex);
             finalRomLines.emplace_back(dataForThisLine);
         } else {
-            LOG_ERR("ERROR: " << line.at(0).body + " (" + toString(line.at(0).type) +
-                                     ") cannot begin a line");
+            LOG_ERR("[ERROR] " << line.at(0).body + " (" + toString(line.at(0).type) +
+                                      ") cannot begin a line");
         }
     }
     return finalRomLines;
@@ -977,8 +979,8 @@ TokenizedInstruction Assembler::parseLineOfTokensIntoTokenizedInstruction(
                 revisedRef = std::to_string(constMap.at(tkn.body));
             } else {
                 throwAFit(tkn.body);
-                LOG_ERR("ERROR: bad reference: " << tkn.body << " " << toString(tkn.type)
-                                                 << " in instruction #" << +instructionIndex);
+                LOG_ERR("[ERROR] bad reference: " << tkn.body << " " << toString(tkn.type)
+                                                  << " in instruction #" << +instructionIndex);
                 // LOG_ERR("label map: " + unorderedMapToString(labelMap));
                 // LOG_ERR("const map: " + unorderedMapToString(constMap));
             }
@@ -1110,7 +1112,7 @@ TokenizedData Assembler::parseLineOfTokensIntoTokenizedData(
     const std::vector<Token>& line, const std::unordered_map<std::string, uint16_t>& labelMap,
     const std::unordered_map<std::string, uint16_t>& constMap, int byteIndex) const {
     if (line.empty()) {
-        LOG_ERR("ERROR: empty line fed to be made into TokenizedData");
+        LOG_ERR("[ERROR] empty line fed to be made into TokenizedData");
         return TokenizedData(Token('\0'));
     }
 
@@ -1143,14 +1145,14 @@ TokenizedData Assembler::parseLineOfTokensIntoTokenizedData(
                             "in label or const map:" +
                             fixedStrTkn.body);
                     if (firstTkn.type != TokenType::STRING_DIR) {
-                        LOG_ERR("ERROR: misused string or invalid reference in "
+                        LOG_ERR("[ERROR] misused string or invalid reference in "
                                 "directive "
                                 << toString(firstTkn.type));
                     }
                 }
             }
         } else {
-            LOG_ERR("ERROR: bad data/directive in .data section: " << toString(tkn.type));
+            LOG_ERR("[ERROR] bad data/directive in .data section: " << toString(tkn.type));
         }
     }
     TokenizedData dataLine(firstTkn);
@@ -1159,7 +1161,7 @@ TokenizedData Assembler::parseLineOfTokensIntoTokenizedData(
             std::vector<Token>(revisedDataTokens.begin(), revisedDataTokens.end()));
     } else {
         throwAFit(firstTkn.body);
-        LOG_ERR("ERROR: bad directive" << line.size());
+        LOG_ERR("[ERROR] bad directive" << line.size());
     }
     // enforce fixed directives
     if (!fixedDirectivesToSizeMap.contains(firstTkn.type)) {
@@ -1167,8 +1169,8 @@ TokenizedData Assembler::parseLineOfTokensIntoTokenizedData(
     }
     size_t d_size = fixedDirectivesToSizeMap.at(firstTkn.type);
     if (dataLine.dataTokens.size() != d_size) {
-        LOG_ERR("ERROR: (" << dataLine.directive.body << ") bad fixed-size directive: "
-                           << dataLine.dataTokens.size() << " != " << d_size);
+        LOG_ERR("[ERROR] (" << dataLine.directive.body << ") bad fixed-size directive: "
+                            << dataLine.dataTokens.size() << " != " << d_size);
         for (const Token& tkn : dataLine.dataTokens) {
             std::cerr << tkn.body << " | ";
         }
@@ -1236,7 +1238,7 @@ std::vector<uint8_t> Assembler::parsePieceOfDataIntoBytes(const Token& pieceOfDa
         try {
             byteVec.emplace_back(static_cast<uint8_t>(strBody.at(0)));
         } catch (std::out_of_range& e) {
-            LOG_ERR("ERROR: bad char literal: " << strBody);
+            LOG_ERR("[ERROR] bad char literal: " << strBody);
         }
     } else if (tknT == TokenType::CHAR_SPACE) {
         byteVec.emplace_back(32); // value of space character
@@ -1314,7 +1316,7 @@ void Token::correctNullChar() {
 void Token::resolveExpression(const std::unordered_map<std::string, uint16_t>& labelMap,
                               const std::unordered_map<std::string, uint16_t>& constMap) {
     if (type != TokenType::EXPRESSION) {
-        LOG_ERR("ERROR: MISMARKED EXPRESSION: " << body);
+        LOG_ERR("[ERROR] MISMARKED EXPRESSION: " << body);
         return;
     }
     auto [str, raw] = expr_res::resolveStrExpr(body, labelMap, constMap);
@@ -1349,18 +1351,18 @@ void TokenizedInstruction::setOperandsAndAutocorrectImmediates(
     bool opHasNoWritImm = opcode.immType == ImmType::NO_IM;
     try {
         if (operands.size() < opcodeToOperandMinimumCountMap.at(opE)) {
-            LOG_ERR("ERROR: too few of operands for opcode: " + opcode.token.body);
+            LOG_ERR("[ERROR] too few of operands for opcode: " + opcode.token.body);
             return;
         }
     } catch (std::out_of_range& e) {
-        LOG_ERR("ERROR: opcode undefined in \"opcodeToOperandMinimumCountMap\" - " +
+        LOG_ERR("[ERROR] opcode undefined in \"opcodeToOperandMinimumCountMap\" - " +
                 opcode.token.body);
         return;
     }
     if (operands.size() > opcodeToOperandMinimumCountMap.at(opE) &&
         !(opCodesWithOptionalSrc2OffsetArgument.contains(opE) ||
           opCodesWithOptionalSrc1OffsetArgument.contains(opE))) {
-        LOG_ERR("ERROR: too many operands for opcode: " + opcode.token.body);
+        LOG_ERR("[ERROR] too many operands for opcode: " + opcode.token.body);
         return;
     }
     if (operands.size() == 3) {
