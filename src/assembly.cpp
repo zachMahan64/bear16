@@ -513,7 +513,7 @@ std::vector<uint8_t> Assembler::assembleOpenedProject() {
     std::vector<uint8_t> byteVec = buildByteVecFromLiteralInstructions(literalInstructions);
     std::vector<uint8_t> dataByteVec = parseTokenizedDataIntoByteVec(allTokenizedInstructions);
     byteVec.insert(byteVec.end(), dataByteVec.begin(), dataByteVec.end());
-    LOG_ERR("Final ROM Size (bytes): " << std::dec << byteVec.size());
+    LOG_ERR("[INFO] Final ROM Size (bytes): " << std::dec << byteVec.size());
     preprocessor.reset(); // clear state
     return byteVec;
 }

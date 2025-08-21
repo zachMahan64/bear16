@@ -41,7 +41,7 @@ int Bear16::assembleAndRunWithoutSavingExecutable() {
     board.loadUserRomFromByteVector(userRom);
     board.loadDiskFromBinFile(diskPath.string());
     // run
-    LOG_ERR("Launched the Bear16 Emulator...");
+    LOG_ERR("[SUCCESS] Launched the Bear16 Emulator...");
     int exitCode = board.run();
 
     // save disk state
@@ -191,7 +191,7 @@ int Bear16::runMentionedExecutable(const std::string& executableFileName,
     board.loadRomFromBinFile(executableFileName);
     board.loadDiskFromBinFile(diskPath.string());
     // run
-    LOG_ERR("Launching the Bear16 Emulator...");
+    LOG_ERR("[SUCCESS] Launched the Bear16 Emulator...");
     int exitCode = board.run();
 
     // save disk state
@@ -217,7 +217,7 @@ void Bear16::resetDisk() {
     }
     std::vector emptyDiskData(isa::DISK_SIZE, 0);
     writeToFile(diskPath.string(), emptyDiskData);
-    std::cout << "Cleared current disk. \n";
+    std::cout << "[SUCCESS] Cleared current disk. \n";
 }
 void Bear16::enterTUI() {
     getEmuStateFromConfigFile();
@@ -344,25 +344,25 @@ bool Bear16::assembleAndSaveExecutable(const std::filesystem::path& executablePa
         std::error_code errorCode;
         std::filesystem::create_directories(executableParentPath, errorCode);
         if (errorCode) {
-            std::cout << "Failed to build path to specified executable\n";
+            std::cout << "[ERROR] Failed to build path to specified executable\n";
         }
     }
     std::ofstream executableFile(executablePath, std::ios::binary);
     if (!executableFile) {
-        std::cerr << "Failed to open output file: " << executablePath << "\n";
+        std::cerr << "[ERROR] Failed to open output file: " << executablePath << "\n";
         return false;
     }
 
     executableFile.write(reinterpret_cast<const char*>(userRom.data()),
                          static_cast<long>(userRom.size()));
     if (!executableFile) {
-        std::cerr << "Failed to write to file: " << executablePath << "\n";
+        std::cerr << "[ERROR] Failed to write to file: " << executablePath << "\n";
         return false;
     }
     executableFile.flush();
     executableFile.close();
 
-    std::cout << "Executable saved to " << executablePath << "\n";
+    std::cout << "[SUCCESS] Executable saved to " << executablePath << "\n";
     enterToContinue();
     return true;
 }
@@ -374,7 +374,7 @@ void Bear16::runSavedExecutable(Bear16::build_type buildType) {
     board.loadRomFromBinFile(computeDefaultExecutablePath(buildType).string());
     board.loadDiskFromBinFile(diskPath.string());
     // run
-    LOG_ERR("Launching the Bear16 Emulator...");
+    LOG_ERR("[SUCCESS] Launched the Bear16 Emulator...");
     int exitCode = board.run();
 
     // save disk state
@@ -388,7 +388,9 @@ void Bear16::runSavedExecutable(Bear16::build_type buildType) {
 }
 
 void Bear16::enterConfigMenu() {
-    auto printInvalidChoice = []() { std::cout << "Invalid choice. Please try again." << "\n"; };
+    auto printInvalidChoice = []() {
+        std::cout << "[ERROR] Invalid choice. Please try again." << "\n";
+    };
     std::string line;
     do {
         printConfigMenu();
@@ -451,8 +453,8 @@ bool Bear16::buildBear16DirsIfDNE() {
             // success, log here?
         } else {
             if (errorCode) {
-                std::cerr << "Error creating Bear16 disk directory: " << errorCode.message()
-                          << "\n";
+                std::cerr << "[ERROR] Failed to create Bear16 disk directory: "
+                          << errorCode.message() << "\n";
             }
         }
     }
@@ -464,8 +466,8 @@ bool Bear16::buildBear16DirsIfDNE() {
             // success, log here?
         } else {
             if (errorCode) {
-                std::cerr << "Error creating Bear16 project directory: " << errorCode.message()
-                          << "\n";
+                std::cerr << "[ERROR] Failed to create Bear16 project directory: "
+                          << errorCode.message() << "\n";
             }
         }
     }
@@ -552,7 +554,7 @@ void Bear16::getProjectPathFromUser() {
 
     auto saveChanges = [this, &potentialnewProjectPath, &projectDirName]() {
         this->projectPath = potentialnewProjectPath;
-        std::cout << "Project path set to: " << projectDirName << "\n";
+        std::cout << "[SUCCESS] Project path set to: " << projectDirName << "\n";
         saveEmuStateToConfigFile();
         enterToContinue();
     };
@@ -567,12 +569,12 @@ void Bear16::getProjectPathFromUser() {
             std::string choice;
             std::getline(std::cin, choice);
             if (!(choice == "c" || choice == "C" || choice == "n" || choice == "N")) {
-                std::cout << "Invalid choice. Please try again." << "\n";
+                std::cout << "[ERROR] Invalid choice. Please try again." << "\n";
             }
             if (choice == "n" || choice == "N") {
                 std::filesystem::create_directory(potentialnewProjectPath);
-                std::cout << "Project directory created at " << potentialnewProjectPath.string()
-                          << "\n";
+                std::cout << "[SUCCESS] Project directory created at "
+                          << potentialnewProjectPath.string() << "\n";
                 madeValidChoice = true;
                 saveChanges();
             } else if (choice == "C" || choice == "c") {
@@ -609,7 +611,7 @@ void Bear16::getDiskPathFromUser() {
             enterToContinue();
             return;
         }
-        std::cout << "Created new disk file \n";
+        std::cout << "[SUCCESS] Created new disk file \n";
     }
     this->diskPath = potentialNewDiskPath;
     std::cout << "Disk set to: \"" << diskFileName << "\"\n";
@@ -645,7 +647,7 @@ void Bear16::getEntryFromUser() {
 }
 
 void Bear16::enterToContinue() {
-    std::cout << "[ENTER] to continue" << "\n";
+    std::cout << "[ENTER] to continue";
     std::cin.get();
 }
 

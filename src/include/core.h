@@ -208,7 +208,7 @@ template <typename T> void writeToFile(const std::string& filename, const T& dat
            "container");
     std::ofstream outFile(filename, std::ios::binary);
     if (!outFile) {
-        throw std::runtime_error("Failed to open file for writing: " + filename);
+        throw std::runtime_error("[ERROR] Failed to open file for writing: " + filename);
     }
     outFile.write(reinterpret_cast<const char*>(data.data()),
                   static_cast<std::streamsize>(data.size()));
