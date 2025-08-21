@@ -46,7 +46,7 @@
 - `export PATH="$HOME/path/to/bear16/build:$PATH"`
 - `source ~/.bashrc`
 - EXPORT TO WINDOWS PATH (for use in Powershell or cmd):
-- [Windows Key] + R > OK
+- (Windows Key) + R > OK
 - Path > Edit > Browse or New & select or type the path to b16's build dir
 ## Technical Overview
 ### Background
