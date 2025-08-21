@@ -31,21 +31,23 @@
 - `make`
 - `echo 'export PATH="$HOME/path/to/bear16/build:$PATH"' >> ~/.bashrc` or `.zshrc` if you're using zsh instead of bash
 - `source ~/.bashrc` or `.zshrc`
-### Windows (Msys2)
+### Windows (Msys2 with ucrt64 shell)
 - Visit: `https://www.msys2.org/`, then download and run the Msys2 setup exe
 - Open Msys2 once installed
-- `pacman -Syu` and restart when prompted
-- `pacman -Su`
-- `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-cmake`
+- `pacman -Syu` then restart Msys2 when completed
+- `pacman -Su` then restart Msys2 when completed
+- `pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-cmake`
 - `cd /c/path/to/bear16`
 - `mkdir build`
 - `cd build`
 - `cmake -G "MinGW Makefiles" ..`
-- `mingw32-make`
-- `echo 'export PATH="$PWD:$PATH"' >> ~/.bashrc`
+- `mingw32-make` restart Msys2 when completed
+- EXPORT TO MSYS2 PATH:
+- `export PATH="$HOME/path/to/bear16/build:$PATH"`
 - `source ~/.bashrc`
-### Windows (Powershell)
-- (... coming soon)
+- EXPORT TO WINDOWS PATH (for use in Powershell or cmd)
+- [Windows Key] + R > OK
+- Path > Edit > Browse or New & select or type the path to b16's build dir
 ## Technical Overview
 ### Background
 - I built Bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
