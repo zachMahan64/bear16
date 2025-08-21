@@ -490,8 +490,12 @@ std::filesystem::path Bear16::computeDefaultExecutablePath(Bear16::build_type bu
 
     // compute the output binary path
     std::filesystem::path executableName =
+#if defined(_WIN32) || defined(__CYGWIN__)
+        projectPath.filename(); // works on windows
+#else
         projectPath.parent_path()
-            .filename(); // gets project name from dir name, TODO: may be implementation defined
+            .filename(); // bcuz of trailing slash
+#endif
     std::filesystem::path executablePath =
         projectPath / buildDir / (executableName.string() + ".bin");
     return executablePath;
@@ -540,8 +544,11 @@ void Bear16::getEmuStateFromConfigFile() {
 void Bear16::getProjectPathFromUser() {
     std::string projectDirName;
     std::filesystem::path projectsParentDir =
-        projectPath.parent_path().parent_path(); // TODO might be implementation defined, funky
-                                                 // behavior likely caused by trailing backslash
+#if defined(_WIN32) || defined(__CYGWIN__)
+        projectPath.parent_path();
+#else
+        projectPath.parent_path().parent_path(); // funky but works on POSIX cuz of trailing slash
+#endif
     std::cout << "Enter the name of the project directory: " << "\n";
     std::cout << projectsParentDir.string() << '/';
     std::getline(std::cin, projectDirName);
@@ -622,7 +629,7 @@ void Bear16::getDiskPathFromUser() {
 void Bear16::getEntryFromUser() {
     std::string entryFileName;
     std::cout << "Enter the name of the entry file: " << "\n";
-    std::cout << projectPath.string();
+    std::cout << projectPath.filename().string() << '/';
     std::getline(std::cin, entryFileName);
     if (entryFileName.empty()) {
         std::cout << "[ERROR] Entry file name cannot be empty." << "\n";
