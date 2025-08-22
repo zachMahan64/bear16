@@ -52,7 +52,7 @@
 ### Background
 - I built Bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
     - The OS is effectively a monolithic kernel with fully featured utility libraries, a shell/CLI, file IO, keyboard IO,
-      framebuffering, blitting, and memory allocator. [Linked here](https://github.com/zachMahan64/bear16_os).
+      framebuffering, blitting, and memory allocator. [Linked here](https://github.com/zachMahan64/bear16-os).
     - The VM and Assembler are written in modern C++ 23.
     - All programming for the Bear16 system must be done in raw assembly.
     - The Bear16 architecture is inspired by x86's expressiveness and RISC-V's simplicity, although it deviates in its syntax, directives, and instruction layout.
@@ -114,7 +114,7 @@
     - `[0x1800 - 0x19FF: privileged_space]`
       - 2 KB
       - Reserved for memory mapped IO
-      - See `isa.h` or `bear16_os` for details
+      - See `isa.h` or the bear16-os repo for details
     - `[0x1800 - 0x9FFF: heap]`
       - 32 KB
     - `[0xA000-0xFFFF: stack]`
@@ -204,7 +204,7 @@ void CPU16::step() {
 - Use the python scripts included in the repo to automatically convert images into bitmaps or to create blank bitmaps that you can manually draw 1's onto.
 #### Some Examples
 - All syntax is provided in the "Assembly Language Details" section here in the README (for directives/other assembly-time related syntax) and the instruction syntax is defined [here](https://docs.google.com/spreadsheets/d/1skLFHBtt_hR7RHbrW7IGVIHvV-CCc16sBRJoc0tyrCA/edit?usp=sharing).
-- The best example is [Bear16 OS itself](https://github.com/zachMahan64/bear16_os)! It is entirely written in raw Bear16 asm lang. Check out the repo to read over the source code if you're curious.
+- The best example is [Bear16 OS itself](https://github.com/zachMahan64/bear16-os)! It is entirely written in raw Bear16 asm lang. Check out the repo to read over the source code if you're curious.
 
 ```asm
 #PROPER RECURSIVE FIBONACCI CALCULATOR, MON 20250609

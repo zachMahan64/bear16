@@ -78,7 +78,7 @@ MORE INFO
     - Emulator & assembler source code
     - Example assembly programs
     → Docs on: https://github.com/zachMahan64/bear16
-    → Bear16 OS docs on: https://github.com/zachMahan64/bear16_os
+    → Bear16 OS docs on: https://github.com/zachMahan64/bear16-os
 
 )HELP";
 
