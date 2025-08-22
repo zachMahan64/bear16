@@ -1369,14 +1369,18 @@ void TokenizedInstruction::setOperandsAndAutocorrectImmediates(
     }
     if (operands.size() == 3) {
         dest = operands.at(0);
-        if ((opE == isa::Opcode_E::SB || opE == isa::Opcode_E::SW) &&
-            dest->valueType == ValueType::IMM) {
-            std::string opcodeStr = (opE == isa::Opcode_E::SW) ? "sw" : "sb";
-            LOG_ERR("[ERROR] immediate value given in dest for instruction \'" << opcodeStr
+        static std::unordered_map<isa::Opcode_E, std::string> regAddrOnlyDestOpcodeMap{
+            {isa::Opcode_E::SW, "sw"},
+            {isa::Opcode_E::SB, "sb"},
+            {isa::Opcode_E::MEMCPY, "memcpy"},
+            {isa::Opcode_E::ROMCPY, "romcpy"}};
+        if (regAddrOnlyDestOpcodeMap.contains(opE) && dest->valueType == ValueType::IMM) {
+            const std::string& opCodeStr = regAddrOnlyDestOpcodeMap.at(opE);
+            LOG_ERR("[ERROR] immediate value given in dest for instruction \'" << opCodeStr
                                                                                << "\'.");
-            LOG_ERR("|-----> " << opcodeStr
+            LOG_ERR("|-----> " << opCodeStr
                                << " expects a register argument in the destination field.");
-            LOG_ERR("|-----> correct usage: " << opcodeStr << " <register_name>, <src1>, <src2>");
+            LOG_ERR("|-----> correct usage: " << opCodeStr << " <register_name>, <src1>, <src2>");
         }
         src1 = operands.at(1);
         src2 = operands.at(2);
@@ -1423,8 +1427,7 @@ void TokenizedInstruction::setOperandsAndAutocorrectImmediates(
     } else if (opcode.immType == ImmType::I2) {
         i2 = true;
     }
-
-} // WIP
+}
 
 // constructors for tokenized instruction components
 // --------------------------------------------------------------------
