@@ -7,7 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # ^ make sure to have a symlink in the project root dir to the
 # compile_commands.json file in the build dir
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -58,7 +58,8 @@ elseif(WIN32)
     # paths
     set(SDL2_INCLUDE_DIR
         "${CMAKE_SOURCE_DIR}/dependencies/SDL2-x86_64-w64-mingw32/include")
-    set(SDL2_LIB_DIR "${CMAKE_SOURCE_DIR}/dependencies/SDL2-x86_64-w64-mingw32/lib")
+    set(SDL2_LIB_DIR
+        "${CMAKE_SOURCE_DIR}/dependencies/SDL2-x86_64-w64-mingw32/lib")
     set(SDL2_DLL "${SDL2_LIB_DIR}/SDL2.dll")
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE SDL_MAIN_HANDLED)
