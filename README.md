@@ -31,7 +31,7 @@
 - `make`
 - `echo 'export PATH="$HOME/path/to/bear16/build:$PATH"' >> ~/.bashrc` or `.zshrc` if you're using zsh instead of bash
 - `source ~/.bashrc` or `.zshrc`
-### Windows (Msys2 with ucrt64 shell)
+### Windows (build with Msys2 ucrt64 shell, then run anywhere)
 - Visit: `https://www.msys2.org/`, then download and run the Msys2 setup exe
 - Open Msys2 once installed
 - `pacman -Syu` then restart Msys2 when completed
@@ -48,6 +48,12 @@
 - EXPORT TO WINDOWS PATH (for use in Powershell or cmd):
 - (Windows Key) + R > OK
 - Path > Edit > Browse or New & select or type the path to b16's build dir
+- Now you can just use b16 in your native windows environment
+### Next Steps
+- Download the [Bear16 OS](https://github.com/zachMahan64/bear16-os); directions are in the repo's README.
+- Run `b16 --help` to read over a guide to the CLI.
+- Run the b16 project-based terminal interface with `b16` or `b16 --tui` -> select "Help" in the menu
+- Now you have all the tools to run the OS or make your own Bear16 programs.
 ## Technical Overview
 ### Background
 - I built Bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
