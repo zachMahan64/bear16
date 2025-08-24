@@ -22,7 +22,7 @@
      - Linux & MacOS: gcc or clang
      - Windows: MinGW
   - SDL2 (for framebuffer and input)
-  - Nlohmann (header-only inside the repo)
+  - Nlohmann Json (header-only inside the repo, so no set-up required for this)
 ### Linux & MacOS
 - `cd path/to/bear16`
 - `mkdir build`
