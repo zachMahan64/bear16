@@ -5,15 +5,16 @@
 - Fedora:        `sudo dnf install SDL2-devel`
 - Debian/Ubuntu: `sudo apt install libsdl2-dev`
 - Arch:          `sudo pacman -S sdl2`
-- `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/path/to/bear16`             or wherever you want the project to live
+- `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/where/you/want/bear16/to/live`
 ### macOS:
-- `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/path/to/bear16`             ^
+- `git clone --depth=1 https://github.com/zachMahan64/bear16.git ~/where/you/want/bear16/to/live`
 ### Windows
-- `git clone --depth=1 https://github.com/zachMahan64/bear16.git %USERPROFILE%/path/to/bear16` ^
+- `git clone --depth=1 https://github.com/zachMahan64/bear16.git %USERPROFILE%/where/you/want/bear16/to/live`
 ### All Platforms
+- **fill in the path in the git clone command with the actual path you want**
 - **You should export the b16 executable's parent directory to your path for proper CLI support (where your b16 executable lives, like a build directory; directions below).**
 ## Build Instructions
-- **Buildable with CMake** directly after cloning the GitHub repo.
+- **Buildable with CMake**
 - **Platform support:** Linux, MacOS, and Windows.
 - **Dependencies:**
   - CMake >= v3.10
