@@ -15,7 +15,7 @@ constexpr const char* helpMessageCli =
   -rd, --reset-disk-disk         reset/zero the contents of the current disk
   doctor, --doctor               restore ".b16.json" config file and rebuild
                                  disks/projects directories if missing
-  <no-args>                      start termnial user interface
+  <no-args>                      start terminal user interface
                                  *note: all args and flags are order-agnostic
 
 usage: b16 [--help | -h]

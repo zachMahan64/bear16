@@ -1,4 +1,4 @@
-# Bear16: A Custom, Fully Featured 16-Bit ISA, Assembler, Emulator, & OS
+# Bear16: A Custom 16-Bit ISA, Fully-Featured Assembler, and Cycle-Accurate Emulator
 ## Set-up
 ### Linux:
 #### Installing SDL2 packages:
