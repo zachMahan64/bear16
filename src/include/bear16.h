@@ -13,8 +13,8 @@
 enum class emu_launch : uint8_t { cli_args, tui };
 class Bear16 {
     // version info & constant state
-    const std::string version = "0.0.7";
-    const std::string dateOfLastVersion = "2025-08-17";
+    const std::string version = "1.0";
+    const std::string dateOfLastVersion = "2025-08-25";
     const emu_launch launchState;
     // PATHING
     // CONSTANTS
