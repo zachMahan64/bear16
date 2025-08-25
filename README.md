@@ -58,7 +58,7 @@
 ## Technical Overview
 ### Background
 - I built Bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
-    - [Link to the OS made with the bear16 tool-chain here](https://github.com/zachMahan64/bear16-os).
+    - Link to the OS made with the bear16 tool-chain [here](https://github.com/zachMahan64/bear16-os)
     - The VM and Assembler are written in modern C++ 23.
     - All programming for the Bear16 system must be done in raw assembly.
     - The Bear16 architecture is inspired by x86's expressiveness and RISC-V's simplicity, although it deviates in its syntax, directives, and instruction layout.
