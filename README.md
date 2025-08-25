@@ -58,19 +58,18 @@
 ## Technical Overview
 ### Background
 - I built Bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
-    - The OS is effectively a monolithic kernel with fully featured utility libraries, a shell/CLI, file IO, keyboard IO,
-      framebuffering, blitting, and memory allocator. [Linked here](https://github.com/zachMahan64/bear16-os).
+    - [Link to the OS made with the bear16 tool-chain here](https://github.com/zachMahan64/bear16-os).
     - The VM and Assembler are written in modern C++ 23.
     - All programming for the Bear16 system must be done in raw assembly.
     - The Bear16 architecture is inspired by x86's expressiveness and RISC-V's simplicity, although it deviates in its syntax, directives, and instruction layout.
     - Bear16 is a pure Harvard architecture in which ROM and RAM occupy separate address spaces. This
       was done as a design choice largely to expand system memory given 16-bit address space constraints without
       the need for banking or wider-than-16-bit register addressing.
-    - The VM has been optimized heavily and can run well over 100 MHz real-time (tested on M2, r7800x, & Core Ultra 9 285H), although this is, of course, overkill and it has been throttled to 40 MHz. The VM operates at the RTL and is cycle-accurate.
+    - The VM has been optimized heavily and can run well over 100 MHz real-time (tested on M2, r7800x, & Core Ultra 9 285H), although this is, of course, overkill and it has been throttled to ~40 MHz. The VM operates at the RTL and is cycle-accurate.
     - Bear16 was primarily an educational endeavor for me, though the entire toolchain is usable by anyone.
 ### ISA and Assembly Language Details
 - Full ISA spreadsheet available [here](https://docs.google.com/spreadsheets/d/1skLFHBtt_hR7RHbrW7IGVIHvV-CCc16sBRJoc0tyrCA/edit?usp=sharing)
-- Bear16 is a 16-bit, little-endian architecture with 16-bit memory addressing and 64-bit fixed-width instructions.
+- Bear16 is a 16-bit, little-endian architecture with 16-bit memory addressing and 64-bit fixed-width instructions. It compromises compact instructions for immediacy and simplicity.
 - Instruction format:
   - Each instruction is broken up into four distinct 16-bit fields
     - `{16} {16} {16} {16}`
