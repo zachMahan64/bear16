@@ -63,6 +63,7 @@ example flows: ~ project set-up ~
                b16 --assemble main.asm --run build/my_executable.bin
                ~~~~~~~~ or ~~~~~~~~
                b16 -ar my_project_entry.asm my_executable.bin
+
 ```
 ## TUI Preview
 ```

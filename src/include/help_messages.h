@@ -41,11 +41,11 @@ example flows: ~ project set-up ~
 
                ~ assemble and run ~
                b16 assemble main.asm build/my_executable.bin
-               b16 run my_executable.bin
+               b16 run build/my_executable.bin
                ~~~~~~~~ or ~~~~~~~~
                b16 --assemble main.asm --run build/my_executable.bin
                ~~~~~~~~ or ~~~~~~~~
-               b16 -ar my_project_entry.asm my_executable.bin
+               b16 -ar my_project_entry.asm build/my_executable.bin
 )HELP";
 
 constexpr const char* helpMessageTui =
