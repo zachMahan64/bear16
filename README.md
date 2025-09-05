@@ -1,4 +1,85 @@
 # Bear16: A Custom 16-Bit ISA, Fully-Featured Assembler, and Cycle-Accurate Emulator
+## Background
+- Bear16 is an exploratory, self-directed project made over hundreds of hours during the summer before my freshman year of college.
+    - Link to the OS made with the bear16 tool-chain [here](https://github.com/zachMahan64/bear16-os)
+    - The VM and Assembler are written in modern C++ 23.
+    - All programming for the Bear16 system must be done in raw assembly.
+    - The Bear16 architecture is inspired by RISC-V's simplicity, although it deviates in its syntax, directives, and instruction layout. The assembly language is very flexible with automatic immediate inlining.
+    - Bear16 is a pure Harvard architecture in which ROM and RAM occupy separate address spaces. This
+      was done as a design choice largely to expand system memory given 16-bit address space constraints without
+      the need for banking or wider-than-16-bit register addressing.
+    - The VM has been optimized heavily and can run well over 100 MHz real-time (tested on M2, r7800x, & Core Ultra 9 285H), although this is, of course, overkill and it has been throttled to ~40 MHz. The VM operates at the RTL and is cycle-accurate.
+    - Bear16 was primarily an educational endeavor for myself, though the entire toolchain is usable by anyone.
+## CLI Usage
+```
+options:
+  -a, --assemble, assemble       assemble source file(s)
+  -r, --run, run                 run the specified rom image
+  --dump                         dump process state at termination
+  -h, --help, help               show help message
+  -v, --version                  show version information
+  -u, --ui, --tui                start terminal user interface
+  -ar, -ra                       assemble and run
+  -sd, --set-disk                set the active disk image
+  -cd, --check-disk              check the path of the current disk
+  -rd, --reset-disk-disk         reset/zero the contents of the current disk
+  doctor, --doctor               restore ".b16.json" config file and rebuild
+                                 disks/projects directories if missing
+  <no-args>                      start terminal user interface
+                                 *note: all args and flags are order-agnostic
+
+usage: b16 [--help | -h]
+       b16 [--assemble | assemble | -a] <assembly_file> <target_binary_file>
+       b16 [--run | run | -r] <binary_file> <--dump/no-flag>
+       b16 [-ar | -ra] <assembly_file> <binary_file> <--dump/no-flag>
+       b16 [--ui | --tui]
+       b16 -sd
+       b16 -cd
+       b16 -rd
+       b16 [--version | -v]
+       b16 [doctor | --doctor]
+       b16 <no-args>
+
+example flows: ~ project set-up ~
+               cd ~/bear16/projects_b16/
+               mkdir my_project
+               cd my_project
+               touch main.asm
+               touch file_to_be_included.asm  # make sure to include this in your entry file!
+               nvim main.asm                  # edit in neovim (or your editor of choice)!
+               mkdir build
+
+               ~ assemble and run ~
+               b16 assemble main.asm build/my_executable.bin
+               b16 run my_executable.bin
+               ~~~~~~~~ or ~~~~~~~~
+               b16 --assemble main.asm --run build/my_executable.bin
+               ~~~~~~~~ or ~~~~~~~~
+               b16 -ar my_project_entry.asm my_executable.bin
+```
+## TUI Preview
+```
+================================================================================
+|               BEAR16 Emulator & Assembler - v1.0 (2025-08-25)                |
+|                              Made by Zach Mahan                              |
+================================================================================
+|                                Open Project:                                 |
+|                    (/Users/zachmahan/dev/asm/bear16-os/)                     |
+================================================================================
+| [1] Assemble Project (Release)                                               |
+| [2] Run Executable   (Release)                                               |
+| [3] Assemble & Run   (Release)                                               |
+|------------------------------------------------------------------------------|
+| [4] Assemble Project (Debug)                                                 |
+| [5] Run Executable   (Debug)                                                 |
+| [6] Assemble & Run   (Debug)                                                 |
+|------------------------------------------------------------------------------|
+| [P] Open a Different Project                                                 |
+| [C] Configure                                                                |
+| [H] Help                                                                     |
+| [Q] Quit                                                                     |
+--------------------------------------------------------------------------------
+```
 ## Set-up
 ### Linux:
 #### Installing SDL2 packages:
@@ -56,17 +137,6 @@
 - Run the b16 project-based terminal interface with `b16` or `b16 --tui` -> select "Help" in the menu
 - Now you have all the tools to run the OS or make your own Bear16 programs.
 ## Technical Overview
-### Background
-- I built Bear16 after hundreds of hours of labor. This was an exploratory, self-directed project made during the summer before my freshman year of college.
-    - Link to the OS made with the bear16 tool-chain [here](https://github.com/zachMahan64/bear16-os)
-    - The VM and Assembler are written in modern C++ 23.
-    - All programming for the Bear16 system must be done in raw assembly.
-    - The Bear16 architecture is inspired by x86's expressiveness and RISC-V's simplicity, although it deviates in its syntax, directives, and instruction layout.
-    - Bear16 is a pure Harvard architecture in which ROM and RAM occupy separate address spaces. This
-      was done as a design choice largely to expand system memory given 16-bit address space constraints without
-      the need for banking or wider-than-16-bit register addressing.
-    - The VM has been optimized heavily and can run well over 100 MHz real-time (tested on M2, r7800x, & Core Ultra 9 285H), although this is, of course, overkill and it has been throttled to ~40 MHz. The VM operates at the RTL and is cycle-accurate.
-    - Bear16 was primarily an educational endeavor for me, though the entire toolchain is usable by anyone.
 ### ISA and Assembly Language Details
 - Full ISA spreadsheet available [here](https://docs.google.com/spreadsheets/d/1skLFHBtt_hR7RHbrW7IGVIHvV-CCc16sBRJoc0tyrCA/edit?usp=sharing)
 - Bear16 is a 16-bit, little-endian architecture with 16-bit memory addressing and 64-bit fixed-width instructions. It compromises compact instructions for immediacy and simplicity.
