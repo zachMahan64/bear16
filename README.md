@@ -12,6 +12,11 @@
     - Bear16 was primarily an educational endeavor for myself, though the entire toolchain is usable by anyone.
 ## Table Of Contents
 - [CLI Usage](#cli-usage)
+- [TUI Preview](#tui-preview)
+- [Set-up](#set-up)
+- [Technical Overview](#technical-overview)
+- [The Bear16 Design Process and a Toolchain Overview](#the-bear16-design-process-and-a-toolchain-overview)
+- [Writing Bear16 Assembly Language](#writing-bear16-assembly-language)
 ## CLI Usage
 ```
 options:
@@ -277,10 +282,10 @@ void CPU16::step() {
 }
 ```
 
-### Writing Bear16 Assembly Language
+## Writing Bear16 Assembly Language
 #### Tools
 - Use the python scripts included in the repo to automatically convert images into bitmaps or to create blank bitmaps that you can manually draw 1's onto.
-#### Some Examples
+### Some Examples
 - All syntax is provided in the "Assembly Language Details" section here in the README (for directives/other assembly-time related syntax) and the instruction syntax is defined [here](https://docs.google.com/spreadsheets/d/1skLFHBtt_hR7RHbrW7IGVIHvV-CCc16sBRJoc0tyrCA/edit?usp=sharing).
 - The best example is [Bear16 OS itself](https://github.com/zachMahan64/bear16-os)! It is entirely written in raw Bear16 asm lang. Check out the repo to read over the source code if you're curious.
 
