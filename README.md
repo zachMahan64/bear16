@@ -11,7 +11,7 @@
     - The VM has been optimized heavily and can run well over 100 MHz real-time (tested on M2, r7800x, & Core Ultra 9 285H), although this is, of course, overkill and it has been throttled to ~40 MHz. The VM operates at the RTL and is cycle-accurate.
     - Bear16 was primarily an educational endeavor for myself, though the entire toolchain is usable by anyone.
 ## Table Of Contents
-- [CLI Usage](cli-usage)
+- [CLI Usage](#cli-usage)
 ## CLI Usage
 ```
 options:
