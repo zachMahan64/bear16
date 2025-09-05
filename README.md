@@ -10,6 +10,8 @@
       the need for banking or wider-than-16-bit register addressing.
     - The VM has been optimized heavily and can run well over 100 MHz real-time (tested on M2, r7800x, & Core Ultra 9 285H), although this is, of course, overkill and it has been throttled to ~40 MHz. The VM operates at the RTL and is cycle-accurate.
     - Bear16 was primarily an educational endeavor for myself, though the entire toolchain is usable by anyone.
+## Table Of Contents
+- [CLI Usage](cli-usage)
 ## CLI Usage
 ```
 options:
@@ -151,7 +153,7 @@ example flows: ~ project set-up ~
         - The immediate flags can be 00, 01, 10, and 11
         - Bit 15 (MSB) indicates that source_one is an immediate; bit 14 indicates the same for source_two.
         - This can be specified manually in text by `{op}{imm_suffix}` where the suffix can either be absent (00), i1 (10), i2 (01), or i (11).
-        - The immediate system allows for full 16-bit immediate inlining which makes code much more concise, at the cost of each instruction being wide (8 bytes!). I will discuss this design decision more in the reflection section.
+        - The immediate system allows for full 16-bit immediate inlining which makes code much more concise, at the cost of each instruction being wide (8 bytes!).
   - Example Instruction:
     - `add t0, t1, 2`
     - Explanation: This instruction adds the value stored in register t1 (temporary/volatile 1) and stores the result into t0. Notice how the source_two field contains the immediate value 2. So this instruction really should be: `addi2 t0, t1, 2`. Thankfully, the assembler recognizes this necessity and resolves all inlined immediates. Manual suffixing (`i1`, `i2`, `i`) is entirely optional and generally discouraged.
