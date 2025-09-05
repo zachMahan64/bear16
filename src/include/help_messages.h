@@ -31,7 +31,7 @@ usage: b16 [--help | -h]
        b16 <no-args>
 
 example flows: ~ project set-up ~
-               cd ~/bear16/projects_b16/
+               cd ~/bear16_projects/
                mkdir my_project
                cd my_project
                touch main.asm
