@@ -2,7 +2,19 @@
 #define HELP_MESSAGES_H
 
 constexpr const char* helpMessageCli =
-    R"HELP(options:
+    R"HELP(usage: b16 [--help | -h]
+       b16 [--assemble | assemble | -a] <assembly_file> <target_binary_file>
+       b16 [--run | run | -r] <binary_file> <--dump/no-flag>
+       b16 [-ar | -ra] <assembly_file> <binary_file> <--dump/no-flag>
+       b16 [--ui | --tui]
+       b16 -sd
+       b16 -cd
+       b16 -rd
+       b16 [--version | -v]
+       b16 [doctor | --doctor]
+       b16 <no-args>
+
+options:
   -a, --assemble, assemble       assemble source file(s)
   -r, --run, run                 run the specified rom image
   --dump                         dump process state at termination
@@ -17,18 +29,6 @@ constexpr const char* helpMessageCli =
                                  disks/projects directories if missing
   <no-args>                      start terminal user interface
                                  *note: all args and flags are order-agnostic
-
-usage: b16 [--help | -h]
-       b16 [--assemble | assemble | -a] <assembly_file> <target_binary_file>
-       b16 [--run | run | -r] <binary_file> <--dump/no-flag>
-       b16 [-ar | -ra] <assembly_file> <binary_file> <--dump/no-flag>
-       b16 [--ui | --tui]
-       b16 -sd
-       b16 -cd
-       b16 -rd
-       b16 [--version | -v]
-       b16 [doctor | --doctor]
-       b16 <no-args>
 
 example flows: ~ project set-up ~
                cd ~/bear16_projects/

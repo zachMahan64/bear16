@@ -19,6 +19,18 @@
 - [Writing Bear16 Assembly Language](#writing-bear16-assembly-language)
 ## CLI Usage
 ```
+usage: b16 [--help | -h]
+       b16 [--assemble | assemble | -a] <assembly_file> <target_binary_file>
+       b16 [--run | run | -r] <binary_file> <--dump/no-flag>
+       b16 [-ar | -ra] <assembly_file> <binary_file> <--dump/no-flag>
+       b16 [--ui | --tui]
+       b16 -sd
+       b16 -cd
+       b16 -rd
+       b16 [--version | -v]
+       b16 [doctor | --doctor]
+       b16 <no-args>
+
 options:
   -a, --assemble, assemble       assemble source file(s)
   -r, --run, run                 run the specified rom image
@@ -35,18 +47,6 @@ options:
   <no-args>                      start terminal user interface
                                  *note: all args and flags are order-agnostic
 
-usage: b16 [--help | -h]
-       b16 [--assemble | assemble | -a] <assembly_file> <target_binary_file>
-       b16 [--run | run | -r] <binary_file> <--dump/no-flag>
-       b16 [-ar | -ra] <assembly_file> <binary_file> <--dump/no-flag>
-       b16 [--ui | --tui]
-       b16 -sd
-       b16 -cd
-       b16 -rd
-       b16 [--version | -v]
-       b16 [doctor | --doctor]
-       b16 <no-args>
-
 example flows: ~ project set-up ~
                cd ~/bear16_projects/
                mkdir my_project
@@ -58,11 +58,11 @@ example flows: ~ project set-up ~
 
                ~ assemble and run ~
                b16 assemble main.asm build/my_executable.bin
-               b16 run my_executable.bin
+               b16 run build/my_executable.bin
                ~~~~~~~~ or ~~~~~~~~
                b16 --assemble main.asm --run build/my_executable.bin
                ~~~~~~~~ or ~~~~~~~~
-               b16 -ar my_project_entry.asm my_executable.bin
+               b16 -ar my_project_entry.asm build/my_executable.bin
 
 ```
 ## TUI Preview
