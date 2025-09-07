@@ -460,6 +460,7 @@ void Assembler::writeToFile(const std::string& filename, const std::vector<uint8
     outFile.close();
 }
 std::vector<uint8_t> Assembler::assembleOpenedProject() {
+    auto start = std::chrono::high_resolution_clock::now();
     std::string fullPath = (std::filesystem::path(projectPath) / entry).string();
     LOG_ASM("Now assembling: " + fullPath);
     std::string processedAsm = preprocessor.preprocessAsmProject(entry);
@@ -472,6 +473,9 @@ std::vector<uint8_t> Assembler::assembleOpenedProject() {
     std::vector<uint8_t> dataByteVec = parseTokenizedDataIntoByteVec(allTokenizedInstructions);
     byteVec.insert(byteVec.end(), dataByteVec.begin(), dataByteVec.end());
     LOG_ERR("[INFO] Final ROM Size (bytes): " << std::dec << byteVec.size());
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    LOG_ERR("[INFO] Assembled in " << elapsed.count() << " ms");
     preprocessor.reset(); // clear state
     return byteVec;
 }
