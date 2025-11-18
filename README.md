@@ -1,7 +1,7 @@
 # Bear16: A Custom 16-Bit ISA, Fully-Featured Assembler, and Cycle-Accurate Emulator
 ## Background
 - Bear16 is an exploratory, self-directed project made over hundreds of hours during the summer before my freshman year of college.
-    - Link to the [Bear16 OS, a retro operating system made with the bear16 tool-chain here.](https://github.com/zachMahan64/bear16-os)
+    - Link to [Bear16 OS, a retro operating system made with the bear16 tool-chain here.](https://github.com/zachMahan64/bear16-os)
     - The VM and Assembler are written in C++ 23.
     - All programming for the Bear16 system must be done in raw assembly.
     - The Bear16 architecture is inspired by RISC-V's simplicity, although it deviates in its syntax, directives, and instruction layout. The assembly language is very flexible with automatic immediate inlining.
