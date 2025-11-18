@@ -1,8 +1,8 @@
 # Bear16: A Custom 16-Bit ISA, Fully-Featured Assembler, and Cycle-Accurate Emulator
 ## Background
 - Bear16 is an exploratory, self-directed project made over hundreds of hours during the summer before my freshman year of college.
-    - Link to the OS made with the bear16 tool-chain [here](https://github.com/zachMahan64/bear16-os)
-    - The VM and Assembler are written in modern C++ 23.
+    - Link to the [Bear16 OS, a retro operating system made with the bear16 tool-chain here.](https://github.com/zachMahan64/bear16-os)
+    - The VM and Assembler are written in C++ 23.
     - All programming for the Bear16 system must be done in raw assembly.
     - The Bear16 architecture is inspired by RISC-V's simplicity, although it deviates in its syntax, directives, and instruction layout. The assembly language is very flexible with automatic immediate inlining.
     - Bear16 is a pure Harvard architecture in which ROM and RAM occupy separate address spaces. This
@@ -114,28 +114,25 @@ example flows: ~ project set-up ~
   - SDL2 (for framebuffer and input)
   - Nlohmann Json (header-only inside the repo, so no set-up required for this)
 ### Linux & MacOS
-- `cd path/to/bear16`
-- `mkdir build`
-- `cd build`
-- `cmake ..`
-- `make`
-- `echo 'export PATH="$HOME/path/to/bear16/build:$PATH"' >> ~/.bashrc` or `.zshrc` if you're using zsh instead of bash
-- `source ~/.bashrc` or `.zshrc`
+```
+cd path/to/bear16
+mkdir build && cd build && cmake .. && make
+echo 'export PATH="$HOME/path/to/bear16/build:$PATH"' >> ~/.bashrc # or .zshrc, etc.
+source ~/.bashrc                                                   # ^
+```
 ### Windows (build with Msys2 ucrt64 shell, then run anywhere)
 - Visit: `https://www.msys2.org/`, then download and run the Msys2 setup exe
-- Open Msys2 once installed
-- `pacman -Syu` then restart Msys2 when completed
-- `pacman -Su` then restart Msys2 when completed
-- `pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-cmake`
-- `cd /c/path/to/bear16`
-- `mkdir build`
-- `cd build`
-- `cmake -G "MinGW Makefiles" ..`
-- `mingw32-make` restart Msys2 when completed
-- EXPORT TO MSYS2 PATH:
-- `export PATH="$HOME/path/to/bear16/build:$PATH"`
-- `source ~/.bashrc`
-- EXPORT TO WINDOWS PATH (for use in Powershell or cmd):
+- Open MSYS2 UCRT64 once installed
+```
+pacman -Syu
+pacman -Su
+pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-cmake
+cd path/to/bear16
+mkdir build && cd build && cmake -G "MinGW Makefiles" && mingw32-make
+export PATH="$HOME/path/to/bear16/build:$PATH" >> .bashrc
+source ~/.bashrc
+```
+- To export to Windows Path (for use in Powershell or cmd):
 - (Windows Key) + R > OK
 - Path > Edit > Browse or New & select or type the path to b16's build dir
 - Now you can just use b16 in your native windows environment
@@ -222,57 +219,25 @@ The design philosophy behind Bear16 is one of maximizing speed. The emulator, de
     - owns a DiskController & a InputController (memory-mapped IO controllers)
     - all subcomponents of Board have non-owning views into memory/disk
     - all objects follow RAII and everything lives on stack (for maximized cache-locality) besides the SDL2 window and the disk (an std::vector).
-    - heres the simplified C++ code for the Board's main method ("run"):
-```cpp
-int Board::run() {
-    int exitCode = 0;
-    // init clock & SDL2 timings
-    STEPS_PER_LOOP = ... enough to target 36'000'000 Hz;
-    SDL_Event event;
-    clock.resetCycles(); // set clock cycles to zero @ the start of a new process
-    clock.initMemMappedTime();
+    - heres the pseudocode code for the Board's main method ("run"):
+```
+Board::run():
+    while cpu.isNotHalted:
+        poll for inputs
+        for (numInnerCycles):
+            cpu.step()
+            clock.tick()
+            // this inner loop lets the cpu wait less often for (slow) SDL2 polling
+        diskController.handleDiskOperation()
+        if (timeSinceLastFrame  >= TARGET_FRAME_TIME):
+            renderFramebuffer()
 
-    auto startTime = currentTimeMillis(); // for calculating clock speed after running ends
-    constexpr double TARGET_FRAME_TIME = 1.0 / 60.0; // 60 FPS,
-    uint64_t lastFrameTime = SDL_GetPerformanceCounter();
-    const uint64_t freq = SDL_GetPerformanceFrequency();
-
-    do {
-        while (SDL_PollEvent(&event)) {
-            ... poll for an event, like a keypress
-        }
-        for (int i = 0; i < STEPS_PER_LOOP; ++i) {
-            cpu.step();
-            clock.tick();
-            if (cpu.isHalted) {
-                break;
-            }
-        } // this inner loop lets the cpu wait less often for (slow) SDL2 polling
-
-        diskController.handleDiskOperation();
-
-        const uint64_t now = SDL_GetPerformanceCounter();
-        const double elapsed = static_cast<double>(now - lastFrameTime) / static_cast<double>(freq);
-
-        if (elapsed >= TARGET_FRAME_TIME) {
-            ... render framebuffer to SDL2 window & update memory-mapped time
-        }
-    } while (!cpu.isHalted);
-
-    // calculate some clock stats
-    auto endTime = currentTimeMillis();
-    auto elapsedMillis = static_cast<double>(endTime - startTime);
-    calcClockSpeedHz(elapsedMillis);
-
-    return exitCode;
-}
 ```
 - [cpu16](core.h)
     - main interface through the "step" method:
 ```cpp
 void CPU16::step() {
     // fetch & decode
-    LOG("DEBUG: PC = " << pc);
     parts::Instruction instr(fetchInstruction());
     // execute & writeback
     execute(instr);
